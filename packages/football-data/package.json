@@ -1,0 +1,7 @@
+{
+  "name": "@fdg/football-data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Football data providers, normalization, caching and matchday prefetch"
+}

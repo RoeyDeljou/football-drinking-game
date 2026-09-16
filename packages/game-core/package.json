@@ -1,0 +1,26 @@
+{
+  "name": "@fdg/game-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Platform-agnostic game engine: room state machine, game modules, scoring, penalties",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run --root ../.."
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  }
+}
