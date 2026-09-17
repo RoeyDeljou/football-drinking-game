@@ -1,0 +1,11 @@
+{
+  "get": "fixtures",
+  "parameters": { "league": "39", "season": "2025" },
+  "errors": {
+    "rateLimit": "Too many requests. Your subscription plan allows 30 requests per minute.",
+    "plan": "Free plans are limited to the 2021-2023 seasons."
+  },
+  "results": 0,
+  "paging": { "current": 1, "total": 1 },
+  "response": []
+}

@@ -1,0 +1,69 @@
+{
+  "get": "fixtures/lineups",
+  "parameters": { "fixture": "1208301" },
+  "errors": [],
+  "results": 2,
+  "paging": { "current": 1, "total": 1 },
+  "response": [
+    {
+      "team": {
+        "id": 42,
+        "name": "Arsenal",
+        "logo": "https://media.api-sports.io/football/teams/42.png",
+        "colors": { "player": { "primary": "e80909", "number": "ffffff" } }
+      },
+      "coach": { "id": 4, "name": "M. Arteta", "photo": null },
+      "formation": "4-3-3",
+      "startXI": [
+        { "player": { "id": 20752, "name": "David Raya", "number": 22, "pos": "G", "grid": "1:1" } },
+        { "player": { "id": 20753, "name": "Jurriën Timber", "number": 12, "pos": "D", "grid": "2:1" } },
+        { "player": { "id": 20754, "name": "William Saliba", "number": 2, "pos": "D", "grid": "2:2" } },
+        { "player": { "id": 20755, "name": "Gabriel Magalhães", "number": 6, "pos": "D", "grid": "2:3" } },
+        { "player": { "id": 20756, "name": "Riccardo Calafiori", "number": 33, "pos": "D", "grid": "2:4" } },
+        { "player": { "id": 20757, "name": "Declan Rice", "number": 41, "pos": "M", "grid": "3:1" } },
+        { "player": { "id": 20758, "name": "Martín Zubimendi", "number": null, "pos": "M", "grid": "3:2" } },
+        { "player": { "id": 20759, "name": "Martin Ødegaard", "number": 8, "pos": "M", "grid": "3:3" } },
+        { "player": { "id": 20760, "name": "Bukayo Saka", "number": 7, "pos": "F", "grid": "4:1" } },
+        { "player": { "id": 20761, "name": "Viktor Gyökeres", "number": 14, "pos": null, "grid": "4:2" } },
+        { "player": { "id": 20762, "name": "Gabriel Martinelli", "number": 11, "pos": "F", "grid": "4:3" } }
+      ],
+      "substitutes": [
+        { "player": { "id": 20763, "name": "Kepa Arrizabalaga", "number": 1, "pos": "G", "grid": null } },
+        { "player": { "id": 20764, "name": "Ben White", "number": 4, "pos": "D", "grid": null } },
+        { "player": { "id": 20765, "name": "Mikel Merino", "number": 23, "pos": "M", "grid": null } },
+        { "player": { "id": 20766, "name": "Leandro Trossard", "number": 19, "pos": "F", "grid": null } },
+        { "player": { "id": 20767, "name": "Kai Havertz", "number": 29, "pos": "F", "grid": null } }
+      ]
+    },
+    {
+      "team": {
+        "id": 40,
+        "name": "Liverpool",
+        "logo": "https://media.api-sports.io/football/teams/40.png",
+        "colors": { "player": { "primary": "d10505", "number": "ffffff" } }
+      },
+      "coach": { "id": 7, "name": "A. Slot", "photo": null },
+      "formation": "4-3-3",
+      "startXI": [
+        { "player": { "id": 30801, "name": "Alisson Becker", "number": 1, "pos": "G", "grid": "1:1" } },
+        { "player": { "id": 30802, "name": "Conor Bradley", "number": 84, "pos": "D", "grid": "2:1" } },
+        { "player": { "id": 30803, "name": "Ibrahima Konaté", "number": 5, "pos": "D", "grid": "2:2" } },
+        { "player": { "id": 30804, "name": "Virgil van Dijk", "number": 4, "pos": "D", "grid": "2:3" } },
+        { "player": { "id": 30805, "name": "Milos Kerkez", "number": 6, "pos": "D", "grid": "2:4" } },
+        { "player": { "id": 30806, "name": "Ryan Gravenberch", "number": 38, "pos": "M", "grid": "3:1" } },
+        { "player": { "id": 30807, "name": "Alexis Mac Allister", "number": 10, "pos": "M", "grid": "3:2" } },
+        { "player": { "id": 30808, "name": "Dominik Szoboszlai", "number": 8, "pos": "M", "grid": "3:3" } },
+        { "player": { "id": 30809, "name": "Florian Wirtz", "number": 7, "pos": "F", "grid": "4:1" } },
+        { "player": { "id": 30810, "name": "Hugo Ekitiké", "number": 22, "pos": "F", "grid": "4:2" } },
+        { "player": { "id": 30811, "name": "Mohamed Salah", "number": 11, "pos": "F", "grid": "4:3" } }
+      ],
+      "substitutes": [
+        { "player": { "id": 30812, "name": "Giorgi Mamardashvili", "number": 25, "pos": "G", "grid": null } },
+        { "player": { "id": 30813, "name": "Joe Gomez", "number": 2, "pos": "D", "grid": null } },
+        { "player": { "id": 30814, "name": "Curtis Jones", "number": 17, "pos": "M", "grid": null } },
+        { "player": { "id": null, "name": null, "number": null, "pos": null, "grid": null } },
+        { "player": { "id": 30815, "name": "Alexander Isak", "number": 9, "pos": "F", "grid": null } }
+      ]
+    }
+  ]
+}

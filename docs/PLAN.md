@@ -38,7 +38,7 @@ The five Phase-1 modules (`M1` Match Markets, `M2` Who's That Player?, `M3` Shir
 - [x] Module implementations with full rules + tests: `M1` Match Markets, `M2` Who's That Player?, `M3` Shirt Number, `G1` Guess the Player, `G6` Trivia Rush
 - [x] `npm run test`, `npm run lint`, `npm run typecheck` green; no platform imports (enforced by the ESLint rule)
 
-## Phase 2 — Football data layer (free sources only) · IN REVIEW (QA round 1: FAIL, 4 defects, fixes in progress)
+## Phase 2 — Football data layer (free sources only) · DONE
 
 Owner: `football-data-engineer`
 

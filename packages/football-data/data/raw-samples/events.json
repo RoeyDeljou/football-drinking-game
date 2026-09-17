@@ -1,0 +1,90 @@
+{
+  "get": "fixtures/events",
+  "parameters": { "fixture": "1208301" },
+  "errors": [],
+  "results": 9,
+  "paging": { "current": 1, "total": 1 },
+  "response": [
+    {
+      "time": { "elapsed": 15, "extra": null },
+      "team": { "id": 42, "name": "Arsenal", "logo": null },
+      "player": { "id": 20754, "name": "William Saliba" },
+      "assist": { "id": 20759, "name": "Martin Ødegaard" },
+      "type": "Goal",
+      "detail": "Normal Goal",
+      "comments": "Header, from corner"
+    },
+    {
+      "time": { "elapsed": 18, "extra": null },
+      "team": { "id": 40, "name": "Liverpool", "logo": null },
+      "player": { "id": 30804, "name": "Virgil van Dijk" },
+      "assist": { "id": null, "name": null },
+      "type": "Card",
+      "detail": "Yellow Card",
+      "comments": "Persistent fouling"
+    },
+    {
+      "time": { "elapsed": 36, "extra": null },
+      "team": { "id": 40, "name": "Liverpool", "logo": null },
+      "player": { "id": 30811, "name": "Mohamed Salah" },
+      "assist": { "id": 30809, "name": "Florian Wirtz" },
+      "type": "Goal",
+      "detail": "Normal Goal",
+      "comments": null
+    },
+    {
+      "time": { "elapsed": 62, "extra": null },
+      "team": { "id": 42, "name": "Arsenal", "logo": null },
+      "player": { "id": null, "name": null },
+      "assist": { "id": null, "name": null },
+      "type": "Var",
+      "detail": "Penalty confirmed",
+      "comments": null
+    },
+    {
+      "time": { "elapsed": 64, "extra": null },
+      "team": { "id": 42, "name": "Arsenal", "logo": null },
+      "player": { "id": 20760, "name": "Bukayo Saka" },
+      "assist": { "id": null, "name": null },
+      "type": "Goal",
+      "detail": "Penalty",
+      "comments": null
+    },
+    {
+      "time": { "elapsed": 67, "extra": null },
+      "team": { "id": 40, "name": "Liverpool", "logo": null },
+      "player": { "id": 30810, "name": "Hugo Ekitiké" },
+      "assist": { "id": 30815, "name": "Alexander Isak" },
+      "type": "subst",
+      "detail": "Substitution 1",
+      "comments": null
+    },
+    {
+      "time": { "elapsed": 77, "extra": null },
+      "team": { "id": 42, "name": "Arsenal", "logo": null },
+      "player": { "id": 20757, "name": "Declan Rice" },
+      "assist": { "id": null, "name": null },
+      "type": "Card",
+      "detail": "Second Yellow card",
+      "comments": "Tactical foul"
+    },
+    {
+      "time": { "elapsed": null, "extra": null },
+      "team": { "id": 40, "name": "Liverpool", "logo": null },
+      "player": { "id": 30807, "name": "Alexis Mac Allister" },
+      "assist": { "id": null, "name": null },
+      "type": "Card",
+      "detail": "Yellow Card",
+      "comments": "Upstream sent no minute for this event"
+    },
+    {
+      "time": { "elapsed": 90, "extra": 3 },
+      "team": { "id": 40, "name": "Liverpool", "logo": null },
+      "player": { "id": 30815, "name": "Alexander Isak" },
+      "assist": { "id": 30811, "name": "Mohamed Salah" },
+      "type": "Goal",
+      "detail": "Normal Goal",
+      "comments": null
+    }
+  ]
+}

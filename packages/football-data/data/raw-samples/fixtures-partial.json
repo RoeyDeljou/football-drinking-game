@@ -1,0 +1,42 @@
+{
+  "get": "fixtures",
+  "parameters": { "id": "1208301" },
+  "errors": [],
+  "results": 2,
+  "paging": { "current": 1, "total": 1 },
+  "response": [
+    {
+      "fixture": {
+        "id": 1208999,
+        "referee": null,
+        "timezone": "UTC",
+        "date": "2026-02-07T20:00:00+00:00",
+        "venue": { "id": null, "name": null, "city": null },
+        "status": { "long": "First Half", "short": "1H", "elapsed": 22, "extra": null }
+      },
+      "league": { "id": 39, "name": "Premier League", "season": 2025, "round": null },
+      "teams": {
+        "home": { "id": 66, "name": "Aston Villa", "code": null, "logo": null, "winner": null },
+        "away": { "id": 45, "name": "Everton", "code": "EVE", "logo": null, "winner": null }
+      },
+      "goals": { "home": null, "away": null },
+      "score": { "halftime": null, "fulltime": null }
+    },
+    {
+      "fixture": {
+        "id": 1300001,
+        "timezone": "UTC",
+        "date": "2026-02-07T13:00:00+00:00",
+        "venue": { "id": 900, "name": "Estádio da Luz", "city": "Lisbon" },
+        "status": { "long": "Match Finished", "short": "FT", "elapsed": 90 }
+      },
+      "league": { "id": 94, "name": "Primeira Liga", "season": 2025, "round": "Regular Season - 20" },
+      "teams": {
+        "home": { "id": 211, "name": "Benfica", "code": "BEN", "logo": null },
+        "away": { "id": 212, "name": "Porto", "code": "POR", "logo": null }
+      },
+      "goals": { "home": 2, "away": 0 },
+      "score": { "halftime": { "home": 1, "away": 0 }, "fulltime": { "home": 2, "away": 0 } }
+    }
+  ]
+}

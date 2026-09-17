@@ -1,0 +1,6730 @@
+{
+  "provenance": {
+    "kind": "recorded-sample-data",
+    "description": "Career histories for 184 players, resolved on Wikidata by name + date of birth (unambiguous matches only) from the starters of the recorded fixtures. Club careers only; national and youth teams excluded. Club names are linked to this dataset's own team ids wherever the (offline, pure) team-name resolver in src/team-names.ts can match them unambiguously — the same code path CompositeProvider uses live.",
+    "recordedAt": "2026-09-16T19:00:00.000Z",
+    "disclaimer": "Dated snapshot of real data recorded from the free ESPN public site API (fixtures, lineups, events, match and season statistics, squads) and the Wikidata Query Service (career history) on the recordedAt date, normalized by @fdg/football-data. It is a frozen recording for offline development and tests, not a live feed: results, squads and statistics will have moved on since. ESPN data is unofficial and subject to ESPN terms; Wikidata content is CC0."
+  },
+  "careers": [
+    {
+      "playerId": "301425",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Club Brugge K.V.",
+          "fromSeason": "2020/21",
+          "toSeason": "2022/23",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Royal Antwerp F.C.",
+          "fromSeason": "2023/24",
+          "toSeason": "2025/26",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "238902",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Porto",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 6,
+          "goals": 0
+        },
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2017/18",
+          "toSeason": null,
+          "appearances": 173,
+          "goals": 4
+        },
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 21,
+          "goals": 1
+        }
+      ]
+    },
+    {
+      "playerId": "328466",
+      "entries": [
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 78,
+          "goals": 4
+        }
+      ]
+    },
+    {
+      "playerId": "157073",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Sheffield United F.C.",
+          "fromSeason": "2010/11",
+          "toSeason": "2013/14",
+          "appearances": 134,
+          "goals": 9
+        },
+        {
+          "teamId": null,
+          "teamName": "Hull City A.F.C.",
+          "fromSeason": "2013/14",
+          "toSeason": "2016/17",
+          "appearances": 54,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Wigan Athletic F.C.",
+          "fromSeason": "2014/15",
+          "toSeason": "2014/15",
+          "appearances": 16,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Leicester City F.C.",
+          "fromSeason": "2016/17",
+          "toSeason": "2018/19",
+          "appearances": 69,
+          "goals": 5
+        },
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": null,
+          "appearances": 167,
+          "goals": 7
+        }
+      ]
+    },
+    {
+      "playerId": "233937",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Newell's Old Boys",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 1,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Defensa y Justicia",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 21,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Defensa y Justicia",
+          "fromSeason": "2017/18",
+          "toSeason": "2018/19",
+          "appearances": 25,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "AFC Ajax",
+          "fromSeason": "2018/19",
+          "toSeason": "2021/22",
+          "appearances": 74,
+          "goals": 6
+        },
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 76,
+          "goals": 3
+        }
+      ]
+    },
+    {
+      "playerId": "271170",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "ES Troyes AC",
+          "fromSeason": "2017/18",
+          "toSeason": "2018/19",
+          "appearances": 41,
+          "goals": 11
+        },
+        {
+          "teamId": "337",
+          "teamName": "Brentford F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": "2024/25",
+          "appearances": 222,
+          "goals": 65
+        },
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 30,
+          "goals": 9
+        }
+      ]
+    },
+    {
+      "playerId": "193297",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "R.S.C. Anderlecht",
+          "fromSeason": "2013/14",
+          "toSeason": "2017/18",
+          "appearances": 139,
+          "goals": 26
+        },
+        {
+          "teamId": "174",
+          "teamName": "AS Monaco FC",
+          "fromSeason": "2017/18",
+          "toSeason": "2019/20",
+          "appearances": 47,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "Leicester City F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": "2018/19",
+          "appearances": 13,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Leicester City F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": "2022/23",
+          "appearances": 138,
+          "goals": 18
+        },
+        {
+          "teamId": null,
+          "teamName": "Aston Villa F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": "2026/27",
+          "appearances": 93,
+          "goals": 5
+        },
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 3,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "259902",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Sion",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 29,
+          "goals": 10
+        },
+        {
+          "teamId": null,
+          "teamName": "RB Leipzig",
+          "fromSeason": "2017/18",
+          "toSeason": "2019/20",
+          "appearances": 35,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Hertha BSC",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 39,
+          "goals": 12
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2020/21",
+          "toSeason": "2022/23",
+          "appearances": 40,
+          "goals": 6
+        },
+        {
+          "teamId": null,
+          "teamName": "Wolverhampton Wanderers F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": "2022/23",
+          "appearances": 17,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Wolverhampton Wanderers F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": "2024/25",
+          "appearances": 65,
+          "goals": 27
+        },
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 33,
+          "goals": 10
+        }
+      ]
+    },
+    {
+      "playerId": "124091",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Novara Calcio",
+          "fromSeason": "2011/12",
+          "toSeason": "2012/13",
+          "appearances": 23,
+          "goals": 4
+        },
+        {
+          "teamId": null,
+          "teamName": "Udinese Calcio",
+          "fromSeason": "2012/13",
+          "toSeason": "2015/16",
+          "appearances": 86,
+          "goals": 10
+        },
+        {
+          "teamId": null,
+          "teamName": "U.C. Sampdoria",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 33,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "Sporting CP",
+          "fromSeason": "2016/17",
+          "toSeason": "2019/20",
+          "appearances": 83,
+          "goals": 39
+        },
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": null,
+          "appearances": 230,
+          "goals": 71
+        }
+      ]
+    },
+    {
+      "playerId": "230945",
+      "entries": [
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2014/15",
+          "toSeason": null,
+          "appearances": 288,
+          "goals": 87
+        },
+        {
+          "teamId": null,
+          "teamName": "Aston Villa F.C.",
+          "fromSeason": "2024/25",
+          "toSeason": "2024/25",
+          "appearances": 10,
+          "goals": 2
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2025/26",
+          "toSeason": "2025/26",
+          "appearances": 32,
+          "goals": 8
+        }
+      ]
+    },
+    {
+      "playerId": "217092",
+      "entries": [
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2014/15",
+          "toSeason": "2020/21",
+          "appearances": 215,
+          "goals": 0
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2020/21",
+          "toSeason": "2024/25",
+          "appearances": 104,
+          "goals": 0
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 19,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "303785",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "G.D.U. Ericeirense",
+          "fromSeason": "2015/16",
+          "toSeason": "2017/18",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "G.D. Estoril Praia",
+          "fromSeason": "2017/18",
+          "toSeason": "2018/19",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Sporting CP",
+          "fromSeason": "2018/19",
+          "toSeason": "2021/22",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Wolverhampton Wanderers F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "299910",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "GNK Dinamo Zagreb",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": 13,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "GNK Dinamo Zagreb",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 23,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "RB Leipzig",
+          "fromSeason": "2019/20",
+          "toSeason": "2023/24",
+          "appearances": 59,
+          "goals": 3
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 81,
+          "goals": 11
+        }
+      ]
+    },
+    {
+      "playerId": "285450",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Club Atlético River Plate",
+          "fromSeason": "2018/19",
+          "toSeason": "2021/22",
+          "appearances": 40,
+          "goals": 10
+        },
+        {
+          "teamId": null,
+          "teamName": "Defensa y Justicia",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 14,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "S.L. Benfica",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": 17,
+          "goals": 1
+        },
+        {
+          "teamId": "363",
+          "teamName": "Chelsea F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": "2026/27",
+          "appearances": 119,
+          "goals": 19
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "265907",
+      "entries": [
+        {
+          "teamId": "363",
+          "teamName": "Chelsea F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": "2020/21",
+          "appearances": 0,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Swansea City A.F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": "2019/20",
+          "appearances": 12,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Swansea City A.F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 40,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Crystal Palace F.C.",
+          "fromSeason": "2020/21",
+          "toSeason": "2025/26",
+          "appearances": 152,
+          "goals": 8
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 15,
+          "goals": 1
+        }
+      ]
+    },
+    {
+      "playerId": "234878",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "S.L. Benfica B",
+          "fromSeason": "2014/15",
+          "toSeason": "2016/17",
+          "appearances": 55,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "S.L. Benfica",
+          "fromSeason": "2016/17",
+          "toSeason": "2019/20",
+          "appearances": 91,
+          "goals": 9
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": null,
+          "appearances": 169,
+          "goals": 5
+        }
+      ]
+    },
+    {
+      "playerId": "250787",
+      "entries": [
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2015/16",
+          "toSeason": null,
+          "appearances": 218,
+          "goals": 68
+        }
+      ]
+    },
+    {
+      "playerId": "238472",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Newcastle United F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": "2023/24",
+          "appearances": 44,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Bristol Rovers F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": "2021/22",
+          "appearances": 21,
+          "goals": 7
+        },
+        {
+          "teamId": null,
+          "teamName": "Nottingham Forest F.C.",
+          "fromSeason": "2023/24",
+          "toSeason": "2025/26",
+          "appearances": 75,
+          "goals": 6
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "253989",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Bryne FK",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 16,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Molde FK",
+          "fromSeason": "2016/17",
+          "toSeason": "2018/19",
+          "appearances": 39,
+          "goals": 14
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Red Bull Salzburg",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": 16,
+          "goals": 17
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": 67,
+          "goals": 62
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 134,
+          "goals": 114
+        }
+      ]
+    },
+    {
+      "playerId": "298008",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Olympique Lyonnais Reserves and Academy",
+          "fromSeason": "2018/19",
+          "toSeason": "2020/21",
+          "appearances": 13,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "Olympique Lyonnais",
+          "fromSeason": "2018/19",
+          "toSeason": "2024/25",
+          "appearances": 146,
+          "goals": 14
+        },
+        {
+          "teamId": null,
+          "teamName": "France Olympic football team",
+          "fromSeason": "2023/24",
+          "toSeason": "2023/24",
+          "appearances": 8,
+          "goals": 2
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 31,
+          "goals": 4
+        }
+      ]
+    },
+    {
+      "playerId": "273292",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Bristol City F.C.",
+          "fromSeason": "2016/17",
+          "toSeason": "2022/23",
+          "appearances": 112,
+          "goals": 16
+        },
+        {
+          "teamId": null,
+          "teamName": "Bath City F.C.",
+          "fromSeason": "2017/18",
+          "toSeason": "2017/18",
+          "appearances": 14,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Newport County A.F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": "2018/19",
+          "appearances": 21,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Sunderland A.F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": "2019/20",
+          "appearances": 7,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "AFC Bournemouth",
+          "fromSeason": "2022/23",
+          "toSeason": "2025/26",
+          "appearances": 101,
+          "goals": 30
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 17,
+          "goals": 7
+        }
+      ]
+    },
+    {
+      "playerId": "196876",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "S.C. Internacional",
+          "fromSeason": "2012/13",
+          "toSeason": "2015/16",
+          "appearances": 44,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "AS Roma",
+          "fromSeason": "2015/16",
+          "toSeason": "2017/18",
+          "appearances": 37,
+          "goals": 0
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2017/18",
+          "toSeason": null,
+          "appearances": 254,
+          "goals": 1
+        }
+      ]
+    },
+    {
+      "playerId": "270821",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "C.A. Rentistas",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 17,
+          "goals": 7
+        },
+        {
+          "teamId": null,
+          "teamName": "Boston River",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 27,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Barcelona Atlètic",
+          "fromSeason": "2017/18",
+          "toSeason": "2019/20",
+          "appearances": 42,
+          "goals": 6
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2018/19",
+          "toSeason": null,
+          "appearances": 143,
+          "goals": 11
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "226177",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Olympiacos F.C.",
+          "fromSeason": "2013/14",
+          "toSeason": "2019/20",
+          "appearances": 46,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Esbjerg fB",
+          "fromSeason": "2016/17",
+          "toSeason": "2016/17",
+          "appearances": 9,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Willem II",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 33,
+          "goals": 3
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": null,
+          "appearances": 66,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "AS Roma",
+          "fromSeason": "2025/26",
+          "toSeason": "2025/26",
+          "appearances": 18,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "274632",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Jong Ajax",
+          "fromSeason": "2017/18",
+          "toSeason": "2019/20",
+          "appearances": 44,
+          "goals": 8
+        },
+        {
+          "teamId": null,
+          "teamName": "AFC Ajax",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": 72,
+          "goals": 7
+        },
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": 25,
+          "goals": 0
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": 99,
+          "goals": 6
+        }
+      ]
+    },
+    {
+      "playerId": "355980",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Stade Rennais FC B",
+          "fromSeason": "2021/22",
+          "toSeason": "2023/24",
+          "appearances": 31,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Clermont Foot 63",
+          "fromSeason": "2023/24",
+          "toSeason": "2024/25",
+          "appearances": 23,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Stade Rennais F.C.",
+          "fromSeason": "2023/24",
+          "toSeason": "2025/26",
+          "appearances": 31,
+          "goals": 0
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "157892",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Groningen",
+          "fromSeason": "2010/11",
+          "toSeason": "2012/13",
+          "appearances": 62,
+          "goals": 7
+        },
+        {
+          "teamId": null,
+          "teamName": "Celtic F.C.",
+          "fromSeason": "2012/13",
+          "toSeason": "2014/15",
+          "appearances": 76,
+          "goals": 9
+        },
+        {
+          "teamId": null,
+          "teamName": "Southampton F.C.",
+          "fromSeason": "2014/15",
+          "toSeason": "2017/18",
+          "appearances": 67,
+          "goals": 4
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2017/18",
+          "toSeason": null,
+          "appearances": 272,
+          "goals": 27
+        }
+      ]
+    },
+    {
+      "playerId": "397545",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Real Madrid Castilla",
+          "fromSeason": "2022/23",
+          "toSeason": "2024/25",
+          "appearances": 63,
+          "goals": 13
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Madrid Club de Fútbol",
+          "fromSeason": "2024/25",
+          "toSeason": "2025/26",
+          "appearances": 2,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Club Atlético Osasuna",
+          "fromSeason": "2025/26",
+          "toSeason": "2025/26",
+          "appearances": 34,
+          "goals": 6
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "257206",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Liefering",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 42,
+          "goals": 16
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Red Bull Salzburg",
+          "fromSeason": "2017/18",
+          "toSeason": "2022/23",
+          "appearances": 56,
+          "goals": 16
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 97,
+          "goals": 14
+        }
+      ]
+    },
+    {
+      "playerId": "235662",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "AIK Fotboll",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 24,
+          "goals": 10
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2016/17",
+          "toSeason": "2018/19",
+          "appearances": 5,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Willem II",
+          "fromSeason": "2018/19",
+          "toSeason": "2018/19",
+          "appearances": 16,
+          "goals": 13
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Sociedad",
+          "fromSeason": "2018/19",
+          "toSeason": "2021/22",
+          "appearances": 105,
+          "goals": 33
+        },
+        {
+          "teamId": null,
+          "teamName": "Newcastle United F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": "2024/25",
+          "appearances": 86,
+          "goals": 54
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 17,
+          "goals": 6
+        }
+      ]
+    },
+    {
+      "playerId": "303748",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Bayer 04 Leverkusen",
+          "fromSeason": "2019/20",
+          "toSeason": "2024/25",
+          "appearances": 140,
+          "goals": 35
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 26,
+          "goals": 4
+        }
+      ]
+    },
+    {
+      "playerId": "328238",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Olympique Lyonnais Reserves and Academy",
+          "fromSeason": "2019/20",
+          "toSeason": "2022/23",
+          "appearances": 22,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "Olympique Lyonnais",
+          "fromSeason": "2020/21",
+          "toSeason": "2022/23",
+          "appearances": 40,
+          "goals": 5
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2022/23",
+          "toSeason": "2026/27",
+          "appearances": 88,
+          "goals": 29
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "153765",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "VfB Stuttgart II",
+          "fromSeason": "2008/09",
+          "toSeason": "2010/11",
+          "appearances": 57,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Bayer 04 Leverkusen",
+          "fromSeason": "2010/11",
+          "toSeason": "2017/18",
+          "appearances": 233,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Arsenal F.C.",
+          "fromSeason": "2017/18",
+          "toSeason": "2021/22",
+          "appearances": 101,
+          "goals": 0
+        },
+        {
+          "teamId": "370",
+          "teamName": "Fulham F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 75,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "197163",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "K.R.C. Genk",
+          "fromSeason": "2014/15",
+          "toSeason": "2017/18",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Atalanta BC",
+          "fromSeason": "2017/18",
+          "toSeason": "2020/21",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Leicester City F.C.",
+          "fromSeason": "2020/21",
+          "toSeason": "2023/24",
+          "appearances": 91,
+          "goals": 5
+        },
+        {
+          "teamId": "370",
+          "teamName": "Fulham F.C.",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "222396",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Everton F.C.",
+          "fromSeason": "2014/15",
+          "toSeason": "2018/19",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Wigan Athletic F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": "370",
+          "teamName": "Fulham F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "313230",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Liefering",
+          "fromSeason": "2018/19",
+          "toSeason": "2020/21",
+          "appearances": 51,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Red Bull Salzburg",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 5,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "SK Sturm Graz",
+          "fromSeason": "2021/22",
+          "toSeason": "2024/25",
+          "appearances": 85,
+          "goals": 7
+        },
+        {
+          "teamId": null,
+          "teamName": "Elche CF",
+          "fromSeason": "2024/25",
+          "toSeason": "2026/27",
+          "appearances": 79,
+          "goals": 1
+        },
+        {
+          "teamId": "370",
+          "teamName": "Fulham F.C.",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "263110",
+      "entries": [
+        {
+          "teamId": "370",
+          "teamName": "Fulham F.C.",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": "370",
+          "teamName": "Fulham F.C.",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "218998",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Asker Fotball",
+          "fromSeason": "2012/13",
+          "toSeason": "2013/14",
+          "appearances": 8,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Vålerenga Fotball",
+          "fromSeason": "2014/15",
+          "toSeason": "2016/17",
+          "appearances": 36,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "K.R.C. Genk",
+          "fromSeason": "2016/17",
+          "toSeason": "2019/20",
+          "appearances": 84,
+          "goals": 4
+        },
+        {
+          "teamId": null,
+          "teamName": "Sheffield United F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": "2022/23",
+          "appearances": 97,
+          "goals": 13
+        },
+        {
+          "teamId": null,
+          "teamName": "Burnley F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 37,
+          "goals": 1
+        },
+        {
+          "teamId": "370",
+          "teamName": "Fulham F.C.",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "175063",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Arsenal F.C.",
+          "fromSeason": "2015/16",
+          "toSeason": "2019/20",
+          "appearances": 100,
+          "goals": 11
+        },
+        {
+          "teamId": null,
+          "teamName": "Everton F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": "2022/23",
+          "appearances": 123,
+          "goals": 6
+        },
+        {
+          "teamId": "370",
+          "teamName": "Fulham F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": 84,
+          "goals": 16
+        }
+      ]
+    },
+    {
+      "playerId": "141438",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Central Coast Mariners FC",
+          "fromSeason": "2009/10",
+          "toSeason": "2012/13",
+          "appearances": 80,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Club Brugge K.V.",
+          "fromSeason": "2012/13",
+          "toSeason": "2014/15",
+          "appearances": 77,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Valencia CF",
+          "fromSeason": "2014/15",
+          "toSeason": "2016/17",
+          "appearances": 10,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "K.R.C. Genk",
+          "fromSeason": "2016/17",
+          "toSeason": "2016/17",
+          "appearances": 17,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Brighton & Hove Albion F.C.",
+          "fromSeason": "2016/17",
+          "toSeason": "2020/21",
+          "appearances": 121,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Arsenal F.C.",
+          "fromSeason": "2020/21",
+          "toSeason": "2020/21",
+          "appearances": 3,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Sociedad",
+          "fromSeason": "2020/21",
+          "toSeason": "2022/23",
+          "appearances": 3,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "F.C. Copenhagen",
+          "fromSeason": "2022/23",
+          "toSeason": "2022/23",
+          "appearances": 6,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "AZ Alkmaar",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 47,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "AS Roma",
+          "fromSeason": "2023/24",
+          "toSeason": "2024/25",
+          "appearances": 0,
+          "goals": 0
+        },
+        {
+          "teamId": "175",
+          "teamName": "R.C. Lens",
+          "fromSeason": "2024/25",
+          "toSeason": "2024/25",
+          "appearances": 14,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Levante UD",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 5,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "186024",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "TSG 1899 Hoffenheim II",
+          "fromSeason": "2011/12",
+          "toSeason": "2012/13",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "TSG 1899 Hoffenheim",
+          "fromSeason": "2012/13",
+          "toSeason": "2016/17",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2016/17",
+          "toSeason": "2020/21",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Celtic F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": "2018/19",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "US Sassuolo Calcio",
+          "fromSeason": "2018/19",
+          "toSeason": "2020/21",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "US Sassuolo Calcio",
+          "fromSeason": "2020/21",
+          "toSeason": "2024/25",
+          "appearances": 110,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Levante UD",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "300985",
+      "entries": [
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "319114",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "RC Celta de Vigo",
+          "fromSeason": "2020/21",
+          "toSeason": null,
+          "appearances": 16,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "RC Celta Fortuna",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 30,
+          "goals": 1
+        }
+      ]
+    },
+    {
+      "playerId": "276841",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Real Madrid Castilla",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "150451",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Stade de Reims",
+          "fromSeason": "2008/09",
+          "toSeason": "2015/16",
+          "appearances": 170,
+          "goals": 14
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Betis Balompié",
+          "fromSeason": "2015/16",
+          "toSeason": "2020/21",
+          "appearances": 173,
+          "goals": 8
+        },
+        {
+          "teamId": null,
+          "teamName": "Villarreal CF",
+          "fromSeason": "2020/21",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "203680",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "UE Cornellá",
+          "fromSeason": "2011/12",
+          "toSeason": "2011/12",
+          "appearances": 1,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "AE Prat",
+          "fromSeason": "2012/13",
+          "toSeason": "2013/14",
+          "appearances": 19,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "CD Tenerife B",
+          "fromSeason": "2013/14",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "C.D. Tenerife",
+          "fromSeason": "2014/15",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Pobla de Mafumet CF",
+          "fromSeason": "2014/15",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "317784",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Real Sociedad",
+          "fromSeason": "2013/14",
+          "toSeason": "2017/18",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "CD Berio FT",
+          "fromSeason": "2017/18",
+          "toSeason": "2018/19",
+          "appearances": 34,
+          "goals": 7
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Sociedad B",
+          "fromSeason": "2018/19",
+          "toSeason": "2022/23",
+          "appearances": 102,
+          "goals": 10
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Sociedad",
+          "fromSeason": "2020/21",
+          "toSeason": "2024/25",
+          "appearances": 58,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Levante UD",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 36,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Antiguoko",
+          "fromSeason": "unknown",
+          "toSeason": "2013/14",
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "342136",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FK TSC",
+          "fromSeason": "2020/21",
+          "toSeason": "2022/23",
+          "appearances": 76,
+          "goals": 16
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Red Bull Salzburg",
+          "fromSeason": "2022/23",
+          "toSeason": "2025/26",
+          "appearances": 63,
+          "goals": 17
+        },
+        {
+          "teamId": "112",
+          "teamName": "SS Lazio",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 8,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Levante UD",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "267591",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Gimnàstic de Tarragona",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "UE Figueres",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "297362",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "RCD Espanyol B",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 17,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "RCD Espanyol de Barcelona",
+          "fromSeason": "2021/22",
+          "toSeason": "2024/25",
+          "appearances": 55,
+          "goals": 0
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 30,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "128714",
+      "entries": [
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2017/18",
+          "toSeason": "2020/21",
+          "appearances": 19,
+          "goals": 0
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2020/21",
+          "toSeason": null,
+          "appearances": 113,
+          "goals": 4
+        },
+        {
+          "teamId": null,
+          "teamName": "Girona FC",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 32,
+          "goals": 5
+        }
+      ]
+    },
+    {
+      "playerId": "403582",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Barcelona Atlètic",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 20,
+          "goals": 1
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 7,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "231828",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Villarreal CF B",
+          "fromSeason": "2014/15",
+          "toSeason": "2014/15",
+          "appearances": 39,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Villarreal CF",
+          "fromSeason": "2014/15",
+          "toSeason": "2017/18",
+          "appearances": 63,
+          "goals": 1
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2017/18",
+          "toSeason": "2018/19",
+          "appearances": 34,
+          "goals": 3
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": "2026/27",
+          "appearances": 196,
+          "goals": 23
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "368992",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Barcelona Atlètic",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 9,
+          "goals": 0
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 68,
+          "goals": 1
+        }
+      ]
+    },
+    {
+      "playerId": "312015",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Atlètic Sant Just FC",
+          "fromSeason": "2020/21",
+          "toSeason": "2022/23",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Barcelona Atlètic",
+          "fromSeason": "2022/23",
+          "toSeason": "2024/25",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "354334",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Barcelona Atlètic",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 1,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Linares Deportivo",
+          "fromSeason": "2022/23",
+          "toSeason": "2022/23",
+          "appearances": 37,
+          "goals": 12
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": 90,
+          "goals": 22
+        }
+      ]
+    },
+    {
+      "playerId": "250465",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "UD Las Palmas",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": 36,
+          "goals": 4
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2019/20",
+          "toSeason": null,
+          "appearances": 156,
+          "goals": 22
+        }
+      ]
+    },
+    {
+      "playerId": "231050",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Avaí Futebol Clube",
+          "fromSeason": "2014/15",
+          "toSeason": "2014/15",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Vitória S.C. B",
+          "fromSeason": "2015/16",
+          "toSeason": "2015/16",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Vitória S.C.",
+          "fromSeason": "2015/16",
+          "toSeason": "2017/18",
+          "appearances": 65,
+          "goals": 19
+        },
+        {
+          "teamId": null,
+          "teamName": "Sporting CP",
+          "fromSeason": "2017/18",
+          "toSeason": "2018/19",
+          "appearances": 28,
+          "goals": 6
+        },
+        {
+          "teamId": null,
+          "teamName": "Stade Rennais F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": 28,
+          "goals": 6
+        },
+        {
+          "teamId": null,
+          "teamName": "Leeds United F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": 65,
+          "goals": 17
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 125,
+          "goals": 49
+        }
+      ]
+    },
+    {
+      "playerId": "362150",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Barcelona Atlètic",
+          "fromSeason": "2022/23",
+          "toSeason": "2022/23",
+          "appearances": 1,
+          "goals": null
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 101,
+          "goals": 30
+        }
+      ]
+    },
+    {
+      "playerId": "268782",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Everton F.C.",
+          "fromSeason": "2016/17",
+          "toSeason": "2022/23",
+          "appearances": 65,
+          "goals": 7
+        },
+        {
+          "teamId": null,
+          "teamName": "Preston North End F.C.",
+          "fromSeason": "2020/21",
+          "toSeason": "2020/21",
+          "appearances": 11,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Newcastle United F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": "2025/26",
+          "appearances": 111,
+          "goals": 24
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 3,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "149622",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "NK Olimpija Ljubljana",
+          "fromSeason": "2008/09",
+          "toSeason": "2009/10",
+          "appearances": 34,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "S.C. Beira-Mar",
+          "fromSeason": "2009/10",
+          "toSeason": "2009/10",
+          "appearances": 0,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "S.L. Benfica",
+          "fromSeason": "2009/10",
+          "toSeason": "2013/14",
+          "appearances": 16,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "S.C. Olhanense",
+          "fromSeason": "2010/11",
+          "toSeason": "2010/11",
+          "appearances": 0,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "U.D. Leiria",
+          "fromSeason": "2011/12",
+          "toSeason": "2011/12",
+          "appearances": 16,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Rio Ave F.C.",
+          "fromSeason": "2011/12",
+          "toSeason": "2012/13",
+          "appearances": 28,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "S.L. Benfica B",
+          "fromSeason": "2012/13",
+          "toSeason": "2012/13",
+          "appearances": 2,
+          "goals": 0
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2014/15",
+          "toSeason": null,
+          "appearances": 395,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "206474",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Real Madrid Castilla",
+          "fromSeason": "2013/14",
+          "toSeason": "2015/16",
+          "appearances": 58,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Madrid Club de Fútbol",
+          "fromSeason": "2014/15",
+          "toSeason": "2018/19",
+          "appearances": 22,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Deportivo Alavés",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 32,
+          "goals": 0
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2018/19",
+          "toSeason": null,
+          "appearances": 212,
+          "goals": 24
+        }
+      ]
+    },
+    {
+      "playerId": "166396",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Valencia CF Mestalla",
+          "fromSeason": "2005/06",
+          "toSeason": "2007/08",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Barcelona Juvenil A",
+          "fromSeason": "2007/08",
+          "toSeason": "2011/12",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Barcelona Atlètic",
+          "fromSeason": "2010/11",
+          "toSeason": "2014/15",
+          "appearances": 92,
+          "goals": 6
+        },
+        {
+          "teamId": null,
+          "teamName": "S.L. Benfica",
+          "fromSeason": "2015/16",
+          "toSeason": "2022/23",
+          "appearances": 197,
+          "goals": 19
+        },
+        {
+          "teamId": null,
+          "teamName": "Bayer 04 Leverkusen",
+          "fromSeason": "2022/23",
+          "toSeason": "2025/26",
+          "appearances": 94,
+          "goals": 20
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "140791",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Atlético Madrid B",
+          "fromSeason": "2007/08",
+          "toSeason": "2010/11",
+          "appearances": 66,
+          "goals": 7
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2008/09",
+          "toSeason": null,
+          "appearances": 511,
+          "goals": 40
+        }
+      ]
+    },
+    {
+      "playerId": "96970",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Club Atlético Belgrano",
+          "fromSeason": "2015/16",
+          "toSeason": "2017/18",
+          "appearances": 16,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Genoa CFC",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": 27,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Genoa CFC",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": 30,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Juventus FC",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": 0,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Atalanta BC",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 31,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Tottenham Hotspur F.C.",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 22,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Atalanta BC",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": 0,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Tottenham Hotspur F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": "2026/27",
+          "appearances": 101,
+          "goals": 10
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "214888",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Stade Brestois 29",
+          "fromSeason": "2012/13",
+          "toSeason": "2015/16",
+          "appearances": 1,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Sociedad B",
+          "fromSeason": "2015/16",
+          "toSeason": "2018/19",
+          "appearances": 82,
+          "goals": 4
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Sociedad",
+          "fromSeason": "2017/18",
+          "toSeason": "2024/25",
+          "appearances": 167,
+          "goals": 4
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 55,
+          "goals": 2
+        }
+      ]
+    },
+    {
+      "playerId": "274197",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Valencia CF Mestalla",
+          "fromSeason": "2017/18",
+          "toSeason": "2018/19",
+          "appearances": 26,
+          "goals": 4
+        },
+        {
+          "teamId": null,
+          "teamName": "Valencia CF",
+          "fromSeason": "2018/19",
+          "toSeason": "2021/22",
+          "appearances": 62,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "RCD Mallorca",
+          "fromSeason": "2021/22",
+          "toSeason": "2023/24",
+          "appearances": 66,
+          "goals": 7
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2022/23",
+          "toSeason": "2026/27",
+          "appearances": 80,
+          "goals": 12
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "290802",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "S.C. Internacional",
+          "fromSeason": "2018/19",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Betis Balompié",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "229645",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Charlton Athletic F.C.",
+          "fromSeason": "2014/15",
+          "toSeason": "2016/17",
+          "appearances": 45,
+          "goals": 10
+        },
+        {
+          "teamId": null,
+          "teamName": "Everton F.C.",
+          "fromSeason": "2016/17",
+          "toSeason": "2018/19",
+          "appearances": 36,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "RB Leipzig",
+          "fromSeason": "2017/18",
+          "toSeason": "2021/22",
+          "appearances": 22,
+          "goals": 5
+        },
+        {
+          "teamId": "370",
+          "teamName": "Fulham F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 34,
+          "goals": 4
+        },
+        {
+          "teamId": null,
+          "teamName": "Leicester City F.C.",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 26,
+          "goals": 6
+        },
+        {
+          "teamId": null,
+          "teamName": "Atalanta BC",
+          "fromSeason": "2021/22",
+          "toSeason": "2025/26",
+          "appearances": 105,
+          "goals": 41
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 12,
+          "goals": 4
+        }
+      ]
+    },
+    {
+      "playerId": "273499",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "KAA Gent",
+          "fromSeason": "2018/19",
+          "toSeason": "2020/21",
+          "appearances": 60,
+          "goals": 30
+        },
+        {
+          "teamId": null,
+          "teamName": "Lille OSC",
+          "fromSeason": "2020/21",
+          "toSeason": "2024/25",
+          "appearances": 178,
+          "goals": 87
+        },
+        {
+          "teamId": null,
+          "teamName": "Juventus FC",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 35,
+          "goals": 6
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "297373",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Villarreal CF C",
+          "fromSeason": "2018/19",
+          "toSeason": "2018/19",
+          "appearances": 1,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Villarreal CF B",
+          "fromSeason": "2018/19",
+          "toSeason": "2020/21",
+          "appearances": 23,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Villarreal CF",
+          "fromSeason": "2019/20",
+          "toSeason": "2024/25",
+          "appearances": 108,
+          "goals": 15
+        },
+        {
+          "teamId": null,
+          "teamName": "Girona FC",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 38,
+          "goals": 5
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 26,
+          "goals": 2
+        }
+      ]
+    },
+    {
+      "playerId": "144759",
+      "entries": [
+        {
+          "teamId": "93",
+          "teamName": "Athletic Club",
+          "fromSeason": "2002/03",
+          "toSeason": "2007/08",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "CD Baskonia",
+          "fromSeason": "2007/08",
+          "toSeason": "2009/10",
+          "appearances": 44,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Athletic Bilbao B",
+          "fromSeason": "2009/10",
+          "toSeason": "2011/12",
+          "appearances": 30,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Barakaldo CF",
+          "fromSeason": "2011/12",
+          "toSeason": "2012/13",
+          "appearances": 21,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Villarreal CF B",
+          "fromSeason": "2012/13",
+          "toSeason": "2015/16",
+          "appearances": 102,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Club Deportivo Numancia de Soria",
+          "fromSeason": "2015/16",
+          "toSeason": "2017/18",
+          "appearances": 76,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Levante UD",
+          "fromSeason": "2017/18",
+          "toSeason": "2021/22",
+          "appearances": 103,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Club Atlético Osasuna",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 42,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "366598",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "IFK Göteborg",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "311969",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "UE Figueres",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Girona FC",
+          "fromSeason": "2018/19",
+          "toSeason": "2021/22",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Inter",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "UD Logroñés",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Albacete Balompié",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Basel",
+          "fromSeason": "2022/23",
+          "toSeason": "2024/25",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Oviedo",
+          "fromSeason": "2023/24",
+          "toSeason": "2023/24",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Sporting de Gijón",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "170154",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Ontinyent CF",
+          "fromSeason": "2002/03",
+          "toSeason": "2005/06",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Hércules CF",
+          "fromSeason": "2005/06",
+          "toSeason": "2008/09",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "CD Alcoyano",
+          "fromSeason": "2010/11",
+          "toSeason": "2011/12",
+          "appearances": 2,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Madrid Castilla",
+          "fromSeason": "2011/12",
+          "toSeason": "2015/16",
+          "appearances": 52,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Oviedo",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 40,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Club Atlético Osasuna",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 39,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Eintracht Frankfurt",
+          "fromSeason": "2017/18",
+          "toSeason": "2019/20",
+          "appearances": 22,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Club Atlético Osasuna",
+          "fromSeason": "2019/20",
+          "toSeason": null,
+          "appearances": 123,
+          "goals": 3
+        }
+      ]
+    },
+    {
+      "playerId": "296163",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Real Betis Balompié",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Betis B",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "381628",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Club Atlético Osasuna",
+          "fromSeason": "2010/11",
+          "toSeason": "2021/22",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "CD Subiza",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": 2,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Osasuna B",
+          "fromSeason": "2021/22",
+          "toSeason": "2025/26",
+          "appearances": 107,
+          "goals": 9
+        },
+        {
+          "teamId": null,
+          "teamName": "Club Atlético Osasuna",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 22,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "CF Ardoi FE",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "303906",
+      "entries": [
+        {
+          "teamId": "112",
+          "teamName": "SS Lazio",
+          "fromSeason": "2019/20",
+          "toSeason": "2023/24",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Ternana Calcio",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Oviedo",
+          "fromSeason": "2022/23",
+          "toSeason": "2022/23",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Valladolid",
+          "fromSeason": "2023/24",
+          "toSeason": "2023/24",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Valladolid",
+          "fromSeason": "2023/24",
+          "toSeason": "2024/25",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "AFC Ajax",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "265140",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Atromitos F.C.",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "288901",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "S.L. Benfica",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": 25,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Arsenal F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "333311",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Vejle Boldklub",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "250850",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "US Sassuolo Calcio",
+          "fromSeason": "2016/17",
+          "toSeason": "2023/24",
+          "appearances": 72,
+          "goals": 11
+        },
+        {
+          "teamId": null,
+          "teamName": "Ascoli Calcio 1898 FC",
+          "fromSeason": "2017/18",
+          "toSeason": "2018/19",
+          "appearances": 33,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Empoli FC",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": 37,
+          "goals": 5
+        },
+        {
+          "teamId": "4007",
+          "teamName": "AC Monza",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 37,
+          "goals": 8
+        },
+        {
+          "teamId": null,
+          "teamName": "Inter Milan",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 32,
+          "goals": 6
+        },
+        {
+          "teamId": null,
+          "teamName": "Inter Milan",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 50,
+          "goals": 5
+        },
+        {
+          "teamId": "112",
+          "teamName": "SS Lazio",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "282228",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Jong Ajax",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 60,
+          "goals": 14
+        },
+        {
+          "teamId": null,
+          "teamName": "AFC Ajax",
+          "fromSeason": "2020/21",
+          "toSeason": "2025/26",
+          "appearances": 184,
+          "goals": 36
+        },
+        {
+          "teamId": "112",
+          "teamName": "SS Lazio",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "204669",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "A.C. Bellaria Igea Marina",
+          "fromSeason": "2011/12",
+          "toSeason": "2013/14",
+          "appearances": 6,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Hellas Verona FC",
+          "fromSeason": "2013/14",
+          "toSeason": "2021/22",
+          "appearances": 136,
+          "goals": 14
+        },
+        {
+          "teamId": null,
+          "teamName": "Venezia F.C.",
+          "fromSeason": "2014/15",
+          "toSeason": "2014/15",
+          "appearances": 33,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Associazione Sportiva Cittadella",
+          "fromSeason": "2015/16",
+          "toSeason": "2015/16",
+          "appearances": 12,
+          "goals": 0
+        },
+        {
+          "teamId": "112",
+          "teamName": "SS Lazio",
+          "fromSeason": "2021/22",
+          "toSeason": "2021/22",
+          "appearances": 29,
+          "goals": 4
+        },
+        {
+          "teamId": "112",
+          "teamName": "SS Lazio",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": 107,
+          "goals": 27
+        }
+      ]
+    },
+    {
+      "playerId": "189026",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Paris Saint-Germain FC Youth Academy",
+          "fromSeason": "2011/12",
+          "toSeason": "2014/15",
+          "appearances": 42,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Lille OSC",
+          "fromSeason": "2014/15",
+          "toSeason": "2020/21",
+          "appearances": 149,
+          "goals": 0
+        },
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2020/21",
+          "toSeason": null,
+          "appearances": 160,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "228298",
+      "entries": [
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "214689",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Liga Deportiva Universitaria de Quito",
+          "fromSeason": "2014/15",
+          "toSeason": "2015/16",
+          "appearances": 40,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Club Recreativo Granada",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 21,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Granada CF",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 2,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Watford F.C.",
+          "fromSeason": "2015/16",
+          "toSeason": "2019/20",
+          "appearances": 0,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Unión Deportiva Almería",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 26,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "RCD Mallorca",
+          "fromSeason": "2017/18",
+          "toSeason": "2018/19",
+          "appearances": 12,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Club Atlético Osasuna",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": 36,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Villarreal CF",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": 53,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Brighton & Hove Albion F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": "2024/25",
+          "appearances": 84,
+          "goals": 4
+        },
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 6,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "290375",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FK Partizan",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": 37,
+          "goals": 1
+        },
+        {
+          "teamId": "174",
+          "teamName": "AS Monaco FC",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": 8,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Cercle Brugge K.S.V.",
+          "fromSeason": "2020/21",
+          "toSeason": "2020/21",
+          "appearances": 11,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Basel",
+          "fromSeason": "2021/22",
+          "toSeason": "2021/22",
+          "appearances": 10,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Red Bull Salzburg",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 49,
+          "goals": 2
+        },
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 35,
+          "goals": 4
+        }
+      ]
+    },
+    {
+      "playerId": "309570",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Juventus FC",
+          "fromSeason": "2020/21",
+          "toSeason": "2023/24",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Empoli FC",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": 14,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Genoa CFC",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 29,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Genoa CFC",
+          "fromSeason": "2023/24",
+          "toSeason": "2024/25",
+          "appearances": 25,
+          "goals": 3
+        },
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "324097",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Real Madrid Castilla",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": 73,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Madrid Club de Fútbol",
+          "fromSeason": "2021/22",
+          "toSeason": "2021/22",
+          "appearances": 2,
+          "goals": 0
+        },
+        {
+          "teamId": "112",
+          "teamName": "SS Lazio",
+          "fromSeason": "2022/23",
+          "toSeason": "2026/27",
+          "appearances": 88,
+          "goals": 1
+        },
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "76762",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "HŠK Zrinjski Mostar",
+          "fromSeason": "2002/03",
+          "toSeason": "2003/04",
+          "appearances": 22,
+          "goals": 8
+        },
+        {
+          "teamId": null,
+          "teamName": "GNK Dinamo Zagreb",
+          "fromSeason": "2002/03",
+          "toSeason": "2007/08",
+          "appearances": 94,
+          "goals": 27
+        },
+        {
+          "teamId": null,
+          "teamName": "NK Inter Zaprešić",
+          "fromSeason": "2003/04",
+          "toSeason": "2004/05",
+          "appearances": 18,
+          "goals": 4
+        },
+        {
+          "teamId": null,
+          "teamName": "Tottenham Hotspur F.C.",
+          "fromSeason": "2007/08",
+          "toSeason": "2011/12",
+          "appearances": 127,
+          "goals": 13
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Madrid Club de Fútbol",
+          "fromSeason": "2011/12",
+          "toSeason": "2025/26",
+          "appearances": 394,
+          "goals": 30
+        },
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 37,
+          "goals": 2
+        }
+      ]
+    },
+    {
+      "playerId": "176203",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Paris Saint-Germain FC Youth Academy",
+          "fromSeason": "2011/12",
+          "toSeason": "2013/14",
+          "appearances": 9,
+          "goals": 0
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2011/12",
+          "toSeason": "2018/19",
+          "appearances": 150,
+          "goals": 13
+        },
+        {
+          "teamId": null,
+          "teamName": "Toulouse FC",
+          "fromSeason": "2012/13",
+          "toSeason": "2012/13",
+          "appearances": 13,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Juventus FC",
+          "fromSeason": "2019/20",
+          "toSeason": "2024/25",
+          "appearances": 157,
+          "goals": 18
+        },
+        {
+          "teamId": null,
+          "teamName": "Olympique de Marseille",
+          "fromSeason": "2024/25",
+          "toSeason": "2025/26",
+          "appearances": 30,
+          "goals": 9
+        },
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 29,
+          "goals": 6
+        }
+      ]
+    },
+    {
+      "playerId": "288896",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "S.L. Benfica B",
+          "fromSeason": "2018/19",
+          "toSeason": "2020/21",
+          "appearances": 37,
+          "goals": 15
+        },
+        {
+          "teamId": null,
+          "teamName": "S.L. Benfica",
+          "fromSeason": "2019/20",
+          "toSeason": "2022/23",
+          "appearances": 64,
+          "goals": 30
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2023/24",
+          "toSeason": "2023/24",
+          "appearances": 11,
+          "goals": 2
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2023/24",
+          "toSeason": "2025/26",
+          "appearances": 70,
+          "goals": 25
+        },
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 3,
+          "goals": 1
+        }
+      ]
+    },
+    {
+      "playerId": "186505",
+      "entries": [
+        {
+          "teamId": "363",
+          "teamName": "Chelsea F.C.",
+          "fromSeason": "2013/14",
+          "toSeason": "2022/23",
+          "appearances": 103,
+          "goals": 7
+        },
+        {
+          "teamId": null,
+          "teamName": "Crystal Palace F.C.",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 24,
+          "goals": 2
+        },
+        {
+          "teamId": "370",
+          "teamName": "Fulham F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 30,
+          "goals": 1
+        },
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": 26,
+          "goals": 6
+        }
+      ]
+    },
+    {
+      "playerId": "219531",
+      "entries": [
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2013/14",
+          "toSeason": "2014/15",
+          "appearances": 0,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "FK Vojvodina",
+          "fromSeason": "2013/14",
+          "toSeason": "2014/15",
+          "appearances": 17,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "KS Lechia Gdańsk",
+          "fromSeason": "2015/16",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Standard Liège",
+          "fromSeason": "2019/20",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Torino FC",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Ars et Labor Ferrara Calcio",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "155904",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "AS Reggina 1914",
+          "fromSeason": "2009/10",
+          "toSeason": "2014/15",
+          "appearances": 58,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "A.C. Cuneo 1905 Olmo",
+          "fromSeason": "2011/12",
+          "toSeason": "2012/13",
+          "appearances": 27,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Matera",
+          "fromSeason": "2014/15",
+          "toSeason": "2016/17",
+          "appearances": 58,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Empoli FC",
+          "fromSeason": "2016/17",
+          "toSeason": "2018/19",
+          "appearances": 73,
+          "goals": 6
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2018/19",
+          "toSeason": null,
+          "appearances": 223,
+          "goals": 14
+        }
+      ]
+    },
+    {
+      "playerId": "148974",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Juventus FC",
+          "fromSeason": "2012/13",
+          "toSeason": "2018/19",
+          "appearances": 10,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Empoli FC",
+          "fromSeason": "2012/13",
+          "toSeason": "2012/13",
+          "appearances": 7,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Lanciano Calcio 1920",
+          "fromSeason": "2012/13",
+          "toSeason": "2012/13",
+          "appearances": 3,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Siena FC",
+          "fromSeason": "2013/14",
+          "toSeason": "2013/14",
+          "appearances": 24,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Atalanta BC",
+          "fromSeason": "2013/14",
+          "toSeason": "2014/15",
+          "appearances": 2,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "LR Vicenza",
+          "fromSeason": "2014/15",
+          "toSeason": "2014/15",
+          "appearances": 10,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "A.C. Perugia Calcio",
+          "fromSeason": "2015/16",
+          "toSeason": "2015/16",
+          "appearances": 34,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Atalanta BC",
+          "fromSeason": "2015/16",
+          "toSeason": "2017/18",
+          "appearances": 48,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "AS Roma",
+          "fromSeason": "2018/19",
+          "toSeason": "2023/24",
+          "appearances": 104,
+          "goals": 5
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 59,
+          "goals": 4
+        }
+      ]
+    },
+    {
+      "playerId": "188412",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FK AS Trenčín",
+          "fromSeason": "2010/11",
+          "toSeason": "2014/15",
+          "appearances": 76,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Jong Ajax",
+          "fromSeason": "2012/13",
+          "toSeason": "2013/14",
+          "appearances": 30,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Nordsjælland",
+          "fromSeason": "2015/16",
+          "toSeason": "2017/18",
+          "appearances": 61,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "RC Celta de Vigo",
+          "fromSeason": "2017/18",
+          "toSeason": "2019/20",
+          "appearances": 86,
+          "goals": 0
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2019/20",
+          "toSeason": null,
+          "appearances": 168,
+          "goals": 2
+        }
+      ]
+    },
+    {
+      "playerId": "205576",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "KF Drenica",
+          "fromSeason": "2010/11",
+          "toSeason": "2012/13",
+          "appearances": 40,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Partizani Tirana",
+          "fromSeason": "2012/13",
+          "toSeason": "2014/15",
+          "appearances": 59,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "RNK Split",
+          "fromSeason": "2014/15",
+          "toSeason": "2015/16",
+          "appearances": 41,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "NK Lokomotiva",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 28,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "GNK Dinamo Zagreb",
+          "fromSeason": "2015/16",
+          "toSeason": "2018/19",
+          "appearances": 57,
+          "goals": 4
+        },
+        {
+          "teamId": null,
+          "teamName": "Hellas Verona FC",
+          "fromSeason": "2019/20",
+          "toSeason": "2019/20",
+          "appearances": 19,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Hellas Verona FC",
+          "fromSeason": "2019/20",
+          "toSeason": "2019/20",
+          "appearances": 17,
+          "goals": 0
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2019/20",
+          "toSeason": null,
+          "appearances": 68,
+          "goals": 7
+        }
+      ]
+    },
+    {
+      "playerId": "188306",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "AS Roma",
+          "fromSeason": "2011/12",
+          "toSeason": "2012/13",
+          "appearances": 0,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "A.C. Perugia Calcio",
+          "fromSeason": "2011/12",
+          "toSeason": "2012/13",
+          "appearances": 28,
+          "goals": 8
+        },
+        {
+          "teamId": null,
+          "teamName": "Delfino Pescara 1936",
+          "fromSeason": "2012/13",
+          "toSeason": "2014/15",
+          "appearances": 72,
+          "goals": 11
+        },
+        {
+          "teamId": null,
+          "teamName": "US Sassuolo Calcio",
+          "fromSeason": "2015/16",
+          "toSeason": "2017/18",
+          "appearances": 96,
+          "goals": 20
+        },
+        {
+          "teamId": null,
+          "teamName": "Inter Milan",
+          "fromSeason": "2017/18",
+          "toSeason": "2020/21",
+          "appearances": 47,
+          "goals": 5
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 52,
+          "goals": 11
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2020/21",
+          "toSeason": null,
+          "appearances": 145,
+          "goals": 17
+        }
+      ]
+    },
+    {
+      "playerId": "274217",
+      "entries": [
+        {
+          "teamId": "363",
+          "teamName": "Chelsea F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "309273",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "F.C. Copenhagen",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": 19,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "SK Sturm Graz",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": 18,
+          "goals": 9
+        },
+        {
+          "teamId": null,
+          "teamName": "Atalanta BC",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 32,
+          "goals": 9
+        },
+        {
+          "teamId": "360",
+          "teamName": "Manchester United F.C.",
+          "fromSeason": "2023/24",
+          "toSeason": "2026/27",
+          "appearances": 62,
+          "goals": 14
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2025/26",
+          "toSeason": "2025/26",
+          "appearances": 33,
+          "goals": 12
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "134947",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "K.R.C. Genk",
+          "fromSeason": "2007/08",
+          "toSeason": "2011/12",
+          "appearances": 97,
+          "goals": 16
+        },
+        {
+          "teamId": null,
+          "teamName": "SV Werder Bremen",
+          "fromSeason": "2011/12",
+          "toSeason": "2012/13",
+          "appearances": 33,
+          "goals": 10
+        },
+        {
+          "teamId": "363",
+          "teamName": "Chelsea F.C.",
+          "fromSeason": "2011/12",
+          "toSeason": "2013/14",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "VfL Wolfsburg",
+          "fromSeason": "2013/14",
+          "toSeason": "2014/15",
+          "appearances": 52,
+          "goals": 13
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2014/15",
+          "toSeason": "2024/25",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 18,
+          "goals": 5
+        }
+      ]
+    },
+    {
+      "playerId": "286814",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Sønderjyske Fodbold",
+          "fromSeason": "2020/21",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "IFK Göteborg",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "261616",
+      "entries": [
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Barcelona Atlètic",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "276654",
+      "entries": [
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "272867",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Ranheim Fotball",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "304222",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "KV Oostende",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 38,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "Bologna F.C. 1909",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 31,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Stade Rennais F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": "2024/25",
+          "appearances": 63,
+          "goals": 6
+        },
+        {
+          "teamId": null,
+          "teamName": "Eintracht Frankfurt",
+          "fromSeason": "2023/24",
+          "toSeason": "2024/25",
+          "appearances": 18,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Eintracht Frankfurt",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 37,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Bologna F.C. 1909",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "180956",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "F.C. Crotone",
+          "fromSeason": "2012/13",
+          "toSeason": "2013/14",
+          "appearances": 39,
+          "goals": 12
+        },
+        {
+          "teamId": null,
+          "teamName": "ACF Fiorentina",
+          "fromSeason": "2012/13",
+          "toSeason": "2017/18",
+          "appearances": 72,
+          "goals": 14
+        },
+        {
+          "teamId": null,
+          "teamName": "Juventus FC",
+          "fromSeason": "2017/18",
+          "toSeason": "2021/22",
+          "appearances": 134,
+          "goals": 8
+        },
+        {
+          "teamId": null,
+          "teamName": "Toronto FC",
+          "fromSeason": "2022/23",
+          "toSeason": "2025/26",
+          "appearances": 88,
+          "goals": 25
+        },
+        {
+          "teamId": null,
+          "teamName": "Bologna F.C. 1909",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 29,
+          "goals": 4
+        }
+      ]
+    },
+    {
+      "playerId": "202429",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Rangers F.C.",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "285438",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Atalanta BC",
+          "fromSeason": "2018/19",
+          "toSeason": "2024/25",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Spezia Calcio",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Genoa CFC",
+          "fromSeason": "2021/22",
+          "toSeason": "2021/22",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Hellas Verona FC",
+          "fromSeason": "2022/23",
+          "toSeason": "2022/23",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Empoli FC",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "US Lecce",
+          "fromSeason": "2023/24",
+          "toSeason": "2023/24",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Cagliari Calcio",
+          "fromSeason": "2024/25",
+          "toSeason": "2024/25",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Cagliari Calcio",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "365160",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Estudiantes de La Plata",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "188031",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "VfL Bochum II",
+          "fromSeason": "2012/13",
+          "toSeason": "2014/15",
+          "appearances": 5,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "VfL Bochum",
+          "fromSeason": "2012/13",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "326499",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Zagłębie Lubin",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "190167",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Carl Zeiss Jena",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "379024",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Fimleikafélag Hafnarfjarðar",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Breiðablik men's football",
+          "fromSeason": "2021/22",
+          "toSeason": "2021/22",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Atlanta United FC",
+          "fromSeason": "unknown",
+          "toSeason": "2019/20",
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "276329",
+      "entries": [
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Bayern Munich II",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "324660",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "TSG 1899 Hoffenheim",
+          "fromSeason": "2021/22",
+          "toSeason": "2024/25",
+          "appearances": 56,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "TSG 1899 Hoffenheim II",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 19,
+          "goals": 5
+        },
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 21,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "222793",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Liefering",
+          "fromSeason": "2014/15",
+          "toSeason": "2015/16",
+          "appearances": 16,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Red Bull Salzburg",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 17,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "RB Leipzig",
+          "fromSeason": "2016/17",
+          "toSeason": "2021/22",
+          "appearances": 112,
+          "goals": 4
+        },
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 126,
+          "goals": 5
+        }
+      ]
+    },
+    {
+      "playerId": "157688",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Gyeongju Korea Hydro and Nuclear Power FC",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 17,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Jeonbuk Hyundai Motors FC",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 52,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Beijing Guoan F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": "2021/22",
+          "appearances": 45,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Fenerbahçe Istanbul",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": 31,
+          "goals": 1
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 35,
+          "goals": 2
+        },
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 79,
+          "goals": 4
+        }
+      ]
+    },
+    {
+      "playerId": "402841",
+      "entries": [
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 26,
+          "goals": 5
+        }
+      ]
+    },
+    {
+      "playerId": "359370",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Bayern Munich II",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 9,
+          "goals": 0
+        },
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": 64,
+          "goals": 6
+        }
+      ]
+    },
+    {
+      "playerId": "142200",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Tottenham Hotspur F.C.",
+          "fromSeason": "2008/09",
+          "toSeason": "2022/23",
+          "appearances": 317,
+          "goals": 213
+        },
+        {
+          "teamId": null,
+          "teamName": "Leyton Orient F.C.",
+          "fromSeason": "2010/11",
+          "toSeason": "2010/11",
+          "appearances": 18,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "Millwall F.C.",
+          "fromSeason": "2011/12",
+          "toSeason": "2011/12",
+          "appearances": 22,
+          "goals": 7
+        },
+        {
+          "teamId": null,
+          "teamName": "Norwich City F.C.",
+          "fromSeason": "2012/13",
+          "toSeason": "2012/13",
+          "appearances": 3,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Leicester City F.C.",
+          "fromSeason": "2012/13",
+          "toSeason": "2012/13",
+          "appearances": 13,
+          "goals": 2
+        },
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": 94,
+          "goals": 98
+        }
+      ]
+    },
+    {
+      "playerId": "286831",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Crystal Palace F.C.",
+          "fromSeason": "2020/21",
+          "toSeason": "2023/24",
+          "appearances": 82,
+          "goals": 14
+        },
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 66,
+          "goals": 27
+        },
+        {
+          "teamId": null,
+          "teamName": "France Olympic football team",
+          "fromSeason": "2024/25",
+          "toSeason": "2024/25",
+          "appearances": 9,
+          "goals": 5
+        }
+      ]
+    },
+    {
+      "playerId": "304572",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Jong PSV",
+          "fromSeason": "2020/21",
+          "toSeason": "2022/23",
+          "appearances": 55,
+          "goals": 9
+        },
+        {
+          "teamId": null,
+          "teamName": "PSV Eindhoven",
+          "fromSeason": "2020/21",
+          "toSeason": "2025/26",
+          "appearances": 92,
+          "goals": 31
+        },
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 1,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "238544",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "TSG 1899 Hoffenheim",
+          "fromSeason": "2016/17",
+          "toSeason": "2019/20",
+          "appearances": 1,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Augsburg",
+          "fromSeason": "2018/19",
+          "toSeason": "2018/19",
+          "appearances": 16,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "VfB Stuttgart",
+          "fromSeason": "2019/20",
+          "toSeason": "2019/20",
+          "appearances": 31,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "VfB Stuttgart",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 33,
+          "goals": 0
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 149,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "222991",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Viking FK",
+          "fromSeason": "2014/15",
+          "toSeason": "2017/18",
+          "appearances": 63,
+          "goals": 7
+        },
+        {
+          "teamId": "598",
+          "teamName": "1. FC Union Berlin",
+          "fromSeason": "2017/18",
+          "toSeason": "2022/23",
+          "appearances": 87,
+          "goals": 2
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": 78,
+          "goals": 7
+        }
+      ]
+    },
+    {
+      "playerId": "310709",
+      "entries": [
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "IF Brommapojkarna",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Skiljebo SK",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "286828",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "SC Freiburg II",
+          "fromSeason": "2017/18",
+          "toSeason": "2019/20",
+          "appearances": 25,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "SC Freiburg",
+          "fromSeason": "2018/19",
+          "toSeason": "2021/22",
+          "appearances": 49,
+          "goals": 4
+        },
+        {
+          "teamId": "598",
+          "teamName": "1. FC Union Berlin",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 16,
+          "goals": 1
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 112,
+          "goals": 11
+        }
+      ]
+    },
+    {
+      "playerId": "220714",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Hannover 96",
+          "fromSeason": "2015/16",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "VfB Stuttgart",
+          "fromSeason": "2019/20",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "240912",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Volendam",
+          "fromSeason": "2015/16",
+          "toSeason": "2018/19",
+          "appearances": 73,
+          "goals": 12
+        },
+        {
+          "teamId": null,
+          "teamName": "SC Heerenveen",
+          "fromSeason": "2018/19",
+          "toSeason": "2021/22",
+          "appearances": 71,
+          "goals": 14
+        },
+        {
+          "teamId": null,
+          "teamName": "PSV Eindhoven",
+          "fromSeason": "2021/22",
+          "toSeason": "2026/27",
+          "appearances": 135,
+          "goals": 22
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "324820",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Birmingham City F.C.",
+          "fromSeason": "2020/21",
+          "toSeason": "2022/23",
+          "appearances": 24,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Sunderland A.F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": "2024/25",
+          "appearances": 85,
+          "goals": 11
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 15,
+          "goals": 1
+        }
+      ]
+    },
+    {
+      "playerId": "186381",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Stade Lavallois",
+          "fromSeason": "2012/13",
+          "toSeason": "2014/15",
+          "appearances": 33,
+          "goals": 6
+        },
+        {
+          "teamId": null,
+          "teamName": "Lille OSC",
+          "fromSeason": "2014/15",
+          "toSeason": "2015/16",
+          "appearances": 8,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "1. FC Köln",
+          "fromSeason": "2015/16",
+          "toSeason": "2018/19",
+          "appearances": 37,
+          "goals": 6
+        },
+        {
+          "teamId": null,
+          "teamName": "AJ Auxerre",
+          "fromSeason": "2015/16",
+          "toSeason": "2015/16",
+          "appearances": 16,
+          "goals": 8
+        },
+        {
+          "teamId": null,
+          "teamName": "Amiens SC",
+          "fromSeason": "2018/19",
+          "toSeason": "2020/21",
+          "appearances": 37,
+          "goals": 13
+        },
+        {
+          "teamId": null,
+          "teamName": "Stade Rennais F.C.",
+          "fromSeason": "2020/21",
+          "toSeason": "2023/24",
+          "appearances": 65,
+          "goals": 19
+        },
+        {
+          "teamId": null,
+          "teamName": "VfB Stuttgart",
+          "fromSeason": "2022/23",
+          "toSeason": "2022/23",
+          "appearances": 22,
+          "goals": 11
+        },
+        {
+          "teamId": null,
+          "teamName": "VfB Stuttgart",
+          "fromSeason": "2023/24",
+          "toSeason": "2024/25",
+          "appearances": 28,
+          "goals": 28
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 61,
+          "goals": 36
+        }
+      ]
+    },
+    {
+      "playerId": "349733",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Arsenal F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 34,
+          "goals": 4
+        },
+        {
+          "teamId": null,
+          "teamName": "Olympique de Marseille",
+          "fromSeason": "2025/26",
+          "toSeason": "2025/26",
+          "appearances": 9,
+          "goals": 2
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "291629",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Porto",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 21,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Wolverhampton Wanderers F.C.",
+          "fromSeason": "2020/21",
+          "toSeason": "2025/26",
+          "appearances": 72,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "R.S.C. Anderlecht",
+          "fromSeason": "2022/23",
+          "toSeason": "2022/23",
+          "appearances": 32,
+          "goals": 11
+        },
+        {
+          "teamId": null,
+          "teamName": "PSV Eindhoven",
+          "fromSeason": "2022/23",
+          "toSeason": "2022/23",
+          "appearances": 19,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "Rangers F.C.",
+          "fromSeason": "2023/24",
+          "toSeason": "2023/24",
+          "appearances": 25,
+          "goals": 6
+        },
+        {
+          "teamId": null,
+          "teamName": "UD Las Palmas",
+          "fromSeason": "2024/25",
+          "toSeason": "2024/25",
+          "appearances": 25,
+          "goals": 10
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "251639",
+      "entries": [
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "323936",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Bayern Munich II",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 33,
+          "goals": 21
+        },
+        {
+          "teamId": null,
+          "teamName": "SBV Vitesse",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": 25,
+          "goals": 4
+        },
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 4,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "GNK Dinamo Zagreb",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": 18,
+          "goals": 4
+        }
+      ]
+    },
+    {
+      "playerId": "286433",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Odds BK",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "164187",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Paris FC",
+          "fromSeason": "2009/10",
+          "toSeason": "2010/11",
+          "appearances": 33,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Valenciennes F.C.",
+          "fromSeason": "2010/11",
+          "toSeason": "2014/15",
+          "appearances": 61,
+          "goals": 1
+        },
+        {
+          "teamId": "175",
+          "teamName": "R.C. Lens",
+          "fromSeason": "2014/15",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "250377",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "SC Bastia",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "180174",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "OGC Nice",
+          "fromSeason": "2013/14",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "291850",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Montpellier Hérault Sport Club",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "192015",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "RC Strasbourg Alsace",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "248699",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Krasnodar",
+          "fromSeason": "2016/17",
+          "toSeason": "2023/24",
+          "appearances": 147,
+          "goals": 0
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 27,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "240233",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Real Madrid Castilla",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 28,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Madrid Club de Fútbol",
+          "fromSeason": "2016/17",
+          "toSeason": "2019/20",
+          "appearances": 9,
+          "goals": 2
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2017/18",
+          "toSeason": "2019/20",
+          "appearances": 54,
+          "goals": 7
+        },
+        {
+          "teamId": null,
+          "teamName": "Inter Milan",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 37,
+          "goals": 7
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2020/21",
+          "toSeason": null,
+          "appearances": 128,
+          "goals": 19
+        }
+      ]
+    },
+    {
+      "playerId": "290591",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Sporting CP",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": 40,
+          "goals": 1
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 27,
+          "goals": 0
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 72,
+          "goals": 7
+        }
+      ]
+    },
+    {
+      "playerId": "288897",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Porto B",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": 11,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "Wolverhampton Wanderers F.C.",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 19,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Porto",
+          "fromSeason": "2019/20",
+          "toSeason": "2021/22",
+          "appearances": 38,
+          "goals": 2
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 122,
+          "goals": 15
+        }
+      ]
+    },
+    {
+      "playerId": "159047",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "S.C. Corinthians Paulista",
+          "fromSeason": "2010/11",
+          "toSeason": "2011/12",
+          "appearances": 6,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "AS Roma",
+          "fromSeason": "2011/12",
+          "toSeason": "2012/13",
+          "appearances": 26,
+          "goals": 0
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2012/13",
+          "toSeason": null,
+          "appearances": 323,
+          "goals": 27
+        }
+      ]
+    },
+    {
+      "playerId": "287005",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Independiente del Valle",
+          "fromSeason": "2018/19",
+          "toSeason": "2021/22",
+          "appearances": 26,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Royal Antwerp F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": 42,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Eintracht Frankfurt",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 33,
+          "goals": 0
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 46,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "345581",
+      "entries": [
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 81,
+          "goals": 5
+        }
+      ]
+    },
+    {
+      "playerId": "355061",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "S.L. Benfica B",
+          "fromSeason": "2021/22",
+          "toSeason": "2021/22",
+          "appearances": 11,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "S.L. Benfica",
+          "fromSeason": "2021/22",
+          "toSeason": "2023/24",
+          "appearances": 50,
+          "goals": 4
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 50,
+          "goals": 8
+        }
+      ]
+    },
+    {
+      "playerId": "265869",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Valencia CF Mestalla",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 12,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Valencia CF",
+          "fromSeason": "2016/17",
+          "toSeason": "2019/20",
+          "appearances": 71,
+          "goals": 6
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 28,
+          "goals": 9
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2021/22",
+          "toSeason": "2026/27",
+          "appearances": 140,
+          "goals": 41
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 3,
+          "goals": 2
+        }
+      ]
+    },
+    {
+      "playerId": "229744",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Stade Rennais F.C.",
+          "fromSeason": "2014/15",
+          "toSeason": "2015/16",
+          "appearances": 26,
+          "goals": 12
+        },
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2015/16",
+          "toSeason": "2016/17",
+          "appearances": 32,
+          "goals": 6
+        },
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2016/17",
+          "toSeason": "2023/24",
+          "appearances": 127,
+          "goals": 24
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 77,
+          "goals": 34
+        }
+      ]
+    },
+    {
+      "playerId": "274745",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Dinamo Tbilisi",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 4,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Rustavi",
+          "fromSeason": "2017/18",
+          "toSeason": "2018/19",
+          "appearances": 18,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Lokomotiv Moscow",
+          "fromSeason": "2018/19",
+          "toSeason": "2018/19",
+          "appearances": 7,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Rubin Kazan",
+          "fromSeason": "2018/19",
+          "toSeason": "2021/22",
+          "appearances": 69,
+          "goals": 9
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Dinamo Batumi",
+          "fromSeason": "2021/22",
+          "toSeason": "2021/22",
+          "appearances": 11,
+          "goals": 8
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2022/23",
+          "toSeason": "2024/25",
+          "appearances": 85,
+          "goals": 28
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 44,
+          "goals": 12
+        }
+      ]
+    },
+    {
+      "playerId": "304256",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Villarreal CF B",
+          "fromSeason": "2019/20",
+          "toSeason": "2022/23",
+          "appearances": 41,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Villarreal CF",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 38,
+          "goals": 0
+        },
+        {
+          "teamId": "363",
+          "teamName": "Chelsea F.C.",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "374221",
+      "entries": [
+        {
+          "teamId": "363",
+          "teamName": "Chelsea F.C.",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "377782",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Atlético Malagueño",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 6,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Sevilla Atlético",
+          "fromSeason": "2021/22",
+          "toSeason": "2024/25",
+          "appearances": 65,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Sevilla FC",
+          "fromSeason": "2022/23",
+          "toSeason": "2026/27",
+          "appearances": 23,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "RC Strasbourg Alsace",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "290230",
+      "entries": [
+        {
+          "teamId": "124",
+          "teamName": "Borussia Dortmund",
+          "fromSeason": "2018/19",
+          "toSeason": "2024/25",
+          "appearances": 147,
+          "goals": 19
+        },
+        {
+          "teamId": null,
+          "teamName": "Nottingham Forest F.C.",
+          "fromSeason": "2023/24",
+          "toSeason": "2023/24",
+          "appearances": 10,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Borussia Mönchengladbach",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "379012",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Istres",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 2,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "USL Dunkerque",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 48,
+          "goals": 5
+        },
+        {
+          "teamId": null,
+          "teamName": "RC Strasbourg Alsace",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "303787",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Malmö FF",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Kalmar FF",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Kristianstad FC",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Varbergs BoIS FC",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "134169",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "TPS Turku",
+          "fromSeason": "2007/08",
+          "toSeason": "2007/08",
+          "appearances": 0,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Åbo IFK",
+          "fromSeason": "2007/08",
+          "toSeason": "2007/08",
+          "appearances": 11,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Esbjerg fB",
+          "fromSeason": "2008/09",
+          "toSeason": "2012/13",
+          "appearances": 76,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Brøndby IF",
+          "fromSeason": "2012/13",
+          "toSeason": "2014/15",
+          "appearances": 69,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Eintracht Frankfurt",
+          "fromSeason": "2014/15",
+          "toSeason": "2017/18",
+          "appearances": 101,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Bayer 04 Leverkusen",
+          "fromSeason": "2017/18",
+          "toSeason": "2024/25",
+          "appearances": 222,
+          "goals": 0
+        },
+        {
+          "teamId": "174",
+          "teamName": "AS Monaco FC",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 17,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "222628",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Servette FC",
+          "fromSeason": "2013/14",
+          "toSeason": "2014/15",
+          "appearances": 6,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "BSC Young Boys",
+          "fromSeason": "2014/15",
+          "toSeason": "2016/17",
+          "appearances": 50,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Borussia Mönchengladbach",
+          "fromSeason": "2016/17",
+          "toSeason": "2021/22",
+          "appearances": 125,
+          "goals": 11
+        },
+        {
+          "teamId": null,
+          "teamName": "Juventus FC",
+          "fromSeason": "2021/22",
+          "toSeason": "2023/24",
+          "appearances": 11,
+          "goals": 1
+        },
+        {
+          "teamId": "363",
+          "teamName": "Chelsea F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": "2022/23",
+          "appearances": 7,
+          "goals": 0
+        },
+        {
+          "teamId": "174",
+          "teamName": "AS Monaco FC",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 56,
+          "goals": 10
+        }
+      ]
+    },
+    {
+      "playerId": "155532",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Sporting CP",
+          "fromSeason": "2011/12",
+          "toSeason": "2013/14",
+          "appearances": 27,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Sporting CP B",
+          "fromSeason": "2011/12",
+          "toSeason": "2013/14",
+          "appearances": 16,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Tottenham Hotspur F.C.",
+          "fromSeason": "2013/14",
+          "toSeason": "2023/24",
+          "appearances": 274,
+          "goals": 12
+        },
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2023/24",
+          "toSeason": "2023/24",
+          "appearances": 15,
+          "goals": 0
+        },
+        {
+          "teamId": "132",
+          "teamName": "FC Bayern Munich",
+          "fromSeason": "2024/25",
+          "toSeason": "2024/25",
+          "appearances": 21,
+          "goals": 2
+        },
+        {
+          "teamId": "174",
+          "teamName": "AS Monaco FC",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 9,
+          "goals": 1
+        }
+      ]
+    },
+    {
+      "playerId": "195501",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "PFC CSKA Moscow",
+          "fromSeason": "2013/14",
+          "toSeason": "2018/19",
+          "appearances": 81,
+          "goals": 9
+        },
+        {
+          "teamId": "174",
+          "teamName": "AS Monaco FC",
+          "fromSeason": "2018/19",
+          "toSeason": null,
+          "appearances": 188,
+          "goals": 33
+        }
+      ]
+    },
+    {
+      "playerId": "323110",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Győri ETO FC",
+          "fromSeason": "2019/20",
+          "toSeason": "2020/21",
+          "appearances": 16,
+          "goals": 0
+        },
+        {
+          "teamId": "103",
+          "teamName": "AC Milan",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 0,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "AZ Alkmaar",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": 33,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "AFC Bournemouth",
+          "fromSeason": "2022/23",
+          "toSeason": "2024/25",
+          "appearances": 66,
+          "goals": 2
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 34,
+          "goals": 2
+        }
+      ]
+    },
+    {
+      "playerId": "249299",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Argentinos Juniors",
+          "fromSeason": "2015/16",
+          "toSeason": "2018/19",
+          "appearances": 56,
+          "goals": 8
+        },
+        {
+          "teamId": null,
+          "teamName": "Argentinos Juniors",
+          "fromSeason": "2018/19",
+          "toSeason": "2018/19",
+          "appearances": 10,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Boca Juniors",
+          "fromSeason": "2018/19",
+          "toSeason": "2019/20",
+          "appearances": 13,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Brighton & Hove Albion F.C.",
+          "fromSeason": "2018/19",
+          "toSeason": "2022/23",
+          "appearances": 98,
+          "goals": 16
+        },
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": 105,
+          "goals": 12
+        }
+      ]
+    },
+    {
+      "playerId": "379588",
+      "entries": [
+        {
+          "teamId": "364",
+          "teamName": "Liverpool F.C.",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 19,
+          "goals": 2
+        }
+      ]
+    },
+    {
+      "playerId": "323838",
+      "entries": [
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2020/21",
+          "toSeason": null,
+          "appearances": 61,
+          "goals": 12
+        },
+        {
+          "teamId": null,
+          "teamName": "Atlético Madrid B",
+          "fromSeason": "2021/22",
+          "toSeason": "2022/23",
+          "appearances": 51,
+          "goals": 29
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Zaragoza",
+          "fromSeason": "2022/23",
+          "toSeason": "2023/24",
+          "appearances": 36,
+          "goals": 9
+        },
+        {
+          "teamId": null,
+          "teamName": "Deportivo Alavés",
+          "fromSeason": "2023/24",
+          "toSeason": "2024/25",
+          "appearances": 14,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Argentina Olympic football team",
+          "fromSeason": "2024/25",
+          "toSeason": "2024/25",
+          "appearances": 5,
+          "goals": 1
+        }
+      ]
+    },
+    {
+      "playerId": "257786",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "MŠK Žilina",
+          "fromSeason": "2015/16",
+          "toSeason": "2017/18",
+          "appearances": 40,
+          "goals": 4
+        },
+        {
+          "teamId": null,
+          "teamName": "ACF Fiorentina",
+          "fromSeason": "2017/18",
+          "toSeason": "2020/21",
+          "appearances": 5,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "AC Sparta Prague",
+          "fromSeason": "2018/19",
+          "toSeason": "2020/21",
+          "appearances": 53,
+          "goals": 10
+        },
+        {
+          "teamId": null,
+          "teamName": "AC Sparta Prague",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 49,
+          "goals": 10
+        },
+        {
+          "teamId": null,
+          "teamName": "Feyenoord Rotterdam",
+          "fromSeason": "2021/22",
+          "toSeason": "2024/25",
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "332613",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Atlético Levante UD",
+          "fromSeason": "2020/21",
+          "toSeason": "2021/22",
+          "appearances": 19,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Levante UD",
+          "fromSeason": "2021/22",
+          "toSeason": "2023/24",
+          "appearances": 39,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Unión Deportiva Almería",
+          "fromSeason": "2023/24",
+          "toSeason": "2024/25",
+          "appearances": 59,
+          "goals": 2
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 11,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Spain Olympic football team",
+          "fromSeason": "2025/26",
+          "toSeason": "2026/27",
+          "appearances": 3,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "336634",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Atlético Madrid B",
+          "fromSeason": "2022/23",
+          "toSeason": "2022/23",
+          "appearances": 12,
+          "goals": 1
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": 76,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Spain Olympic football team",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": 1,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "277206",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Club Atlético River Plate",
+          "fromSeason": "2017/18",
+          "toSeason": "2021/22",
+          "appearances": 57,
+          "goals": 23
+        },
+        {
+          "teamId": null,
+          "teamName": "Club Atlético River Plate",
+          "fromSeason": "2021/22",
+          "toSeason": "2021/22",
+          "appearances": 17,
+          "goals": 11
+        },
+        {
+          "teamId": "382",
+          "teamName": "Manchester City F.C.",
+          "fromSeason": "2021/22",
+          "toSeason": "2023/24",
+          "appearances": 67,
+          "goals": 20
+        },
+        {
+          "teamId": "1068",
+          "teamName": "Atlético Madrid",
+          "fromSeason": "2023/24",
+          "toSeason": null,
+          "appearances": 65,
+          "goals": 25
+        }
+      ]
+    },
+    {
+      "playerId": "304503",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Dynamo Kyiv",
+          "fromSeason": "2018/19",
+          "toSeason": "2022/23",
+          "appearances": 50,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "AFC Bournemouth",
+          "fromSeason": "2022/23",
+          "toSeason": "2024/25",
+          "appearances": 78,
+          "goals": 1
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2024/25",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "403578",
+      "entries": [
+        {
+          "teamId": "83",
+          "teamName": "FC Barcelona",
+          "fromSeason": "2024/25",
+          "toSeason": "2025/26",
+          "appearances": 4,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Barcelona Atlètic",
+          "fromSeason": "2024/25",
+          "toSeason": "2025/26",
+          "appearances": 3,
+          "goals": 0
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2025/26",
+          "toSeason": null,
+          "appearances": 13,
+          "goals": 1
+        }
+      ]
+    },
+    {
+      "playerId": "214596",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Real Betis B",
+          "fromSeason": "2013/14",
+          "toSeason": "2014/15",
+          "appearances": 23,
+          "goals": 2
+        },
+        {
+          "teamId": null,
+          "teamName": "Real Betis Balompié",
+          "fromSeason": "2013/14",
+          "toSeason": "2017/18",
+          "appearances": 56,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Elche CF",
+          "fromSeason": "2016/17",
+          "toSeason": "2016/17",
+          "appearances": 18,
+          "goals": 1
+        },
+        {
+          "teamId": "114",
+          "teamName": "SSC Napoli",
+          "fromSeason": "2017/18",
+          "toSeason": "2021/22",
+          "appearances": 125,
+          "goals": 18
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2021/22",
+          "toSeason": null,
+          "appearances": 91,
+          "goals": 9
+        }
+      ]
+    },
+    {
+      "playerId": "329690",
+      "entries": [
+        {
+          "teamId": "174",
+          "teamName": "AS Monaco FC",
+          "fromSeason": "2020/21",
+          "toSeason": "2025/26",
+          "appearances": 109,
+          "goals": 18
+        },
+        {
+          "teamId": null,
+          "teamName": "France Olympic football team",
+          "fromSeason": "2023/24",
+          "toSeason": "2023/24",
+          "appearances": 10,
+          "goals": 2
+        },
+        {
+          "teamId": "160",
+          "teamName": "Paris Saint-Germain FC",
+          "fromSeason": "2026/27",
+          "toSeason": null,
+          "appearances": 0,
+          "goals": 0
+        }
+      ]
+    },
+    {
+      "playerId": "260346",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC DAC 1904 Dunajská Streda",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "307484",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FC Liefering",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "238958",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "NK Olimpija Ljubljana",
+          "fromSeason": "2012/13",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "ŠK Slovan Bratislava",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "260751",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FK Partizan",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "235045",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "ŠK Slovan Bratislava",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Kaisar",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Astana",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "176145",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "Club Deportivo Universitario",
+          "fromSeason": "2012/13",
+          "toSeason": "2015/16",
+          "appearances": 37,
+          "goals": 3
+        },
+        {
+          "teamId": null,
+          "teamName": "Columbus Crew",
+          "fromSeason": "2015/16",
+          "toSeason": "2015/16",
+          "appearances": 5,
+          "goals": 1
+        },
+        {
+          "teamId": null,
+          "teamName": "Pittsburgh Riverhounds SC",
+          "fromSeason": "2015/16",
+          "toSeason": "2015/16",
+          "appearances": 8,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Cincinnati",
+          "fromSeason": "2016/17",
+          "toSeason": "2016/17",
+          "appearances": 1,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Columbus Crew",
+          "fromSeason": "2016/17",
+          "toSeason": "2017/18",
+          "appearances": 22,
+          "goals": 0
+        },
+        {
+          "teamId": null,
+          "teamName": "Chicago Fire FC",
+          "fromSeason": "2018/19",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "189717",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "NK Interblock",
+          "fromSeason": "2010/11",
+          "toSeason": "2011/12",
+          "appearances": 21,
+          "goals": 10
+        },
+        {
+          "teamId": null,
+          "teamName": "NK Olimpija Ljubljana",
+          "fromSeason": "2011/12",
+          "toSeason": "2014/15",
+          "appearances": 95,
+          "goals": 46
+        },
+        {
+          "teamId": null,
+          "teamName": "NK Olimpija Ljubljana",
+          "fromSeason": "2011/12",
+          "toSeason": "2015/16",
+          "appearances": 95,
+          "goals": 46
+        },
+        {
+          "teamId": null,
+          "teamName": "FC Basel",
+          "fromSeason": "2015/16",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        },
+        {
+          "teamId": null,
+          "teamName": "Panathinaikos F.C.",
+          "fromSeason": "2022/23",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    },
+    {
+      "playerId": "386509",
+      "entries": [
+        {
+          "teamId": null,
+          "teamName": "FK AS Trenčín",
+          "fromSeason": "unknown",
+          "toSeason": null,
+          "appearances": null,
+          "goals": null
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3304 @@
+{
+  "head": {
+    "vars": [
+      "player",
+      "st",
+      "team",
+      "teamLabel",
+      "start",
+      "end",
+      "matches",
+      "goals",
+      "types"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q14327453"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q14327453-43AA326E-5F6F-4AA4-B7C2-29BBC055D60C"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q23674710"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Belgium national under-16 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2012-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2013-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "10"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "8"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q23904672 http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q4979316"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q4979316-acfafa21-497c-4e3c-b623-daa5eff07cc0"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1457"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "U.C. Sampdoria"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "33"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "5"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q103229495"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q20830808"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q20830808-079CE03B-9745-4C14-9D3A-FBD951CB6A77"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1543"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "AC Milan"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2015-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2021-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "215"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q103229495"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q26255506"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q26255506-a000a9ff-4c8d-ccea-95ec-7f68e2e6a846"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1543"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "AC Milan"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2020-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2021-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "21"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "1"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q103229495"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q4979316"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q4979316-04D7CCA2-F2D0-42BF-B35A-6A3AD2D1D769"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q2798"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Udinese Calcio"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2013-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "86"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "10"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q103229495"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q22951255"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q22951255-ceec7112-47eb-e626-c049-dd36f4cfe75a"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q7156"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "FC Barcelona"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2025-07-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2026-06-30T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "32"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "8"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q10651067 http://www.wikidata.org/entity/Q20639856 http://www.wikidata.org/entity/Q103229495"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q4979316"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q4979316-19D5A087-B44A-4017-B919-AE7BA58D1CEC"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q8416"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Novara Calcio"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2012-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2013-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "23"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "4"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q103229495"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q35831063"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q35831063-8664c193-40c8-d5c3-0fcb-6d6eccbd5999"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q8701"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Atlético Madrid"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2021-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2023-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "40"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "6"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q114703020"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q114703020-230816ee-4d1e-54ae-f1e5-9c673f18ae9b"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18656"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Manchester United F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2022-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "78"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "4"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q165772"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q165772-083c2cba-4e82-4417-e1ab-ecda5a53d91d"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18656"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Manchester United F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "167"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "7"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q22951255"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q22951255-3c357db7-46cf-b93c-5c7e-260c69631904"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18656"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Manchester United F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2015-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "288"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "87"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q26255506"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q26255506-5b8f0c07-4b62-1734-5f6c-4e0765118a63"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18656"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Manchester United F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2018-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "173"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "4"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q30881092"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q30881092-b273f79a-451c-8d64-d6e5-4280e75f7921"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18656"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Manchester United F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2022-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "76"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "3"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q35831063"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q35831063-00c60788-45c8-7307-e3b0-dcb91597c72f"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18656"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Manchester United F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2025-06-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "33"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "10"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q4979316"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q4979316-4a904209-4b57-003e-4859-91775cf9c2e4"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18656"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Manchester United F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2020-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "230"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "71"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q49561427"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q49561427-9e537642-4bb9-4fbd-4fa9-9242d2ac0b4e"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18656"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Manchester United F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2025-07-21T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "30"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "9"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q98100512"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q98100512-a4baa44c-4fdb-ff45-3277-db9a44887fab"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18656"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Manchester United F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2025-09-01T00:00:00Z"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q14327453"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q14327453-b0603282-4ecb-3cd9-84a1-b96d2a4f1abb"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18656"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Manchester United F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2026-07-14T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "3"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q14327453"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q14327453-18385ca1-4412-6c3a-f779-a9de1a8e2320"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18711"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Aston Villa F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2023-06-10T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2026-07-14T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "93"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "5"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q22951255"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q22951255-43C524DC-95F8-4E13-B0CB-9066863E97BD"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18711"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Aston Villa F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2025-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2025-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "10"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q165772"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q165772-21267E4B-EAE3-4A33-8D3A-84DC7D8BF55B"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18750"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Wigan Athletic F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2015-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2015-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "16"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "1"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q165772"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q165772-32605B59-FDDD-4EC5-B787-6B7E697BB158"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q19477"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Hull City A.F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "54"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q14327453"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q14327453-19b19460-487c-1acd-e724-b44517464754"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q19481"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Leicester City F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-07-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2023-06-10T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "138"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "18"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q14327453"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q14327453-ec3b0e83-4119-8b1a-8033-e1c0db19edac"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q19481"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Leicester City F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-31T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-06-30T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "13"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "3"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q165772"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q165772-70d6d267-4f96-3215-95e0-5215add6953a"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q19481"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Leicester City F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "69"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "5"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q35831063"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q35831063-473e4792-44fb-42fe-e39a-f2f2438b8abe"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q19500"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Wolverhampton Wanderers F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2023-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2025-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "65"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "27"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q20639856 http://www.wikidata.org/entity/Q103229495"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q35831063"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q35831063-b87fce97-45eb-efa4-72f2-ff3099749a75"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q19500"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Wolverhampton Wanderers F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2023-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2023-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "17"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q20639856 http://www.wikidata.org/entity/Q103229495"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q49561427"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q49561427-0a493485-49d3-feb3-cf41-ee94e4ef5a9a"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q19571"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Brentford F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2025-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "222"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "65"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q165772"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q165772-87A070F3-BB66-4197-B2AF-3CBD10D4899B"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q19607"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Sheffield United F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2011-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "134"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "9"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q114703020"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q114703020-dc6d43c4-48a3-8028-6330-d141b60745a2"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q47762"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "England men's national association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2024-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "14"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q165772"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q165772-9c53f2ea-4822-9428-cdb5-0ac6f995b3ad"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q47762"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "England men's national association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "64"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "7"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q22951255"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q22951255-69c2333a-4e7f-9df6-3d99-f251b0f4bc90"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q47762"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "England men's national association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-05-27T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "78"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "19"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q20830808"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q20830808-40c4a2da-4aed-4d28-4892-f4d8dfd3f23a"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q50602"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Manchester City F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2025-09-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "19"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q4979316"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q4979316-2b0ec957-4d74-0b6f-430a-665d61bbd164"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q75729"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Sporting CP"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2020-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "83"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "39"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q847017"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q30881092"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q30881092-b32f3649-45c8-7f28-4201-e381c52c1367"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q79800"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Argentina men's national football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "33"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q30881092"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q30881092-c1553fce-4c70-fbdb-a452-1600c5585ba0"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q81888"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "AFC Ajax"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2022-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "74"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "6"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q891723"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q35831063"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q35831063-b6cf6f27-47b2-ff1e-8fd5-fe85a3ea3de6"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q83459"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Brazil men's national football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2021-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "26"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "4"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q35831063"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q35831063-3ca9d686-466f-1ff2-9be5-766d94c8284f"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q102720"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Hertha BSC"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2020-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2021-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "39"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "12"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q26255506"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q26255506-D9CDBFA4-3C23-4CF5-AA15-5A6BA1081825"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q128446"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "FC Porto"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2018-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "6"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q13580678"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q14327453"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q14327453-7b0ce8dc-4a97-0624-824a-68f222f19d0a"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q166776"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Belgium men's national football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-11-09T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "90"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "15"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q98100512"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q98100512-f26e5def-4b0f-95e0-1bb1-3f72c27f02e0"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q166776"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Belgium men's national football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2015-11-18T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "3"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q49561427"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q49561427-baa2a08c-49ed-e1ec-655f-7ff26b4804b0"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q175309"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Cameroon men's national football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2022-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "32"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "7"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q14327453"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q14327453-6d119dae-4488-55b4-d799-b06eaa796f64"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q180305"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "AS Monaco FC"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-07-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-07-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "47"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "5"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q14327453"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q14327453-FF571F87-9798-4646-AB1A-BD31AB9AED9B"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q187528"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "R.S.C. Anderlecht"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2013-07-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-07-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "139"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "26"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q98100512"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q98100512-1fe047bb-4572-4177-7d9b-e55ee7c25090"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q190916"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Club Brugge K.V."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2020-07-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2023-06-30T00:00:00Z"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q15944511 http://www.wikidata.org/entity/Q20639856"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q165772"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q165772-3c61f0c8-4f33-497e-8bfc-aee839781c51"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q204238"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "England national under-21 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2012-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2012-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "1"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q22951255"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q22951255-a5d5b309-4ae2-2c4f-f899-4ae7a19105bb"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q204238"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "England national under-21 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-09-06T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "1"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "3"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q30881092"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q30881092-b8823c0f-1a57-4a71-84ac-2e450315da0c"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q221882"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Newell's Old Boys"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2018-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "1"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q847017"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q4979316"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q4979316-d7abdeac-4eee-f8f6-f10a-e444ff7e2e7b"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q267245"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Portugal men's national football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "88"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "29"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q26255506"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q26255506-3b5f13ce-43f8-4bce-abe0-d0751e1a51eb"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q267245"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Portugal men's national football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2021-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "37"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "3"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q35831063"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q35831063-70f3e86c-5618-4b45-836f-c98ce23b918a"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q321061"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "FC Sion"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2018-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "29"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "10"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028 http://www.wikidata.org/entity/Q847017"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q20830808"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q20830808-68892510-4dd5-eda1-2410-8276b9f025fb"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q483020"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Paris Saint-Germain FC"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2021-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2025-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "104"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q49561427"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q49561427-84fff241-2bd6-4e94-be60-4c29251c14e4"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q501693"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "ES Troyes AC"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2018-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "41"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "11"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q20830808"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q20830808-e132a22c-4706-729f-d03d-e61f062d2480"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q676899"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Italy men's national association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-09-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "72"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q35831063"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q35831063-60153ABC-2FFE-4016-BAF1-D7497D0A29C8"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q702455"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "RB Leipzig"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2018-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2020-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "35"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q98100512"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q98100512-2e9b87b4-4b3e-ae9e-86ba-89646509a00b"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q732002"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Royal Antwerp F.C."
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2023-07-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2025-08-01T00:00:00Z"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q14327453"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q14327453-B0BDFB86-87E9-451C-BD2F-0308204A1A12"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q815515"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Belgium national under-21 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2013-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "14"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "6"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q35831063"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q35831063-104d5677-46cc-4a4d-c075-b688dcdca891"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q899189"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Brazil national under-23 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2021-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "24"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "21"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q15944511 http://www.wikidata.org/entity/Q23759293"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q20830808"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q20830808-B0471FE6-4D9A-4D78-88B1-522777EC20CF"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q922698"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Italy national under-21 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "7"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q135408445"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q30881092"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q30881092-5fc32ea7-4ebd-7fac-b92b-736ef58c8041"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1024338"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Defensa y Justicia"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2018-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "25"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q30881092"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q30881092-7982efc5-4432-d037-b1c0-fdcdad6dbae4"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1024338"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Defensa y Justicia"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2018-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "21"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "1"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q476028"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q114703020"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q114703020-51b2a5e3-401b-9483-52f1-29ebe5d4e2c7"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1049171"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "England national under-18 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2022-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q22951255"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q22951255-96D83831-D684-43F4-A1D6-967752A86393"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1049171"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "England national under-18 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q22951255"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q22951255-4A2297EC-01BE-479E-A920-8659F5DBAD47"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1049176"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "England national under-20 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-03-27T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q30881092"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q30881092-d92f9287-432b-1147-10a0-bc320f0eabe9"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1187790"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Argentina national under-20 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2018-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "4"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q49561427"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q49561427-5838e527-4615-dac4-0429-629b30c3bd06"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1277549"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "France national under-21 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2020-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "6"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "1"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979740"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q49561427"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q49561427-96cfe1d1-4a34-4637-d650-288160df73ed"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1344163"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "France national under-20 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2018-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "3"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q23895910"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q49561427"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q49561427-2874d8ed-449d-4c1c-cc0a-1d1f1ed930d4"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1450568"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "France national under-17 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2015-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2015-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "1"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q23901123"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q4979316"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q4979316-05866123-961C-4645-99ED-902CAE463E03"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1630430"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Portugal national under-21 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "17"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "6"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q26255506"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q26255506-80f031bd-485c-2649-a2b2-f5eabc5fcf65"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1630430"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Portugal national under-21 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2017-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2021-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "15"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q4979316"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q4979316-16903733-CBEF-4D8A-A874-74362766F4A1"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1772776"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Portugal national under-20 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "5"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "1"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q20830808"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q20830808-27744598-14D9-4BF0-A232-79EB71487896"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q2331232"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Italy national under-17 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2015-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "10"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q114703020"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q114703020-0f271907-446f-91be-a593-afa9f055c9e2"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q2358861"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "England national under-19 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2023-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "6"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q30881092"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q30881092-ace70233-4322-abeb-4d21-cf6538e98924"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q2462207"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Argentina national under-23 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2019-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "1"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q114703020"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q114703020-ae004058-416f-c320-9603-11837b4c1782"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q2752922"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "England national under-17 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2021-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2022-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "5"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "1"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q4979316"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q4979316-4F1103B6-70FD-4365-90D2-03F819FD951D"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q3590758"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Portugal Olympic football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2016-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "4"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q20830808"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q20830808-D4B49F36-EABB-4CFC-93CF-8A3535CC0DE5"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q3873502"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Italy national under-16 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "3"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q4979316"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q4979316-BB3B17B4-85D3-4ED3-AB94-5898EB2445F2"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q3873524"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Portugal national under-19 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2012-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2012-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q22951255"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q22951255-5F9610C2-A378-46DD-AC9F-7D6D63F363D8"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q4201740"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "England national under-16 association football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2012-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2012-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593"
+        }
+      },
+      {
+        "player": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q20830808"
+        },
+        "st": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/statement/Q20830808-8217A255-7FE7-4DAE-9934-ACA2C795B565"
+        },
+        "team": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q14753120"
+        },
+        "teamLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Italy national under-15 football team"
+        },
+        "start": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "end": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type": "literal",
+          "value": "2014-01-01T00:00:00Z"
+        },
+        "matches": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "2"
+        },
+        "goals": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#decimal",
+          "type": "literal",
+          "value": "0"
+        },
+        "types": {
+          "type": "literal",
+          "value": "http://www.wikidata.org/entity/Q6979593 http://www.wikidata.org/entity/Q23904673"
+        }
+      }
+    ]
+  }
+}

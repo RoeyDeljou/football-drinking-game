@@ -2,6 +2,26 @@
   "name": "@fdg/football-data",
   "version": "0.1.0",
   "private": true,
+  "description": "Football data providers, normalization, caching and matchday prefetch",
   "type": "module",
-  "description": "Football data providers, normalization, caching and matchday prefetch"
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "data"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run --root ../.."
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  }
 }

@@ -1,0 +1,42 @@
+{
+  "provenance": {
+    "kind": "recorded-sample-data",
+    "description": "Index of the recorded ESPN + Wikidata snapshot shipped with @fdg/football-data.",
+    "recordedAt": "2026-09-16T19:00:00.000Z",
+    "disclaimer": "Dated snapshot of real data recorded from the free ESPN public site API (fixtures, lineups, events, match and season statistics, squads) and the Wikidata Query Service (career history) on the recordedAt date, normalized by @fdg/football-data. It is a frozen recording for offline development and tests, not a live feed: results, squads and statistics will have moved on since. ESPN data is unofficial and subject to ESPN terms; Wikidata content is CC0."
+  },
+  "version": 1,
+  "competitions": [
+    {
+      "code": "PREMIER_LEAGUE",
+      "file": "competitions/premier-league.json"
+    },
+    {
+      "code": "LA_LIGA",
+      "file": "competitions/la-liga.json"
+    },
+    {
+      "code": "SERIE_A",
+      "file": "competitions/serie-a.json"
+    },
+    {
+      "code": "BUNDESLIGA",
+      "file": "competitions/bundesliga.json"
+    },
+    {
+      "code": "LIGUE_1",
+      "file": "competitions/ligue-1.json"
+    },
+    {
+      "code": "CHAMPIONS_LEAGUE",
+      "file": "competitions/champions-league.json"
+    }
+  ],
+  "careersFile": "careers.json",
+  "timelines": [
+    {
+      "fixtureId": "401915445",
+      "file": "timelines/401915445.json"
+    }
+  ]
+}

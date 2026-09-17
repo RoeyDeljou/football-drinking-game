@@ -1,0 +1,60 @@
+{
+  "get": "transfers",
+  "parameters": { "player": "30811" },
+  "errors": [],
+  "results": 1,
+  "paging": { "current": 1, "total": 1 },
+  "response": [
+    {
+      "player": { "id": 30811, "name": "M. Salah" },
+      "update": "2026-01-15T12:00:00+00:00",
+      "transfers": [
+        {
+          "date": "2017-06-22",
+          "type": "€ 42.00M",
+          "teams": {
+            "in": { "id": 40, "name": "Liverpool", "logo": "https://media.api-sports.io/football/teams/40.png" },
+            "out": { "id": 497, "name": "AS Roma", "logo": "https://media.api-sports.io/football/teams/497.png" }
+          }
+        },
+        {
+          "date": "2016-08-03",
+          "type": "€ 15.00M",
+          "teams": {
+            "in": { "id": 497, "name": "AS Roma", "logo": null },
+            "out": { "id": 49, "name": "Chelsea", "logo": null }
+          }
+        },
+        {
+          "date": "2015-08-06",
+          "type": "Loan",
+          "teams": {
+            "in": { "id": 497, "name": "AS Roma", "logo": null },
+            "out": { "id": 49, "name": "Chelsea", "logo": null }
+          }
+        },
+        {
+          "date": "2015-02-02",
+          "type": "Loan",
+          "teams": {
+            "in": { "id": 502, "name": "Fiorentina", "logo": null },
+            "out": { "id": 49, "name": "Chelsea", "logo": null }
+          }
+        },
+        {
+          "date": "2014-01-26",
+          "type": "€ 16.50M",
+          "teams": {
+            "in": { "id": 49, "name": "Chelsea", "logo": null },
+            "out": { "id": 288, "name": "FC Basel", "logo": null }
+          }
+        },
+        {
+          "date": null,
+          "type": "N/A",
+          "teams": { "in": null, "out": null }
+        }
+      ]
+    }
+  ]
+}

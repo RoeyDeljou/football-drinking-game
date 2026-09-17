@@ -1,0 +1,66 @@
+{
+  "get": "players/squads",
+  "parameters": { "team": "42" },
+  "errors": [],
+  "results": 1,
+  "paging": { "current": 1, "total": 1 },
+  "response": [
+    {
+      "team": {
+        "id": 42,
+        "name": "Arsenal",
+        "logo": "https://media.api-sports.io/football/teams/42.png"
+      },
+      "players": [
+        {
+          "id": 20752,
+          "name": "David Raya",
+          "age": 30,
+          "number": 22,
+          "position": "Goalkeeper",
+          "photo": "https://media.api-sports.io/football/players/20752.png"
+        },
+        {
+          "id": 20754,
+          "name": "William Saliba",
+          "age": 24,
+          "number": 2,
+          "position": "Defender",
+          "photo": "https://media.api-sports.io/football/players/20754.png"
+        },
+        {
+          "id": 20759,
+          "name": "Martin Ødegaard",
+          "age": 27,
+          "number": 8,
+          "position": "Midfielder",
+          "photo": "https://media.api-sports.io/football/players/20759.png"
+        },
+        {
+          "id": 20760,
+          "name": "Bukayo Saka",
+          "age": 24,
+          "number": 7,
+          "position": "Attacker",
+          "photo": "https://media.api-sports.io/football/players/20760.png"
+        },
+        {
+          "id": 20761,
+          "name": "Viktor Gyökeres",
+          "age": 27,
+          "number": 14,
+          "position": null,
+          "photo": null
+        },
+        {
+          "id": null,
+          "name": "Trialist",
+          "age": null,
+          "number": null,
+          "position": "Midfielder",
+          "photo": null
+        }
+      ]
+    }
+  ]
+}

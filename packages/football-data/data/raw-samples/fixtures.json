@@ -1,0 +1,141 @@
+{
+  "get": "fixtures",
+  "parameters": { "league": "39", "season": "2025" },
+  "errors": [],
+  "results": 3,
+  "paging": { "current": 1, "total": 1 },
+  "response": [
+    {
+      "fixture": {
+        "id": 1208301,
+        "referee": "Michael Oliver",
+        "timezone": "UTC",
+        "date": "2026-02-07T17:30:00+00:00",
+        "timestamp": 1770485400,
+        "periods": { "first": 1770485400, "second": 1770489000 },
+        "venue": { "id": 494, "name": "Emirates Stadium", "city": "London" },
+        "status": { "long": "Second Half", "short": "2H", "elapsed": 63, "extra": null }
+      },
+      "league": {
+        "id": 39,
+        "name": "Premier League",
+        "country": "England",
+        "logo": "https://media.api-sports.io/football/leagues/39.png",
+        "flag": "https://media.api-sports.io/flags/gb-eng.svg",
+        "season": 2025,
+        "round": "Regular Season - 24"
+      },
+      "teams": {
+        "home": {
+          "id": 42,
+          "name": "Arsenal",
+          "code": "ARS",
+          "logo": "https://media.api-sports.io/football/teams/42.png",
+          "winner": null
+        },
+        "away": {
+          "id": 40,
+          "name": "Liverpool",
+          "code": "LIV",
+          "logo": "https://media.api-sports.io/football/teams/40.png",
+          "winner": null
+        }
+      },
+      "goals": { "home": 1, "away": 1 },
+      "score": {
+        "halftime": { "home": 1, "away": 1 },
+        "fulltime": { "home": null, "away": null },
+        "extratime": { "home": null, "away": null },
+        "penalty": { "home": null, "away": null }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1208305,
+        "referee": null,
+        "timezone": "UTC",
+        "date": "2026-02-08T16:30:00+00:00",
+        "timestamp": 1770568200,
+        "periods": { "first": null, "second": null },
+        "venue": { "id": 555, "name": "Etihad Stadium", "city": "Manchester" },
+        "status": { "long": "Not Started", "short": "NS", "elapsed": null, "extra": null }
+      },
+      "league": {
+        "id": 39,
+        "name": "Premier League",
+        "country": "England",
+        "logo": "https://media.api-sports.io/football/leagues/39.png",
+        "flag": "https://media.api-sports.io/flags/gb-eng.svg",
+        "season": 2025,
+        "round": "Regular Season - 24"
+      },
+      "teams": {
+        "home": {
+          "id": 50,
+          "name": "Manchester City",
+          "code": "MCI",
+          "logo": "https://media.api-sports.io/football/teams/50.png",
+          "winner": null
+        },
+        "away": {
+          "id": 49,
+          "name": "Chelsea",
+          "code": "CHE",
+          "logo": "https://media.api-sports.io/football/teams/49.png",
+          "winner": null
+        }
+      },
+      "goals": { "home": null, "away": null },
+      "score": {
+        "halftime": { "home": null, "away": null },
+        "fulltime": { "home": null, "away": null },
+        "extratime": { "home": null, "away": null },
+        "penalty": { "home": null, "away": null }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1208290,
+        "referee": "Anthony Taylor",
+        "timezone": "UTC",
+        "date": "2026-02-01T14:00:00+00:00",
+        "timestamp": 1769954400,
+        "periods": { "first": 1769954400, "second": 1769958000 },
+        "venue": { "id": 562, "name": "St James' Park", "city": "Newcastle upon Tyne" },
+        "status": { "long": "Match Finished", "short": "FT", "elapsed": 90, "extra": 4 }
+      },
+      "league": {
+        "id": 39,
+        "name": "Premier League",
+        "country": "England",
+        "logo": "https://media.api-sports.io/football/leagues/39.png",
+        "flag": "https://media.api-sports.io/flags/gb-eng.svg",
+        "season": 2025,
+        "round": "Regular Season - 23"
+      },
+      "teams": {
+        "home": {
+          "id": 34,
+          "name": "Newcastle",
+          "code": "NEW",
+          "logo": "https://media.api-sports.io/football/teams/34.png",
+          "winner": true
+        },
+        "away": {
+          "id": 47,
+          "name": "Tottenham",
+          "code": "TOT",
+          "logo": "https://media.api-sports.io/football/teams/47.png",
+          "winner": false
+        }
+      },
+      "goals": { "home": 3, "away": 1 },
+      "score": {
+        "halftime": { "home": 2, "away": 0 },
+        "fulltime": { "home": 3, "away": 1 },
+        "extratime": { "home": null, "away": null },
+        "penalty": { "home": null, "away": null }
+      }
+    }
+  ]
+}

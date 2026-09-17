@@ -1,0 +1,130 @@
+{
+  "get": "players",
+  "parameters": { "league": "39", "season": "2025", "page": "1" },
+  "errors": [],
+  "results": 3,
+  "paging": { "current": 1, "total": 2 },
+  "response": [
+    {
+      "player": {
+        "id": 20760,
+        "name": "B. Saka",
+        "firstname": "Bukayo",
+        "lastname": "Saka",
+        "age": 24,
+        "birth": { "date": "2001-09-05", "place": "Ealing", "country": "England" },
+        "nationality": "England",
+        "height": "178 cm",
+        "weight": "70 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/20760.png"
+      },
+      "statistics": [
+        {
+          "team": { "id": 42, "name": "Arsenal", "logo": null },
+          "league": { "id": 39, "name": "Premier League", "country": "England", "season": 2025 },
+          "games": {
+            "appearences": 23,
+            "lineups": 21,
+            "minutes": 1884,
+            "number": null,
+            "position": "Attacker",
+            "rating": "7.612345",
+            "captain": false
+          },
+          "substitutes": { "in": 2, "out": 7, "bench": 2 },
+          "shots": { "total": 62, "on": 29 },
+          "goals": { "total": 11, "conceded": 0, "assists": 9, "saves": null },
+          "passes": { "total": 812, "key": 48, "accuracy": 81 },
+          "tackles": { "total": 26, "blocks": 3, "interceptions": 8 },
+          "duels": { "total": 261, "won": 129 },
+          "dribbles": { "attempts": 118, "success": 61 },
+          "fouls": { "drawn": 51, "committed": 14 },
+          "cards": { "yellow": 3, "yellowred": 0, "red": 0 },
+          "penalty": { "scored": 2, "missed": 0 }
+        },
+        {
+          "team": { "id": 42, "name": "Arsenal", "logo": null },
+          "league": { "id": 2, "name": "UEFA Champions League", "country": "World", "season": 2025 },
+          "games": { "appearences": 7, "lineups": 6, "minutes": 528, "position": "Attacker", "rating": "7.9" },
+          "shots": { "total": 19, "on": 11 },
+          "goals": { "total": 4, "conceded": 0, "assists": 3, "saves": null },
+          "passes": { "total": 241, "key": 15, "accuracy": 84 },
+          "tackles": { "total": 6, "blocks": 0, "interceptions": 2 },
+          "cards": { "yellow": 1, "yellowred": 0, "red": 0 }
+        },
+        {
+          "team": { "id": 42, "name": "Arsenal", "logo": null },
+          "league": { "id": 45, "name": "FA Cup", "country": "England", "season": 2025 },
+          "games": { "appearences": 2, "lineups": 1, "minutes": 112, "position": "Attacker", "rating": "7.0" },
+          "goals": { "total": 1, "assists": 0 },
+          "cards": { "yellow": 0, "yellowred": 0, "red": 0 }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 30811,
+        "name": "M. Salah",
+        "firstname": "Mohamed",
+        "lastname": "Salah",
+        "age": 33,
+        "birth": { "date": "1992-06-15", "place": "Nagrig", "country": "Egypt" },
+        "nationality": "Egypt",
+        "height": "175 cm",
+        "weight": "71 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/30811.png"
+      },
+      "statistics": [
+        {
+          "team": { "id": 40, "name": "Liverpool", "logo": null },
+          "league": { "id": 39, "name": "Premier League", "country": "England", "season": 2025 },
+          "games": {
+            "appearences": 24,
+            "lineups": 23,
+            "minutes": 2043,
+            "position": "Attacker",
+            "rating": "7.804",
+            "captain": false
+          },
+          "shots": { "total": 88, "on": 41 },
+          "goals": { "total": 17, "conceded": 0, "assists": 8, "saves": null },
+          "passes": { "total": 704, "key": 52, "accuracy": 76 },
+          "tackles": { "total": 15, "blocks": 1, "interceptions": 6 },
+          "duels": { "total": 214, "won": 96 },
+          "fouls": { "drawn": 33, "committed": 9 },
+          "cards": { "yellow": 1, "yellowred": 1, "red": 0 },
+          "penalty": { "scored": 4, "missed": 1 }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 20758,
+        "name": "M. Zubimendi",
+        "firstname": "Martín",
+        "lastname": "Zubimendi Ibáñez",
+        "age": 26,
+        "birth": { "date": "1999-02-02", "place": "San Sebastián", "country": "Spain" },
+        "nationality": "Spain",
+        "height": null,
+        "weight": null,
+        "injured": false,
+        "photo": null
+      },
+      "statistics": [
+        {
+          "team": { "id": 42, "name": "Arsenal", "logo": null },
+          "league": { "id": 39, "name": "Premier League", "country": "England", "season": 2025 },
+          "games": { "appearences": 22, "lineups": 20, "minutes": 1755, "position": "Midfielder", "rating": null },
+          "shots": { "total": 14, "on": 4 },
+          "goals": { "total": 2, "conceded": 0, "assists": null, "saves": null },
+          "passes": { "total": 1402, "key": 11, "accuracy": "91" },
+          "tackles": { "total": 51, "blocks": 6, "interceptions": 29 },
+          "cards": { "yellow": 4, "yellowred": 0, "red": 1 }
+        }
+      ]
+    }
+  ]
+}
