@@ -20,32 +20,50 @@ Acceptance criteria:
 - [x] `npm install`, `npm run typecheck`, `npm run lint`, `npm run test` all succeed on the empty scaffold
 - [x] git repository initialized with a sensible `.gitignore`
 
-## Phase 1 — Game engine core · TODO
+## Phase 1 — Game engine core + the five Phase-1 game modules · DONE
 
 Owner: `game-engine-architect`
 
-- [ ] Branded domain ids, room/session state types, and the full action union
-- [ ] Pure reducer for the room lifecycle: `lobby → loading → playing → round-reveal → intermission → finished`
-- [ ] `GameModule` contract: config schema, round generation, answer submission, validation, scoring, penalty emission
-- [ ] `EngineClock` and `Rng` ports; zero direct `Date.now()`/`Math.random()` inside engine code
-- [ ] Scoring service: correctness, speed bonus, streaks, ties; cumulative leaderboard
-- [ ] Penalty engine emitting `PenaltyEvent`s (target: self / others / everyone; magnitude in sips; caps)
-- [ ] Per-recipient state projection (`projectFor(playerId)`) that strips answers and rival picks pre-reveal
-- [ ] Vitest coverage of every reducer branch, tie handling, late/duplicate/invalid submissions, host-only actions
-- [ ] `npm run test -w packages/game-core` green; no platform imports (verified by a lint rule)
+The five Phase-1 modules (`M1` Match Markets, `M2` Who's That Player?, `M3` Shirt Number, `G1` Guess the Player,
+`G6` Trivia Rush) are implemented here as rules-only modules, so Phases 3 and 4 have real games to serve and render.
 
-## Phase 2 — Football data layer · TODO
+- [x] Branded domain ids, room/session state types, and the full action union
+- [x] Pure reducer for the room lifecycle: `lobby → loading → playing → roundReveal → intermission → finished` (+ `aborted`)
+- [x] `GameModule` contract: config schema, round generation, answer submission, validation, scoring, penalty emission
+- [x] `EngineClock` and `Rng` ports; zero direct `Date.now()`/`Math.random()` inside engine code
+- [x] Scoring service: correctness, speed bonus, streaks, ties; cumulative leaderboard
+- [x] Penalty engine emitting `PenaltyEvent`s (target: self / others / everyone; magnitude in sips; caps)
+- [x] Per-recipient state projection (`projectFor(playerId)`) that strips answers and rival picks pre-reveal
+- [x] Vitest coverage of every reducer branch, tie handling, late/duplicate/invalid submissions, host-only actions
+- [x] Module implementations with full rules + tests: `M1` Match Markets, `M2` Who's That Player?, `M3` Shirt Number, `G1` Guess the Player, `G6` Trivia Rush
+- [x] `npm run test`, `npm run lint`, `npm run typecheck` green; no platform imports (enforced by the ESLint rule)
+
+## Phase 2 — Football data layer (free sources only) · IN REVIEW (QA round 1: FAIL, 4 defects, fixes in progress)
 
 Owner: `football-data-engineer`
 
-- [ ] Normalized domain types: `Competition`, `Team`, `Fixture`, `Lineup`, `Player`, `PlayerSeasonStats`, `MatchEvent`, `LiveMatchState`
-- [ ] `FootballDataProvider` interface covering fixtures by date/competition, lineups, squads, season stats, live events
-- [ ] `ApiFootballProvider`: RapidAPI adapter, Zod-validated responses, TTL cache, request coalescing, rate limiter, backoff
-- [ ] `FixtureProvider`: recorded JSON for all 6 competitions plus a replayable match timeline at configurable speed
-- [ ] `MatchdayPrefetcher` exposing stepwise progress (fixtures → lineups → squads → stats) for the loading screen
-- [ ] `GeneralDataset` builder: the season data general games draw from, loaded once at app start and cached
-- [ ] `DataQuality` reporting so the engine can disable a game whose required data is missing
-- [ ] Offline tests for both providers, cache/rate-limit behaviour, and prefetch progress ordering
+Constraint (2026-09-16): **free data sources only.** Verified findings:
+- **ESPN public site API** (no key): fixtures/scoreboards, live status, confirmed lineups with shirt numbers, key events,
+  play-by-play commentary, team match stats, per-player match stats, and squad bios (age, DOB, height, nationality,
+  shirt number) for all six competitions. Unofficial and undocumented: no SLA, may change, terms unclear — acceptable
+  for development, must be re-evaluated before a commercial hub launch.
+- **Wikidata SPARQL** (no key): career history (club + start/end years) for G3 Career Path and G8 Teammate Chain.
+- **API-Football free key** (100 requests/day): kept as an optional fallback adapter, never required.
+- **football-data.org free tier**: excluded — no lineups, events, or squads, and delayed scores.
+- **Market values**: no free source. Decided 2026-09-16: G7 becomes **Guess the Number** on free stats.
+
+- [x] Normalized domain types: `Competition`, `Team`, `Fixture`, `Lineup`, `Player`, `PlayerSeasonStats`, `MatchEvent`, `LiveMatchState`
+- [x] `FootballDataProvider` interface covering fixtures by date/competition, lineups, squads, season stats, live events
+- [x] `EspnProvider` (primary, free, no key): Zod-validated, normalized, TTL cache, coalescing, polite rate limit, backoff
+- [x] `WikidataCareerProvider`: career history enrichment with caching and a strict query budget
+- [x] `CompositeProvider`: routes each capability to the best configured source, merges, and reports provenance in notes
+- [x] `ApiFootballProvider`: optional fallback adapter (free key, 100 requests/day), same guarantees
+- [x] `FixtureProvider`: recorded JSON for all 6 competitions plus a replayable match timeline at configurable speed
+- [x] `MatchdayPrefetcher` exposing stepwise progress (fixtures → lineups → squads → stats) for the loading screen
+- [x] `GeneralDataset` builder: the season data general games draw from, loaded once at app start and cached
+- [x] `DataQuality` reporting so the engine can disable a game whose required data is missing
+- [x] Offline tests for every provider (recorded raw payloads), composite routing, cache/rate-limit behaviour, replay, prefetch progress ordering, general dataset, data quality, factory selection
+- [x] `npm run typecheck`, `npm run lint`, `npm test` green
 
 ## Phase 3 — Backend: rooms, realtime, accounts · TODO
 
@@ -83,13 +101,15 @@ Owners: `game-engine-architect` (rules) + `game-ux-engineer` (screens), `footbal
 
 - [ ] M4 Your Man (draft) · M5 Event Roulette · M6 Match Bingo · M7 Minute Sniper
 - [ ] M8 Stat Duel · M9 Flash Rounds · M10 Lineup Recall
+- [ ] M1 in-play markets (deferred from Phase 1, 2026-09-17): markets that open and settle independently during the
+  match, on top of the pre-kickoff slip already shipped
 - [ ] Live-event ingestion loop mapping provider events onto engine triggers, idempotent against duplicate polls
 - [ ] Each game: engine tests, UI screen, and a replay-provider run proving it fires correctly during a match
 
 ## Phase 6 — Remaining general games · TODO
 
 - [ ] G2 Higher or Lower · G3 Career Path · G4 Name the Top 10 · G5 Odd One Out
-- [ ] G7 Price Is Right · G8 Teammate Chain · G9 Two Truths & a Lie · G10 Most Likely To · G11 Spin the Ball
+- [ ] G7 Guess the Number · G8 Teammate Chain · G9 Two Truths & a Lie · G10 Most Likely To · G11 Spin the Ball
 - [ ] Question generators guarantee solvability and no duplicate rounds within a session
 
 ## Phase 7 — Hardening and hub readiness · TODO

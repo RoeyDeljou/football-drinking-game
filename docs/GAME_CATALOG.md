@@ -5,6 +5,9 @@ season data for the six supported competitions, loaded at app start.
 
 Competitions: Premier League, La Liga, Serie A, Bundesliga, Ligue 1, UEFA Champions League.
 
+**Status: the full catalog below is approved (2026-09-16).** All 21 games are in scope; `P1` ships first and the rest
+land in Phases 5 and 6. Changes to this list after those phases start cost real rework, so amend here first.
+
 `P1` marks the Phase-1 playable set.
 
 ---
@@ -13,7 +16,7 @@ Competitions: Premier League, La Liga, Serie A, Bundesliga, Ligue 1, UEFA Champi
 
 | id | Game | Concept | Data needed | Drink mechanic |
 |---|---|---|---|---|
-| `M1` | **Match Markets** `P1` | Betting-app-style slip between friends: final score, first scorer, anytime scorer, over/under goals, over/under corners, cards, both teams to score, HT result, winning margin, penalty awarded. Pre-kickoff slip plus in-play markets. | Fixture, lineups, live events, match stats | Each lost market = sips; worst slip of the round downs it |
+| `M1` | **Match Markets** `P1` | Betting-app-style slip between friends: final score, first scorer, anytime scorer, over/under goals, over/under corners, cards, both teams to score, HT result, winning margin, penalty awarded. Phase 1 ships the pre-kickoff slip only, locked at the first live event; in-play markets that open and settle independently during the match land in Phase 5 (see `docs/PLAN.md`). | Fixture, lineups, live events, match stats | Each lost market = sips; worst slip of the round downs it |
 | `M2` | **Who's That Player?** `P1` | A fact about one of the 22 on the pitch; everyone guesses which player it is. | Lineups, player season stats, bio | Wrong = drink; last to answer correctly = drink |
 | `M3` | **Shirt Number** `P1` | Guess a pitch player's squad number. Closest wins. | Lineups with shirt numbers | Drink = distance from the real number, capped |
 | `M4` | **Your Man (draft)** | Every player is randomly drafted a starter and lives with them all match. | Lineups + live events per player | Your man fouls/misses/booked = you drink; scores/assists = everyone else drinks |
@@ -34,7 +37,7 @@ Competitions: Premier League, La Liga, Serie A, Bundesliga, Ligue 1, UEFA Champi
 | `G3` | **Career Path** | Club sequence revealed one club at a time; name the player. | Career history |
 | `G4` | **Name the Top 10** | Name the top scorers/assisters of a league season against the clock. | Season leaderboards |
 | `G5` | **Odd One Out** | Four players, three share a hidden trait. | Squads + stats |
-| `G7` | **Price Is Right** | Guess a transfer fee / market value; closest wins. | Transfer/value data |
+| `G7` | **Guess the Number** | A player and a stat are shown (season goals, appearances, assists, minutes, age, height, shirt number); everyone guesses the value, closest wins. Replaces Price Is Right, because no free source has market values. | Season stats (a player's bio fields ride along with their season-stat row; there is no separate bio requirement) |
 | `G8` | **Teammate Chain** | Name someone who played with X; chain continues until someone fails. | Historical squads |
 | `G9` | **Two Truths & a Lie** | Three "facts" about a player; spot the fabricated one. | Player stats (lie generated from a plausible distractor) |
 | `G10` | **Most Likely To** | Social voting with football flavour, no data required. | none |
