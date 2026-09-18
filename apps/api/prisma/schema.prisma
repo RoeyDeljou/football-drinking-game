@@ -1,0 +1,174 @@
+// Prisma schema for the Football Drinking Game API.
+//
+// SQLite for local dev and tests (file-based, zero setup). Postgres-ready: switch the
+// datasource `provider` to "postgresql" and point `DATABASE_URL` at a real Postgres instance —
+// every model here is already Postgres-compatible (cuid ids, Json columns, standard scalars).
+//
+// Realtime room state (lobby presence, in-progress rounds) lives in the in-memory `RoomStore`
+// (see src/rooms/store.ts), never here. This database only holds durable, post-hoc data: accounts,
+// friendships, room bookkeeping, and finished game/round results for stats.
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// A registered account. Guests never get a row here — they are room-scoped identities minted by
+/// the realtime gateway and live only in `RoomStore` + `RoomPlayer` (via `engagementPlayerId`).
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  displayName    String
+  ageConfirmed18 Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  credential   Credential?
+  refreshTokens RefreshToken[]
+
+  friendshipsInitiated Friendship[] @relation("FriendshipRequester")
+  friendshipsReceived  Friendship[] @relation("FriendshipAddressee")
+
+  hostedRooms Room[]       @relation("RoomHostUser")
+  roomPlayers RoomPlayer[]
+  stats       PlayerStat?
+
+  @@index([displayName])
+}
+
+/// argon2id password hash. Split from `User` so a future SSO/hub adapter can leave this table
+/// empty entirely (IdentityProvider is the seam; nothing outside LocalIdentityProvider reads this).
+model Credential {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+/// Rotating refresh tokens. Only a hash of the token is stored; a token is single-use — refreshing
+/// revokes it and issues a new one, recorded via `replacedByTokenId`.
+model RefreshToken {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash         String    @unique
+  createdAt         DateTime  @default(now())
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  replacedByTokenId String?
+
+  @@index([userId])
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+/// One row per friend request. Directional (`requester` -> `addressee`); accepted friendships are
+/// symmetric in the API surface even though the row itself is not.
+model Friendship {
+  id          String           @id @default(cuid())
+  requesterId String
+  requester   User             @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User             @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId, status])
+}
+
+/// Durable record of a room. The engine's live `RoomState` is authoritative while the room plays;
+/// this row is the REST-resolvable summary (PIN lookup, host, lifecycle) and the anchor for
+/// `GameSession`/`RoundResult` once rounds resolve.
+model Room {
+  id         String    @id
+  pin        String    @unique
+  hostUserId String?
+  hostUser   User?     @relation("RoomHostUser", fields: [hostUserId], references: [id], onDelete: SetNull)
+  status     String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  finishedAt DateTime?
+
+  players      RoomPlayer[]
+  gameSessions GameSession[]
+}
+
+/// A participant's room-scoped membership row, for both guests and registered users.
+/// `engagementPlayerId` is the engine's branded `PlayerId` for this room.
+model RoomPlayer {
+  id                 String    @id @default(cuid())
+  roomId             String
+  room               Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  engagementPlayerId String
+  userId             String?
+  user               User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  nickname           String
+  isGuest            Boolean
+  joinedAt           DateTime  @default(now())
+  leftAt             DateTime?
+  finalScore         Int?
+  finalSips          Int?
+
+  @@unique([roomId, engagementPlayerId])
+  @@index([userId])
+}
+
+/// One played game (a `SessionState` in the engine) inside a room, persisted once it finishes.
+/// `id` is the engine's own `SessionId` (already globally unique — it embeds the room id), so a
+/// round result's `gameSessionId` foreign key needs no separate lookup table.
+model GameSession {
+  id            String    @id
+  roomId        String
+  room          Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  moduleId      String
+  category      String
+  roundsPlanned Int
+  startedAt     DateTime
+  finishedAt    DateTime?
+
+  roundResults RoundResult[]
+
+  @@index([roomId])
+}
+
+/// One resolved round. `outcome` is the engine's `RoundOutcome` (scores, winners, summary),
+/// stored opaquely — this table is a durable log, not a second source of game rules.
+model RoundResult {
+  id            String      @id
+  gameSessionId String
+  gameSession   GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
+  roundIndex    Int
+  moduleId      String
+  engineRoundId String
+  outcome       Json
+  createdAt     DateTime    @default(now())
+
+  @@index([gameSessionId])
+}
+
+/// Cumulative cross-room stats for a registered user. Guests have no row (nothing to attach it to
+/// once the room ends).
+model PlayerStat {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomsPlayed    Int      @default(0)
+  roundsPlayed   Int      @default(0)
+  totalScore     Int      @default(0)
+  totalSips      Int      @default(0)
+  correctAnswers Int      @default(0)
+  roundsWon      Int      @default(0)
+  updatedAt      DateTime @updatedAt
+}

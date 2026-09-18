@@ -3,5 +3,33 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Fastify REST + Socket.IO realtime server"
+  "description": "Fastify REST + Socket.IO realtime server",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:tests": "tsc -p tsconfig.tests.json",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "@fdg/football-data": "*",
+    "@fdg/game-core": "*",
+    "@prisma/client": "6.19.3",
+    "argon2": "^0.45.1",
+    "fastify": "^5.12.5",
+    "jose": "^6.2.12",
+    "socket.io": "^4.8.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.1",
+    "prisma": "6.19.3",
+    "socket.io-client": "^4.8.3",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
 }

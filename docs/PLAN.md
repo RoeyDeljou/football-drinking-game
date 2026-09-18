@@ -65,22 +65,30 @@ Constraint (2026-09-16): **free data sources only.** Verified findings:
 - [x] Offline tests for every provider (recorded raw payloads), composite routing, cache/rate-limit behaviour, replay, prefetch progress ordering, general dataset, data quality, factory selection
 - [x] `npm run typecheck`, `npm run lint`, `npm test` green
 
-## Phase 3 — Backend: rooms, realtime, accounts · TODO
+## Phase 3 — Backend: rooms, realtime, accounts · DONE
 
 Owner: `realtime-backend-engineer`
 
-- [ ] Prisma schema: users, credentials, refresh tokens, friendships, rooms, room players, game sessions, round results, stats
-- [ ] `IdentityProvider` interface + `LocalIdentityProvider` (argon2id, access/refresh JWT rotation)
-- [ ] Auth REST: register (18+ confirmation), login, refresh, logout, me
-- [ ] Friends REST: search users, send/accept/decline/remove, list friends, invite a friend to a room
-- [ ] Room REST: create room, resolve PIN, room summary
-- [ ] Socket.IO gateway: join by PIN as guest or user, lobby presence, host controls, submit answer, advance round, reconnect restore
-- [ ] Engine integration: server dispatches actions into `game-core` and broadcasts per-recipient projections
-- [ ] Zod validation and per-event authorization on every socket event; host-only actions enforced server-side
-- [ ] `RoomStore` interface with in-memory implementation; durable result writes to the database
-- [ ] Integration tests: full auth cycle, two clients in one room playing a complete game, host-permission denial, reconnect
+- [x] Prisma schema: users, credentials, refresh tokens, friendships, rooms, room players, game sessions, round results, stats
+- [x] `IdentityProvider` interface + `LocalIdentityProvider` (argon2id, access/refresh JWT rotation)
+- [x] Auth REST: register (18+ confirmation), login, refresh, logout, me
+- [x] Friends REST: search users, send/accept/decline/remove, list friends, invite a friend to a room
+- [x] Room REST: create room, resolve PIN, room summary
+- [x] Socket.IO gateway: join by PIN as guest or user, lobby presence, host controls, submit answer, advance round, reconnect restore
+- [x] Engine integration: server dispatches actions into `game-core` and broadcasts per-recipient projections
+- [x] Zod validation and per-event authorization on every socket event; host-only actions enforced server-side
+- [x] `RoomStore` interface with in-memory implementation; durable result writes to the database
+- [x] Integration tests: full auth cycle, two clients in one room playing a complete game, host-permission denial, reconnect
 
-## Phase 4 — Web client, Phase-1 game set playable end to end · TODO
+QA history: round 1 found a critical defect (hardcoded default auth/room-token secrets with no production guard,
+combined with an unauthenticated endpoint leaking a room's host id, allowing full room takeover from just a PIN)
+plus a test that claimed to play a full game but didn't. Round 2 confirmed both fixed under independent re-attack,
+but found the `.env.example` placeholder secrets were still long enough and unlisted to slip past the new guard.
+Round 3: VERDICT: PASS, with the exploit chain independently re-attempted from scratch and confirmed closed, a full
+3-player 8-round game played and audited for leaks by the verifier directly, and a sensitivity-controlled
+reproduction of the dispatch race condition fix.
+
+## Phase 4 — Web client, Phase-1 game set playable end to end · IN PROGRESS
 
 Owner: `game-ux-engineer`
 

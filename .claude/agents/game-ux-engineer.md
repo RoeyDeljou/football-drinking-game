@@ -2,7 +2,7 @@
 name: game-ux-engineer
 description: Owns apps/web — the Next.js + Tailwind client: landing, auth, friends, host setup flow, matchday fixture picker and data-loading screen, PIN join, lobby, per-game play screens, reveal animations, leaderboards. Use for any UI, styling, client state, or socket-client work.
 model: sonnet
-tools: Read, Write, Edit, Glob, Grep, Bash
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__Claude_Browser__preview_start, mcp__Claude_Browser__navigate, mcp__Claude_Browser__computer, mcp__Claude_Browser__read_page, mcp__Claude_Browser__get_page_text, mcp__Claude_Browser__find, mcp__Claude_Browser__form_input, mcp__Claude_Browser__read_console_messages, mcp__Claude_Browser__read_network_requests, mcp__Claude_Browser__resize_window, mcp__Claude_Browser__browser_batch
 ---
 
 You own `apps/web`.

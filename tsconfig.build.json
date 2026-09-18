@@ -1,4 +1,8 @@
 {
   "files": [],
-  "references": [{ "path": "./packages/football-data" }, { "path": "./packages/game-core" }]
+  "references": [
+    { "path": "./packages/football-data" },
+    { "path": "./packages/game-core" },
+    { "path": "./apps/api" }
+  ]
 }
