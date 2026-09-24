@@ -88,20 +88,37 @@ Round 3: VERDICT: PASS, with the exploit chain independently re-attempted from s
 3-player 8-round game played and audited for leaks by the verifier directly, and a sensitivity-controlled
 reproduction of the dispatch race condition fix.
 
-## Phase 4 — Web client, Phase-1 game set playable end to end · IN PROGRESS
+## Phase 4 — Web client, Phase-1 game set playable end to end · DONE
 
 Owner: `game-ux-engineer`
 
-- [ ] Landing page: Host / Join with PIN / Sign in
-- [ ] Auth screens with 18+ gate and responsible-drinking notice; friends screen
-- [ ] Host flow: choose **Matchday** or **General** → matchday fixture picker (6 competitions, live/upcoming) → game picker → settings
-- [ ] Matchday loading screen driven by real `MatchdayPrefetcher` progress, with failure + retry
-- [ ] Join flow: PIN entry, nickname, link and QR join; lobby with live player list and host start control
-- [ ] Play screens for the Phase-1 set: **M1 Match Markets**, **M2 Who's That Player?**, **M3 Shirt Number**, **G1 Guess the Player**, **G6 Trivia Rush**
-- [ ] Reveal screen with correct answer, per-player result, and drink instructions via `drinkCopy`
-- [ ] Round leaderboard and final results with a drink tally
-- [ ] Reconnecting state, socket error handling, 360px-viewport verified, reduced-motion respected
-- [ ] Playwright end-to-end: host + two guests play a full game to the results screen
+- [x] Landing page: Host / Join with PIN / Sign in
+- [x] Auth screens with 18+ gate and responsible-drinking notice; friends screen
+- [~] Host flow: choose **Matchday** or **General** → matchday fixture picker (6 competitions, live/upcoming) → game picker → settings —
+  matchday picker is a demo fixture + free-text fixture id, not a real browse-6-competitions picker (no `apps/api`
+  endpoint to list fixtures yet); deferred, tracked below
+- [x] Matchday loading screen driven by real `MatchdayPrefetcher` progress, with failure + retry
+- [x] Join flow: PIN entry, nickname, link and QR join; lobby with live player list and host start control
+- [x] Play screens for the Phase-1 set: **M1 Match Markets**, **M2 Who's That Player?**, **M3 Shirt Number**, **G1 Guess the Player**, **G6 Trivia Rush**
+- [x] Reveal screen with correct answer, per-player result, and drink instructions via `drinkCopy`
+- [x] Round leaderboard and final results with a drink tally
+- [x] Reconnecting state, socket error handling, 360px-viewport verified, reduced-motion respected
+- [~] Playwright end-to-end: host + two guests play a full game to the results screen — not built; deferred in
+  favor of getting a playable app in front of the user faster (explicit user priority, 2026-09-17). The same
+  ground was instead covered by qa-verifier driving two real browser sessions through every game by hand across
+  three QA rounds. Revisit before Phase 7 hardening.
+
+Follow-ups opened: a real fixture-browse REST endpoint in `apps/api` (owner: `realtime-backend-engineer`) and a
+Playwright suite (owner: `game-ux-engineer`), both tracked for Phase 7.
+
+QA history: round 1 played all five games end to end in real two-browser sessions and confirmed the core loop,
+no-answer-leak, and reconnect all genuinely work, but found 5 blocking defects — most importantly a dead
+"play another game" action at session end, and a stale stored room session silently hijacking a new PIN/QR/link
+join into the wrong room. Round 2 confirmed all 5 fixed under live re-test, but found one more: rejoining an
+already-ended room bricked the client on a permanent, uncloseable "connecting" spinner. Round 3: VERDICT: PASS,
+with the fix independently re-verified at both the primary layer (the stale room is cleared, so no dead
+"Rejoin" button ever appears) and the fallback layer (a session that survives anyway lands on a working
+"back to start" screen, not a hang).
 
 ## Phase 5 — Remaining matchday games · TODO
 

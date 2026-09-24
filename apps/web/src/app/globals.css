@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #0a0e14;
+  color: #f5f7fa;
+  min-height: 100dvh;
+}
+
+/* Huge, thumb-friendly tap targets by default. */
+button,
+[role='button'],
+a.tap-target {
+  touch-action: manipulation;
+}
+
+.tap-target {
+  min-height: 56px;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
