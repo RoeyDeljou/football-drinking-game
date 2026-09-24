@@ -1,15 +1,17 @@
 // Prisma schema for the Football Drinking Game API.
 //
-// SQLite for local dev and tests (file-based, zero setup). Postgres-ready: switch the
-// datasource `provider` to "postgresql" and point `DATABASE_URL` at a real Postgres instance —
-// every model here is already Postgres-compatible (cuid ids, Json columns, standard scalars).
+// Postgres in every environment — local dev, tests, and production (see docker-compose.yml for a
+// local instance and apps/api/tests/helpers.ts for how the test suite provisions an isolated
+// schema per run against that same instance). This used to be SQLite for zero-setup local dev; it
+// moved to Postgres everywhere so what the test suite exercises is exactly what production runs
+// (see apps/api/README.md for the incident that motivated this in the sibling hub app).
 //
 // Realtime room state (lobby presence, in-progress rounds) lives in the in-memory `RoomStore`
 // (see src/rooms/store.ts), never here. This database only holds durable, post-hoc data: accounts,
 // friendships, room bookkeeping, and finished game/round results for stats.
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

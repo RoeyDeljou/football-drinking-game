@@ -1,8 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import type { AddressInfo } from 'node:net';
 import { io as ioClient } from 'socket.io-client';
@@ -23,19 +20,46 @@ export interface TestServer extends BuiltApp {
   stop(): Promise<void>;
 }
 
-/** Boots a real server against a fresh, migrated SQLite file — never the fixture-provider network. */
+/**
+ * Base connection string for the local Postgres the whole suite shares (see root
+ * `docker-compose.yml` — `docker compose up -d` before `npm test`). Every test server gets its own
+ * throwaway `?schema=` inside this same database so parallel test files never see each other's
+ * rows, without needing a separate database per file.
+ */
+const baseDatabaseUrl = (): string =>
+  process.env.DATABASE_URL ?? 'postgresql://fdg:fdg@localhost:5432/fdg?schema=public';
+
+const withSchema = (url: string, schema: string): string => {
+  const parsed = new URL(url);
+  parsed.searchParams.set('schema', schema);
+  return parsed.toString();
+};
+
+/**
+ * Boots a real server against a fresh, migrated schema inside the shared local Postgres instance —
+ * never the fixture-provider network. Postgres, not SQLite, so the suite exercises exactly what
+ * production runs (see apps/api/prisma/schema.prisma).
+ */
 export const startTestServer = async (): Promise<TestServer> => {
   process.env.FOOTBALL_DATA_PROVIDER = 'fixture';
 
-  const dbPath = join(mkdtempSync(join(tmpdir(), 'fdg-api-test-')), `${randomUUID()}.db`);
-  const databaseUrl = `file:${dbPath}`;
+  const schema = `test_${randomBytes(8).toString('hex')}`;
+  const databaseUrl = withSchema(baseDatabaseUrl(), schema);
 
-  execFileSync('npx', ['prisma', 'migrate', 'deploy'], {
-    cwd: apiDir,
-    env: { ...process.env, DATABASE_URL: databaseUrl },
-    stdio: 'pipe',
-    shell: process.platform === 'win32',
-  });
+  try {
+    execFileSync('npx', ['prisma', 'migrate', 'deploy'], {
+      cwd: apiDir,
+      env: { ...process.env, DATABASE_URL: databaseUrl },
+      stdio: 'pipe',
+      shell: process.platform === 'win32',
+    });
+  } catch (error) {
+    throw new Error(
+      'Failed to migrate the test database schema. Is a local Postgres running? ' +
+        '(`docker compose up -d` from the repo root, then re-run tests.) ' +
+        `Underlying error: ${String(error)}`,
+    );
+  }
 
   const env = loadEnv({
     ...process.env,
@@ -54,6 +78,9 @@ export const startTestServer = async (): Promise<TestServer> => {
     baseUrl,
     socketUrl: baseUrl,
     stop: async () => {
+      // Drop the throwaway schema before disconnecting — `built.close()` tears down the same
+      // Prisma client this runs on, so it must happen first, not after.
+      await built.ctx.prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
       await built.close();
     },
   };

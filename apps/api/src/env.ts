@@ -42,7 +42,7 @@ type SecretKey = (typeof SECRET_KEYS)[number];
 
 const rawEnvSchema = z
   .object({
-    DATABASE_URL: z.string().min(1).default('file:./dev.db'),
+    DATABASE_URL: z.string().min(1).default('postgresql://fdg:fdg@localhost:5432/fdg?schema=public'),
 
     JWT_ACCESS_SECRET: z.string().min(1).optional(),
     JWT_REFRESH_SECRET: z.string().min(1).optional(),
@@ -75,6 +75,16 @@ const rawEnvSchema = z
           message: `${key} is set to a known development default. Generate a real secret before deploying to production.`,
         });
       }
+    }
+    // Explicit CORS allowlist only. `*` in production would let any origin's browser send
+    // credentialed requests (refresh-token cookies, room tokens) to this API.
+    if (value.CORS_ORIGIN === '*') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['CORS_ORIGIN'],
+        message:
+          'CORS_ORIGIN must be an explicit, comma-separated allowlist in production, never "*".',
+      });
     }
   });
 

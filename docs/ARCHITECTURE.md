@@ -49,7 +49,8 @@ broadcast. The client never computes a result, and the server never contains a r
 - Fastify for REST (auth, friends, rooms), Socket.IO for realtime.
 - `IdentityProvider` is the auth seam; `LocalIdentityProvider` uses argon2id with rotating refresh tokens.
 - `RoomStore` is the realtime-state seam: in-memory now, Redis later, with no call-site changes.
-- Prisma + Postgres in production, SQLite for local/dev and tests.
+- Prisma + Postgres everywhere — local dev, tests, and production (a local instance runs via the root
+  `docker-compose.yml`; see `apps/api/tests/helpers.ts` for how tests isolate themselves inside it).
 - Rooms are keyed by a 6-character PIN from an unambiguous alphabet (no `0/O`, `1/I`).
 
 ## apps/web

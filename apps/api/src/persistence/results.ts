@@ -1,6 +1,6 @@
 /**
  * Durable writes. Realtime room state stays in `RoomStore`; this module is the only place that
- * turns engine events into Postgres/SQLite rows — game sessions, round results and cumulative
+ * turns engine events into Postgres rows — game sessions, round results and cumulative
  * player stats, all written once a round/session/room genuinely finishes.
  */
 

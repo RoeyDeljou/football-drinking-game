@@ -1,0 +1,112 @@
+# ==========================================================================
+# Football Drinking Game — apps/api Render deployment
+#
+# Modelled on the deployment lessons already learned in the sibling hub app
+# (its docs/RUNBOOK.md and render.yaml), adapted for this repo's Node/TS
+# monorepo. Nothing about game rules or football data logic lives here —
+# this is transport/infra config only.
+#
+#   * Migrations run as a preDeploy step, never in startCommand — running
+#     them on every boot races itself across restarts (the exact lesson the
+#     reference app's RUNBOOK documents under "Migrations run as a
+#     preDeployCommand, never in startCommand").
+#   * plan: free, explicit owner decision (2026-09-24) — the cold-start
+#     tradeoff (services spin down after 15 min idle, ~50s to wake) is known
+#     and accepted for now. Upgrade path: change `plan: free` to
+#     `plan: starter` on both the web service and the database below when
+#     traffic or the cold start stops being acceptable; no other change
+#     needed.
+#   * region: frankfurt for both the web service and the database — the user
+#     is in Israel, and the reference app's lesson ("web service region MUST
+#     match the database's region") applies here just as much: a mismatched
+#     region round-trips every query across a continent instead of within
+#     one data centre.
+#   * healthCheckPath: /health — confirmed in apps/api/src/app.ts, no auth
+#     required, returns 200 with `{ ok: true }`.
+#   * CORS_ORIGIN is `sync: false`: set by hand once the Vercel URL for
+#     apps/web is known, same reasoning as the reference app's
+#     ALLOWED_ORIGINS. env.ts refuses to boot in production if this is left
+#     at the "*" default.
+# ==========================================================================
+
+services:
+  - type: web
+    name: fdg-api
+    env: node
+    region: frankfurt
+    plan: free # see the upgrade-path note above
+    healthCheckPath: /health
+
+    # npm workspaces build in dependency order: football-data has no internal workspace deps,
+    # game-core depends on football-data's types, apps/api depends on both. `tsc -b` (TypeScript's
+    # project-reference build mode) walks that graph itself via the `references` in
+    # tsconfig.build.json — proven locally against a clean dist/ tree, see the deployment report.
+    # `prisma generate` must run before the api project compiles: apps/api/src/db/client.ts imports
+    # the generated `@prisma/client`, and the generated client must match `provider = "postgresql"`.
+    #
+    # `prisma` is apps/api's own devDependency and does NOT hoist to the repo-root node_modules/.bin
+    # in this workspace layout (confirmed locally — bare `npx prisma` from the repo root fails with
+    # "not recognized"). `npm exec --workspace=apps/api --` resolves and runs it correctly from
+    # root, confirmed locally against a real (unreachable) DATABASE_URL — it got as far as parsing
+    # the schema and datasource before failing only on the expected "can't reach database".
+    buildCommand: npm install && npm exec --workspace=apps/api -- prisma generate && npx tsc -b tsconfig.build.json
+
+    # Applies pending migrations against the production database before the new release goes live.
+    preDeployCommand: npm exec --workspace=apps/api -- prisma migrate deploy
+
+    # buildCommand's `tsc -b` emits apps/api/dist relative to the repo root (Render's working
+    # directory for startCommand); verified locally that `node apps/api/dist/index.js` boots
+    # correctly from that root without a `cd`.
+    startCommand: node apps/api/dist/index.js
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Wired automatically from the managed database below — no manual DATABASE_URL to copy or
+      # get wrong.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fdg-postgres
+          property: connectionString
+
+      # REQUIRED — apps/api/src/env.ts refuses to boot in production without all three, each at
+      # least 32 characters and not one of the literals this repo has ever shipped as a dev
+      # placeholder. Render's generateValue produces a random value well past that floor, so it
+      # clears the guard; nothing further to do here.
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ROOM_TOKEN_SECRET
+        generateValue: true
+
+      # Explicit CORS allowlist. Set by hand once the Vercel URL is known — env.ts refuses to boot
+      # in production with the "*" default, so this cannot be forgotten silently.
+      - key: CORS_ORIGIN
+        sync: false
+
+      # Real ESPN + Wikidata data, not the offline fixture/replay provider — the actual point of
+      # this deployment (see packages/football-data/README.md for the provider's own env reading).
+      - key: FOOTBALL_DATA_PROVIDER
+        value: live
+
+      # Wikimedia's API etiquette asks for a descriptive User-Agent with a contact URL on every
+      # request; without one, requests are more likely to be rate-limited or blocked outright.
+      - key: FOOTBALL_DATA_USER_AGENT
+        value: 'FootballDrinkingGame/1.0 (+https://github.com/fdg-app; contact: ops@fdg.app)'
+
+      # Render sets PORT itself; apps/api's env.ts reads it with a 4000 fallback for local dev only
+      # and HOST already defaults to 0.0.0.0 (required — a container listening on 127.0.0.1/
+      # localhost is unreachable from Render's router). Nothing to set here; listed for visibility.
+      # - key: PORT        (set by Render)
+      # - key: HOST         value: 0.0.0.0   (already env.ts's default)
+
+databases:
+  - name: fdg-postgres
+    region: frankfurt # must match the web service's region — see the note above
+    plan: free
+    # CHECK THE PLAN. Render's free Postgres is deleted 30 days after creation, with a 14-day grace
+    # period and no way back — the same trap the reference app's RUNBOOK.md documents. Fine for
+    # getting the deployment proven out; upgrade to a paid plan (or take your own backups) before
+    # this holds any data worth keeping.

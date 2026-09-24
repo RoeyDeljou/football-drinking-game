@@ -32,7 +32,8 @@ const readEnvExamplePlaceholders = (): Record<string, string> => {
 describe('production secret validation (env.ts)', () => {
   const baseProdEnv = {
     NODE_ENV: 'production',
-    DATABASE_URL: 'file:./prod.db',
+    DATABASE_URL: 'postgresql://user:password@localhost:5432/prod?schema=public',
+    CORS_ORIGIN: 'https://example.com',
   };
 
   it('refuses to boot in production with no secrets set at all', () => {

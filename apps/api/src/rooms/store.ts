@@ -3,7 +3,7 @@
  * in memory, for the lifetime of the process. A Redis-backed implementation is a drop-in later:
  * every call site only ever sees this interface, never a `Map`.
  *
- * Durable, post-hoc data (accounts, finished sessions, round results, stats) lives in Postgres/SQLite
+ * Durable, post-hoc data (accounts, finished sessions, round results, stats) lives in Postgres
  * via Prisma instead — see `src/persistence`.
  *
  * `RoomMeta` carries the one piece of server-owned context the engine itself has no concept of:

@@ -1,12 +1,11 @@
-# Optional local Postgres, for when apps/api is pointed at Postgres instead of the SQLite dev
-# default (see apps/api/.env.example). Not required for `npm run dev` or `npm test` — both work
-# against SQLite with zero setup.
+# Local Postgres for apps/api — required for `npm run dev` (apps/api) and for `npm test` (the API
+# integration suite provisions a throwaway schema inside this same database per test run; see
+# apps/api/tests/helpers.ts). Production uses a separate, Render-managed Postgres instance — this
+# container is local-only.
 #
 # Usage:
 #   docker compose up -d
-#   # then in apps/api/.env:
-#   # DATABASE_URL="postgresql://fdg:fdg@localhost:5432/fdg?schema=public"
-#   # and set `provider = "postgresql"` in apps/api/prisma/schema.prisma
+#   # apps/api/.env.example already points DATABASE_URL at this instance by default.
 
 services:
   postgres:
