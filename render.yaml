@@ -6,10 +6,15 @@
 # monorepo. Nothing about game rules or football data logic lives here —
 # this is transport/infra config only.
 #
-#   * Migrations run as a preDeploy step, never in startCommand — running
-#     them on every boot races itself across restarts (the exact lesson the
-#     reference app's RUNBOOK documents under "Migrations run as a
-#     preDeployCommand, never in startCommand").
+#   * Migrations run once, at the end of buildCommand, never in startCommand
+#     — running them on every boot races itself across restarts (the exact
+#     lesson the reference app's RUNBOOK documents under "Migrations run as
+#     a preDeployCommand, never in startCommand"). A genuine preDeployCommand
+#     step would be cleaner, but Render's free-tier web services don't
+#     support it ("pre-deploy command is not supported for free tier
+#     services") — folding it into buildCommand keeps the same guarantee
+#     (once per deploy, before the new release serves traffic) within that
+#     constraint. Revisit if this moves to a paid plan.
 #   * plan: free, explicit owner decision (2026-09-24) — the cold-start
 #     tradeoff (services spin down after 15 min idle, ~50s to wake) is known
 #     and accepted for now. Upgrade path: change `plan: free` to
@@ -49,10 +54,9 @@ services:
     # "not recognized"). `npm exec --workspace=apps/api --` resolves and runs it correctly from
     # root, confirmed locally against a real (unreachable) DATABASE_URL — it got as far as parsing
     # the schema and datasource before failing only on the expected "can't reach database".
-    buildCommand: npm install && npm exec --workspace=apps/api -- prisma generate && npx tsc -b tsconfig.build.json
-
-    # Applies pending migrations against the production database before the new release goes live.
-    preDeployCommand: npm exec --workspace=apps/api -- prisma migrate deploy
+    # The final step applies pending migrations against the production database, once, before this
+    # build's dist/ is ever started — see the free-tier preDeployCommand note above.
+    buildCommand: npm install && npm exec --workspace=apps/api -- prisma generate && npx tsc -b tsconfig.build.json && npm exec --workspace=apps/api -- prisma migrate deploy
 
     # buildCommand's `tsc -b` emits apps/api/dist relative to the repo root (Render's working
     # directory for startCommand); verified locally that `node apps/api/dist/index.js` boots
