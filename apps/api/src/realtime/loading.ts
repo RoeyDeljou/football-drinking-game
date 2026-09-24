@@ -50,11 +50,23 @@ export const runLoadingPipeline = async (
   /** Tracks the most recently issued dispatch so callers can await the whole in-flight batch. */
   let lastDispatch: Promise<unknown> = Promise.resolve();
 
+  // `onProgress` (passed to `runMatchdayPrefetch` below) calls this synchronously and does not
+  // await it — only the *last* issued dispatch is awaited, via `lastDispatch`, once the prefetch
+  // finishes. An earlier step's dispatch can therefore still be in flight (or already rejected)
+  // when a later one overwrites `lastDispatch`, and nothing ever awaits it directly — so a
+  // rejection here must be caught inside the task itself, or it becomes an unhandled rejection no
+  // caller can ever catch. It's logged and swallowed, not re-thrown: a progress-broadcast failure
+  // for one step must not abort the whole pipeline (the pipeline's real success/failure is decided
+  // by the prefetch's own result, not by whether every progress tick was broadcast).
   const dispatchProgress = (stepKey: string, status: LoadingStepStatus, detail: string | null): Promise<void> => {
     if (!requestedKeys.has(stepKey)) return Promise.resolve();
     const task = (async (): Promise<void> => {
-      const outcome = await dispatchAction(ctx, roomId, { type: 'LOADING_PROGRESS', stepKey, status, detail });
-      if (outcome !== null && outcome.changed) onBroadcast(outcome.record);
+      try {
+        const outcome = await dispatchAction(ctx, roomId, { type: 'LOADING_PROGRESS', stepKey, status, detail });
+        if (outcome !== null && outcome.changed) onBroadcast(outcome.record);
+      } catch (error) {
+        console.error(`[loading] LOADING_PROGRESS dispatch failed for room=${roomId} step=${stepKey}:`, error);
+      }
     })();
     lastDispatch = task;
     return task;

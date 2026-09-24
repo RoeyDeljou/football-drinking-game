@@ -9,6 +9,7 @@ import type { PlayerId, RoomAction, RoomId } from '@fdg/game-core';
 import { asPlayerId, parseClientAction } from '@fdg/game-core';
 import type { Server, Socket } from 'socket.io';
 import type { AppContext } from '../context.js';
+import type { DispatchOutcome } from '../engine/dispatch.js';
 import { dispatchAction, projectRoom } from '../engine/dispatch.js';
 import type { RoomRecord } from '../rooms/store.js';
 import { runLoadingPipeline } from './loading.js';
@@ -57,6 +58,58 @@ const actorOf = (action: RoomAction): PlayerId | null => {
 export interface RealtimeGateway {
   close(): void;
 }
+
+/**
+ * Every socket handler below awaits `dispatchAction` (a real load -> reduce -> save round trip: a
+ * store read/write, and for some actions a Postgres write or a football-data fetch) and none of
+ * that is guaranteed to succeed — a transient store/DB hiccup, exactly the kind Render's free tier
+ * or a Redis-backed `RoomStore` will produce in production, throws. Every handler here is a bare
+ * `void (async () => {...})()` with no caller to catch a rejection, so an uncaught error inside one
+ * became a silent unhandled rejection: the client got no `room:state`, no `room:error`, nothing —
+ * reproduced in `tests/room-action-error-handling.test.ts`. This wrapper is the one place that
+ * guarantees a thrown/rejected handler still reaches the client (or the auth `next()` callback) as
+ * a visible error instead of vanishing.
+ */
+const guarded =
+  <A extends unknown[]>(label: string, handler: (...args: A) => Promise<void>) =>
+  (...args: A): void => {
+    handler(...args).catch((error: unknown) => {
+      console.error(`[gateway] unhandled error in ${label}:`, error);
+    });
+  };
+
+/**
+ * `runLoadingPipeline` is started fire-and-forget after `START_LOADING` is accepted (the loading
+ * screen advances via its own `LOADING_PROGRESS`/`LOADING_FAILED` dispatches, not the initial
+ * action's response) — so a throw inside it (a football-data fetch, `ctx.generalDataset()`, ...)
+ * had nowhere to land: the host was stuck on the loading screen forever with no `room:state` update
+ * and no `room:error` (reproduced in `tests/loading-pipeline-error-handling.test.ts`). On failure,
+ * this dispatches the same `LOADING_FAILED` the pipeline already uses for an ordinary "could not
+ * load the fixture" outcome, so the host sees it through the existing loading-retry UX rather than a
+ * bare error toast; only if *that* dispatch also fails does it fall back to `room:error`.
+ */
+const runLoadingPipelineSafely = async (
+  ctx: AppContext,
+  roomId: RoomId,
+  onBroadcast: (record: RoomRecord) => void,
+  socket: Socket,
+): Promise<void> => {
+  try {
+    await runLoadingPipeline(ctx, roomId, onBroadcast);
+  } catch (error) {
+    console.error(`[gateway] loading pipeline failed for room=${roomId}:`, error);
+    try {
+      const outcome = await dispatchAction(ctx, roomId, {
+        type: 'LOADING_FAILED',
+        reason: 'Loading failed unexpectedly. Please try again.',
+      });
+      if (outcome !== null && outcome.rejection === null) onBroadcast(outcome.record);
+    } catch (innerError) {
+      console.error(`[gateway] failed to mark loading as failed for room=${roomId}:`, innerError);
+      socket.emit('room:error', { code: 'INTERNAL_ERROR', detail: null });
+    }
+  }
+};
 
 export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGateway => {
   /** roomId -> playerId -> socket ids, so a reconnect/second tab is handled gracefully. */
@@ -107,69 +160,36 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
 
   io.use((socket, next) => {
     void (async (): Promise<void> => {
-      const parsedAuth = socketAuthSchema.safeParse(socket.handshake.auth);
-      if (!parsedAuth.success) {
-        next(new Error('INVALID_AUTH'));
+      try {
+        await authenticate(socket, next);
+      } catch (error) {
+        // Anything thrown here (a store/DB hiccup mid-dispatch, a rejected fetch, ...) must still
+        // reach the client as a `connect_error`, never leave the handshake hanging silently — the
+        // same failure mode this whole `guarded`/try-catch pass exists to close off.
+        console.error('[gateway] unhandled error authenticating socket:', error);
+        next(new Error('INTERNAL_ERROR'));
+      }
+    })();
+  });
+
+  const authenticate = async (socket: Socket, next: (err?: Error) => void): Promise<void> => {
+    const parsedAuth = socketAuthSchema.safeParse(socket.handshake.auth);
+    if (!parsedAuth.success) {
+      next(new Error('INVALID_AUTH'));
+      return;
+    }
+    const auth = parsedAuth.data;
+
+    if (auth.mode === 'reconnect') {
+      const claims = await verifyRoomToken(auth.roomToken, ctx.roomTokenSecret);
+      if (claims === null) {
+        next(new Error('INVALID_ROOM_TOKEN'));
         return;
       }
-      const auth = parsedAuth.data;
-
-      if (auth.mode === 'reconnect') {
-        const claims = await verifyRoomToken(auth.roomToken, ctx.roomTokenSecret);
-        if (claims === null) {
-          next(new Error('INVALID_ROOM_TOKEN'));
-          return;
-        }
-        const outcome = await dispatchAction(ctx, claims.roomId, {
-          type: 'PLAYER_RECONNECTED',
-          playerId: claims.playerId,
-        });
-        if (outcome === null) {
-          next(new Error('ROOM_NOT_FOUND'));
-          return;
-        }
-        if (outcome.rejection !== null) {
-          next(new Error(outcome.rejection.code));
-          return;
-        }
-        socket.fdg = {
-          roomId: claims.roomId,
-          playerId: claims.playerId,
-          nickname: claims.nickname,
-          isGuest: claims.isGuest,
-          userId: claims.userId,
-        };
-        next();
-        return;
-      }
-
-      const existingRoom = await ctx.roomStore.findByPin(auth.pin);
-      if (existingRoom === null) {
-        next(new Error('ROOM_NOT_FOUND'));
-        return;
-      }
-      const roomId = existingRoom.state.id;
-
-      let nickname: string;
-      let isGuest: boolean;
-      let userId: string | null;
-      if (auth.mode === 'user') {
-        const claims = await ctx.identity.verifyAccessToken(auth.accessToken);
-        if (claims === null) {
-          next(new Error('UNAUTHENTICATED'));
-          return;
-        }
-        nickname = auth.nickname ?? claims.displayName;
-        isGuest = false;
-        userId = claims.sub;
-      } else {
-        nickname = auth.nickname;
-        isGuest = true;
-        userId = null;
-      }
-
-      const playerId = asPlayerId(randomUUID());
-      const outcome = await dispatchAction(ctx, roomId, { type: 'PLAYER_JOIN', playerId, nickname, isGuest });
+      const outcome = await dispatchAction(ctx, claims.roomId, {
+        type: 'PLAYER_RECONNECTED',
+        playerId: claims.playerId,
+      });
       if (outcome === null) {
         next(new Error('ROOM_NOT_FOUND'));
         return;
@@ -178,25 +198,70 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
         next(new Error(outcome.rejection.code));
         return;
       }
-
-      try {
-        await ctx.prisma.roomPlayer.upsert({
-          where: { roomId_engagementPlayerId: { roomId, engagementPlayerId: playerId } },
-          create: { roomId, engagementPlayerId: playerId, nickname, isGuest, userId },
-          update: { nickname, isGuest, userId },
-        });
-      } catch (error) {
-        // The realtime join already succeeded (the engine is the source of truth for the room);
-        // losing this row only degrades post-hoc stats/history, so it must not fail the join — but
-        // it must not vanish silently either, or a joined player can end up missing from the DB
-        // with nothing in any log to explain why.
-        console.error(`[gateway] failed to persist RoomPlayer for room=${roomId} player=${playerId}:`, error);
-      }
-
-      socket.fdg = { roomId, playerId, nickname, isGuest, userId };
+      socket.fdg = {
+        roomId: claims.roomId,
+        playerId: claims.playerId,
+        nickname: claims.nickname,
+        isGuest: claims.isGuest,
+        userId: claims.userId,
+      };
       next();
-    })();
-  });
+      return;
+    }
+
+    const existingRoom = await ctx.roomStore.findByPin(auth.pin);
+    if (existingRoom === null) {
+      next(new Error('ROOM_NOT_FOUND'));
+      return;
+    }
+    const roomId = existingRoom.state.id;
+
+    let nickname: string;
+    let isGuest: boolean;
+    let userId: string | null;
+    if (auth.mode === 'user') {
+      const claims = await ctx.identity.verifyAccessToken(auth.accessToken);
+      if (claims === null) {
+        next(new Error('UNAUTHENTICATED'));
+        return;
+      }
+      nickname = auth.nickname ?? claims.displayName;
+      isGuest = false;
+      userId = claims.sub;
+    } else {
+      nickname = auth.nickname;
+      isGuest = true;
+      userId = null;
+    }
+
+    const playerId = asPlayerId(randomUUID());
+    const outcome = await dispatchAction(ctx, roomId, { type: 'PLAYER_JOIN', playerId, nickname, isGuest });
+    if (outcome === null) {
+      next(new Error('ROOM_NOT_FOUND'));
+      return;
+    }
+    if (outcome.rejection !== null) {
+      next(new Error(outcome.rejection.code));
+      return;
+    }
+
+    try {
+      await ctx.prisma.roomPlayer.upsert({
+        where: { roomId_engagementPlayerId: { roomId, engagementPlayerId: playerId } },
+        create: { roomId, engagementPlayerId: playerId, nickname, isGuest, userId },
+        update: { nickname, isGuest, userId },
+      });
+    } catch (error) {
+      // The realtime join already succeeded (the engine is the source of truth for the room);
+      // losing this row only degrades post-hoc stats/history, so it must not fail the join — but
+      // it must not vanish silently either, or a joined player can end up missing from the DB
+      // with nothing in any log to explain why.
+      console.error(`[gateway] failed to persist RoomPlayer for room=${roomId} player=${playerId}:`, error);
+    }
+
+    socket.fdg = { roomId, playerId, nickname, isGuest, userId };
+    next();
+  };
 
   io.on('connection', (socket: Socket) => {
     const identity = socket.fdg;
@@ -208,31 +273,40 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
     void socket.join(identity.roomId);
     trackSocket(identity.roomId, identity.playerId, socket.id);
 
-    void (async (): Promise<void> => {
-      const record = await ctx.roomStore.load(identity.roomId);
-      if (record === null) return;
-      const roomToken = await signRoomToken(
-        {
+    guarded('post-connect room:joined', async () => {
+      try {
+        const record = await ctx.roomStore.load(identity.roomId);
+        if (record === null) return;
+        const roomToken = await signRoomToken(
+          {
+            roomId: identity.roomId,
+            playerId: identity.playerId,
+            nickname: identity.nickname,
+            isGuest: identity.isGuest,
+            userId: identity.userId,
+          },
+          ctx.roomTokenSecret,
+        );
+        socket.emit('room:joined', {
           roomId: identity.roomId,
+          pin: record.state.pin,
           playerId: identity.playerId,
-          nickname: identity.nickname,
-          isGuest: identity.isGuest,
-          userId: identity.userId,
-        },
-        ctx.roomTokenSecret,
-      );
-      socket.emit('room:joined', {
-        roomId: identity.roomId,
-        pin: record.state.pin,
-        playerId: identity.playerId,
-        isHost: record.state.hostPlayerId === identity.playerId,
-        roomToken,
-      });
-      broadcastFromRecord(record);
+          isHost: record.state.hostPlayerId === identity.playerId,
+          roomToken,
+        });
+        broadcastFromRecord(record);
+      } catch (error) {
+        console.error(
+          `[gateway] failed to complete post-connect handshake for room=${identity.roomId}:`,
+          error,
+        );
+        socket.emit('room:error', { code: 'INTERNAL_ERROR', detail: null });
+      }
     })();
 
-    socket.on('room:action', (rawPayload: unknown) => {
-      void (async (): Promise<void> => {
+    socket.on(
+      'room:action',
+      guarded('room:action', async (rawPayload: unknown) => {
         const current = socket.fdg;
         if (current === undefined) return;
 
@@ -251,7 +325,21 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
           return;
         }
 
-        const outcome = await dispatchAction(ctx, current.roomId, parsed.action);
+        let outcome: DispatchOutcome | null;
+        try {
+          outcome = await dispatchAction(ctx, current.roomId, parsed.action);
+        } catch (error) {
+          // The load -> reduce -> save round trip in dispatchAction is a real I/O round trip (store
+          // read/write, sometimes a football-data fetch) and can throw — a transient failure here
+          // must reach the client as room:error, never disappear as an unhandled rejection (see the
+          // class comment above `guarded`; reproduced in tests/room-action-error-handling.test.ts).
+          console.error(
+            `[gateway] dispatch failed for room=${current.roomId} action=${parsed.action.type}:`,
+            error,
+          );
+          socket.emit('room:error', { code: 'INTERNAL_ERROR', detail: null });
+          return;
+        }
         if (outcome === null) {
           socket.emit('room:error', { code: 'ROOM_NOT_FOUND', detail: null });
           return;
@@ -267,7 +355,7 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
         broadcastFromRecord(outcome.record);
 
         if (parsed.action.type === 'START_LOADING') {
-          void runLoadingPipeline(ctx, current.roomId, broadcastFromRecord);
+          void runLoadingPipelineSafely(ctx, current.roomId, broadcastFromRecord, socket);
         }
         if (parsed.action.type === 'KICK_PLAYER') {
           const targetId = parsed.action.targetPlayerId;
@@ -275,43 +363,68 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
             io.sockets.sockets.get(socketId)?.disconnect(true);
           }
         }
-      })();
-    });
+      }),
+    );
 
-    socket.on('room:leave', () => {
-      void (async (): Promise<void> => {
+    socket.on(
+      'room:leave',
+      guarded('room:leave', async () => {
         const current = socket.fdg;
         if (current === undefined) return;
-        const outcome = await dispatchAction(ctx, current.roomId, { type: 'PLAYER_LEAVE', playerId: current.playerId });
-        untrackSocket(current.roomId, current.playerId, socket.id);
-        if (outcome !== null && outcome.rejection === null) broadcastFromRecord(outcome.record);
-        void socket.leave(current.roomId);
-      })();
-    });
+        try {
+          const outcome = await dispatchAction(ctx, current.roomId, {
+            type: 'PLAYER_LEAVE',
+            playerId: current.playerId,
+          });
+          if (outcome !== null && outcome.rejection === null) broadcastFromRecord(outcome.record);
+        } catch (error) {
+          console.error(`[gateway] PLAYER_LEAVE dispatch failed for room=${current.roomId}:`, error);
+          socket.emit('room:error', { code: 'INTERNAL_ERROR', detail: null });
+        } finally {
+          untrackSocket(current.roomId, current.playerId, socket.id);
+          void socket.leave(current.roomId);
+        }
+      }),
+    );
 
-    socket.on('disconnect', () => {
-      void (async (): Promise<void> => {
+    socket.on(
+      'disconnect',
+      guarded('disconnect', async () => {
         const current = socket.fdg;
         if (current === undefined) return;
         const wasLastSocket = untrackSocket(current.roomId, current.playerId, socket.id);
         if (!wasLastSocket) return;
+        // No socket survives to hear a room:error here — this can only be logged, but it must not
+        // be left as an unhandled rejection either (a `RoomStore`/DB hiccup on disconnect must not
+        // crash the process or poison the per-room dispatch queue for the next caller).
         const outcome = await dispatchAction(ctx, current.roomId, {
           type: 'PLAYER_DISCONNECTED',
           playerId: current.playerId,
         });
         if (outcome !== null && outcome.rejection === null) broadcastFromRecord(outcome.record);
-      })();
-    });
+      }),
+    );
   });
 
   const tickInterval = setInterval(() => {
-    void (async (): Promise<void> => {
+    // Every `await` below is real I/O against the (eventually Redis-backed) `RoomStore` and can
+    // throw. This runs unawaited off a `setInterval` callback with no caller to catch a rejection —
+    // Node's default behavior for an unhandled rejection is to crash the process, and since
+    // `RoomStore` is in-memory, that would wipe every live room for every player in the app over one
+    // transient hiccup in a single room's tick (reproduced in
+    // tests/tick-loop-error-handling.test.ts). Both the listing call and each room's own tick are
+    // guarded independently so one room's failure never stops the others from ticking.
+    guarded('tick', async () => {
       const ids = await ctx.roomStore.listIds();
       for (const roomId of ids) {
-        const record = await ctx.roomStore.load(roomId);
-        if (record === null || record.state.phase !== 'playing') continue;
-        const outcome = await dispatchAction(ctx, roomId, { type: 'TICK' });
-        if (outcome !== null && outcome.changed) broadcastFromRecord(outcome.record);
+        try {
+          const record = await ctx.roomStore.load(roomId);
+          if (record === null || record.state.phase !== 'playing') continue;
+          const outcome = await dispatchAction(ctx, roomId, { type: 'TICK' });
+          if (outcome !== null && outcome.changed) broadcastFromRecord(outcome.record);
+        } catch (error) {
+          console.error(`[gateway] tick failed for room=${roomId}:`, error);
+        }
       }
     })();
   }, 1000);
