@@ -5,6 +5,12 @@ A phase is complete only when **every** criterion below is demonstrably met and 
 
 Status legend: `TODO` / `IN PROGRESS` / `DONE`
 
+**Live since 2026-09-24:** https://football-drinking-game-web.vercel.app (Vercel + Render, free tier). Deployed
+ahead of Phase 7 at the user's explicit request, once Phases 1-4 gave a genuinely playable app with real data —
+see `docs/DEPLOYMENT.md` for the setup, the free-tier Postgres 30-day expiry to watch for, and how to redeploy.
+Phase 7's hardening work (rate limiting, room lifecycle cleanup, paid-tier upgrade) still applies to this live
+deployment, not just a future one.
+
 ---
 
 ## Phase 0 — Foundations · DONE
