@@ -41,6 +41,13 @@ export interface GeneralDatasetAccess {
   get(): Promise<GeneralDataset>;
   /** Attempt the real load now (ignoring any cool-down). Resolves true on success; never throws. */
   warm(): Promise<boolean>;
+  /** Where the most recent successful load came from (a stored snapshot vs a live build) and how old the data is. */
+  lastLoad(): GeneralDatasetLoadInfo | null;
+}
+
+export interface GeneralDatasetLoadInfo {
+  readonly source: 'snapshot' | 'live build';
+  readonly ageMs: number;
 }
 
 export interface GeneralDatasetAccessOptions {
@@ -60,12 +67,18 @@ export const createGeneralDatasetAccess = (
   const log = options.log ?? ((message, error) => console.error(message, error ?? ''));
   const fallback = emptyGeneralDataset();
   let failedAt: number | null = null;
+  let lastLoad: GeneralDatasetLoadInfo | null = null;
 
   const attempt = async (): Promise<GeneralDataset | null> => {
     try {
       const result = await loader.load();
       if (result.ok) {
         failedAt = null;
+        const builtAt = Date.parse(result.value.builtAt);
+        lastLoad = {
+          source: result.fromCache ? 'snapshot' : 'live build',
+          ageMs: Number.isNaN(builtAt) ? 0 : Math.max(0, now() - builtAt),
+        };
         return result.value;
       }
       log(`[general-dataset] load failed: ${result.error.message}`);
@@ -84,7 +97,13 @@ export const createGeneralDatasetAccess = (
       return (await attempt()) ?? fallback;
     },
     warm: async () => (await attempt()) !== null,
+    lastLoad: () => lastLoad,
   };
+};
+
+const formatAge = (ageMs: number): string => {
+  const minutes = Math.round(ageMs / 60_000);
+  return minutes < 90 ? `${minutes}m` : `${(ageMs / 3_600_000).toFixed(1)}h`;
 };
 
 export interface WarmupOptions {
@@ -105,7 +124,7 @@ export interface WarmupHandle {
  * Fire-and-forget warm-up. Returns immediately; safe to call right after `listen()`.
  */
 export const startGeneralDatasetWarmup = (
-  access: Pick<GeneralDatasetAccess, 'warm'>,
+  access: Pick<GeneralDatasetAccess, 'warm'> & Partial<Pick<GeneralDatasetAccess, 'lastLoad'>>,
   options: WarmupOptions = {},
 ): WarmupHandle => {
   const retryDelayMs = options.retryDelayMs ?? 45_000;
@@ -120,8 +139,11 @@ export const startGeneralDatasetWarmup = (
     try {
       const ok = await access.warm();
       const took = now() - started;
-      if (ok) log(`[warmup] general dataset ready (${label}) in ${took}ms`);
-      else log(`[warmup] general dataset warm-up failed (${label}) after ${took}ms`);
+      if (ok) {
+        const info = access.lastLoad?.() ?? null;
+        const detail = info === null ? '' : `, source: ${info.source}, data age: ${formatAge(info.ageMs)}`;
+        log(`[warmup] general dataset ready (${label}) in ${took}ms${detail}`);
+      } else log(`[warmup] general dataset warm-up failed (${label}) after ${took}ms`);
       return ok;
     } catch (error) {
       log(`[warmup] general dataset warm-up threw (${label}): ${String(error)}`);

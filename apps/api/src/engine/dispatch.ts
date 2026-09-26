@@ -13,7 +13,15 @@
  * submission). Queuing here means no call site has to know or remember to serialize itself.
  */
 
-import type { EngineEvent, EngineRejection, PlayerId, ProjectedRoom, RoomAction, RoomId, RoomState } from '@fdg/game-core';
+import type {
+  EngineEvent,
+  EngineRejection,
+  PlayerId,
+  ProjectedRoom,
+  RoomAction,
+  RoomId,
+  RoomState,
+} from '@fdg/game-core';
 import { activePlayers, projectFor, projectForHostScreen, reduceRoom } from '@fdg/game-core';
 import type { AppContext } from '../context.js';
 import { persistEngineEvents } from '../persistence/results.js';
@@ -49,7 +57,10 @@ const enqueueForRoom = <T>(roomId: RoomId, task: () => Promise<T>): Promise<T> =
   return run;
 };
 
-const project = (state: RoomState, clock: { now(): number }): { projections: Map<PlayerId, ProjectedRoom>; hostScreen: ProjectedRoom } => {
+const project = (
+  state: RoomState,
+  clock: { now(): number },
+): { projections: Map<PlayerId, ProjectedRoom>; hostScreen: ProjectedRoom } => {
   const projections = new Map<PlayerId, ProjectedRoom>();
   for (const player of activePlayers(state)) {
     projections.set(player.id, projectFor(state, player.id, { modules: registry, clock }));
@@ -82,11 +93,20 @@ export const dispatchAction = async (
     }
 
     const { projections, hostScreen } = project(record.state, deps.clock);
-    return { record, events: reduction.events, rejection: reduction.rejection, changed, projections, hostScreen };
+    return {
+      record,
+      events: reduction.events,
+      rejection: reduction.rejection,
+      changed,
+      projections,
+      hostScreen,
+    };
   });
 
 /** Convenience for a fresh `RoomState` that was never in the store (only used right at creation). */
-export const projectRoom = (record: RoomRecord): { projections: ReadonlyMap<PlayerId, ProjectedRoom>; hostScreen: ProjectedRoom } =>
+export const projectRoom = (
+  record: RoomRecord,
+): { projections: ReadonlyMap<PlayerId, ProjectedRoom>; hostScreen: ProjectedRoom } =>
   project(record.state, { now: () => Date.now() });
 
 export type { RoomState };

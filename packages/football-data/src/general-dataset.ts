@@ -13,12 +13,10 @@
 import { COMPETITION_CONFIGS } from './competitions.js';
 import type { DataClock } from './clock.js';
 import { systemDataClock } from './clock.js';
-import { assessGeneralDataQuality, evaluateGameAvailability } from './data-quality.js';
-import type { GameAvailability } from './data-quality.js';
+import { assessGeneralDataQuality } from './data-quality.js';
 import type {
   Competition,
   CompetitionCode,
-  DataQuality,
   FootballPlayerId,
   Player,
   PlayerProfile,
@@ -30,34 +28,14 @@ import type {
 import { asFootballPlayerId } from './domain.js';
 import type { FootballDataProvider } from './provider.js';
 import type { DataResult } from './result.js';
-import { fail, ok } from './result.js';
-import type { GuessableStatFact } from './guessable-stats.js';
-import { buildGuessableStats, groupGuessableStatsByPlayer } from './guessable-stats.js';
+import { describeThrown, fail, ok } from './result.js';
+import { buildGuessableStats } from './guessable-stats.js';
+import type { GeneralDataset } from './general-dataset-core.js';
+import { assembleGeneralDataset, groupStatsByPlayer } from './general-dataset-core.js';
+import type { GeneralDatasetStore } from './general-dataset-snapshot.js';
+import { hydrateGeneralDataset, isSnapshotFresh, serializeGeneralDataset } from './general-dataset-snapshot.js';
 
-export interface GeneralDataset {
-  /** ISO timestamp the dataset was built at. */
-  readonly builtAt: string;
-  readonly competitions: readonly Competition[];
-  readonly teams: readonly Team[];
-  readonly players: readonly Player[];
-  readonly seasonStats: readonly PlayerSeasonStats[];
-  /** Players with career history, which is what `G1` Guess the Player and `G3` Career Path consume. */
-  readonly profiles: readonly PlayerProfile[];
-  readonly leaderboards: readonly SeasonLeaderboard[];
-  /**
-   * One player, one number, ready for a "closest guess wins" round — `G7` Guess the Number's raw material.
-   * Bio facts (age, height, shirt number) plus one set of season facts (goals, assists, appearances, minutes,
-   * yellow cards) per `PlayerSeasonStats` row, each carrying its own `value`, `unit` and source `season`.
-   */
-  readonly guessableStats: readonly GuessableStatFact[];
-  readonly quality: DataQuality;
-  readonly gameAvailability: readonly GameAvailability[];
-  /** Fast lookups for the question generators. */
-  readonly playersById: ReadonlyMap<string, Player>;
-  readonly statsByPlayer: ReadonlyMap<string, readonly PlayerSeasonStats[]>;
-  readonly profilesByPlayer: ReadonlyMap<string, PlayerProfile>;
-  readonly guessableStatsByPlayer: ReadonlyMap<string, readonly GuessableStatFact[]>;
-}
+export type { GeneralDataset } from './general-dataset-core.js';
 
 export interface GeneralDatasetOptions {
   /** Restrict the build to a subset of competitions. Defaults to all six. */
@@ -158,17 +136,11 @@ export async function buildGeneralDataset(
     return fail('INVALID_RESPONSE', 'general dataset came back empty for every competition', { retryable: true });
   }
 
-  const statsByPlayer = new Map<string, PlayerSeasonStats[]>();
-  for (const row of seasonStats) {
-    const bucket = statsByPlayer.get(row.playerId);
-    if (bucket === undefined) statsByPlayer.set(row.playerId, [row]);
-    else bucket.push(row);
-  }
+  const statsByPlayer = groupStatsByPlayer(seasonStats);
 
   // Profile the most prolific players first: they are the ones the general games are most likely to pick.
   const profileTargets = rankProfileTargets(statsByPlayer, options.profileCount ?? 120);
   const profiles: PlayerProfile[] = [];
-  const profilesByPlayer = new Map<string, PlayerProfile>();
   for (const playerId of profileTargets) {
     const result = await provider.getPlayerProfile(playerId);
     if (!result.ok) {
@@ -177,7 +149,6 @@ export async function buildGeneralDataset(
     }
     if (result.value === null) continue;
     profiles.push(result.value);
-    profilesByPlayer.set(result.value.player.id, result.value);
     if (!playersById.has(result.value.player.id)) playersById.set(result.value.player.id, result.value.player);
   }
   tick('Player profiles');
@@ -195,7 +166,7 @@ export async function buildGeneralDataset(
   const teamRows = [...teamsById.values()];
   const guessableStats = buildGuessableStats(players, seasonStats, teamRows);
 
-  const dataset: GeneralDataset = {
+  const dataset = assembleGeneralDataset({
     builtAt: new Date(clock.now()).toISOString(),
     competitions,
     teams: teamRows,
@@ -205,12 +176,7 @@ export async function buildGeneralDataset(
     leaderboards,
     guessableStats,
     quality,
-    gameAvailability: evaluateGameAvailability(quality),
-    playersById,
-    statsByPlayer,
-    profilesByPlayer,
-    guessableStatsByPlayer: groupGuessableStatsByPlayer(guessableStats),
-  };
+  });
   return ok(dataset, quality.notes);
 }
 
@@ -298,40 +264,201 @@ export function buildLeaderboards(
 }
 
 export interface GeneralDatasetLoader {
-  /** Build on first call, then serve the cached dataset. Concurrent callers share one build. */
+  /**
+   * Serve the dataset. Order: in-memory cache, then the stored snapshot (if a `store` is configured; a stale one
+   * is served immediately and refreshed once in the background), then a live build. Concurrent callers share one
+   * read/build.
+   */
   load(): Promise<DataResult<GeneralDataset>>;
   /** The cached dataset without triggering a build. */
   peek(): GeneralDataset | null;
-  /** Drop the cache so the next `load()` rebuilds — e.g. on a new matchweek. */
+  /** Drop the in-memory cache so the next `load()` re-reads the store / rebuilds — e.g. on a new matchweek. */
   invalidate(): void;
 }
 
-/** The app-start cache: one dataset per process, built lazily and coalesced. */
+/** The loader `createGeneralDatasetLoader` returns: the base contract plus a forced refresh (kept separate so existing fakes of `GeneralDatasetLoader` still type-check). */
+export interface RefreshableGeneralDatasetLoader extends GeneralDatasetLoader {
+  /**
+   * Force a live build and, if it is not worse than what we already hold, write it to the store and swap the
+   * in-memory cache. This is what a scheduled sync job calls. Never throws; a failed, partial or worse build
+   * returns a failure and leaves the store and the served dataset untouched.
+   */
+  refresh(): Promise<DataResult<GeneralDataset>>;
+}
+
+export interface GeneralDatasetLoaderOptions extends GeneralDatasetOptions {
+  /** Where the built snapshot is persisted. Omit for the original process-lifetime in-memory behaviour. */
+  readonly store?: GeneralDatasetStore | undefined;
+  /** A stored snapshot older than this triggers a background refresh. Default 12 hours. */
+  readonly maxAgeMs?: number | undefined;
+  /** Store/refresh problems that are swallowed (never thrown) are reported here. */
+  readonly onWarning?: ((message: string) => void) | undefined;
+}
+
+export const DEFAULT_SNAPSHOT_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+/** A refresh with fewer than this fraction of the held players is treated as a degraded build and rejected. */
+export const MIN_REFRESH_PLAYER_RATIO = 0.8;
+
+function configuredCompetitionCount(options: GeneralDatasetOptions): number {
+  const codes = options.competitions ?? COMPETITION_CONFIGS.map((entry) => entry.code);
+  return COMPETITION_CONFIGS.filter((entry) => codes.includes(entry.code)).length;
+}
+
+function competitionsWithStats(dataset: GeneralDataset): number {
+  return new Set(dataset.seasonStats.map((row) => row.competitionId)).size;
+}
+
+/** True when fewer than half of the configured competitions yielded any season stats. */
+function isPartialBuild(dataset: GeneralDataset, options: GeneralDatasetOptions): boolean {
+  const configured = configuredCompetitionCount(options);
+  return configured > 0 && competitionsWithStats(dataset) * 2 < configured;
+}
+
+function flagPartial(dataset: GeneralDataset, options: GeneralDatasetOptions): GeneralDataset {
+  const note = `Partial build: only ${competitionsWithStats(dataset)} of ${configuredCompetitionCount(options)} competitions produced season stats.`;
+  return { ...dataset, quality: { ...dataset.quality, notes: [...dataset.quality.notes, note] } };
+}
+
+/**
+ * The app-start cache: one dataset per process, coalesced.
+ *
+ * Without a `store` this is the original lazy build-once cache. With one, `load()` prefers the persisted snapshot
+ * (instant) and refreshes in the background when it is older than `maxAgeMs`. A refresh only replaces what is
+ * stored and served when it succeeded, has players, is not a partial build and has at least
+ * `MIN_REFRESH_PLAYER_RATIO` of the held player count. A build where fewer than half of the configured
+ * competitions produced stats is always flagged in `quality.notes`; with a store and nothing to serve instead, it
+ * is a retryable failure rather than being cached for the process life.
+ */
 export function createGeneralDatasetLoader(
   provider: FootballDataProvider,
-  options: GeneralDatasetOptions = {},
-): GeneralDatasetLoader {
+  options: GeneralDatasetLoaderOptions = {},
+): RefreshableGeneralDatasetLoader {
+  const store = options.store;
+  const clock = options.clock ?? systemDataClock;
+  const maxAgeMs = options.maxAgeMs ?? DEFAULT_SNAPSHOT_MAX_AGE_MS;
+  const warn = (message: string): void => {
+    try {
+      options.onWarning?.(message);
+    } catch {
+      // a broken warning sink must not break loading
+    }
+  };
+
   let cached: GeneralDataset | null = null;
-  let building: Promise<DataResult<GeneralDataset>> | null = null;
+  let loading: Promise<DataResult<GeneralDataset>> | null = null;
+  let refreshing: Promise<DataResult<GeneralDataset>> | null = null;
+
+  const readStored = async (): Promise<GeneralDataset | null> => {
+    if (store === undefined) return null;
+    try {
+      const stored = await store.read();
+      if (stored === null) return null;
+      const hydrated = hydrateGeneralDataset(stored.snapshot);
+      if (!hydrated.ok) {
+        warn(`Stored general dataset snapshot is unusable: ${hydrated.error.message}`);
+        return null;
+      }
+      return hydrated.value;
+    } catch (thrown) {
+      warn(`Could not read the general dataset store: ${describeThrown(thrown)}`);
+      return null;
+    }
+  };
+
+  const writeStored = async (dataset: GeneralDataset): Promise<void> => {
+    if (store === undefined) return;
+    try {
+      await store.write(serializeGeneralDataset(dataset), {
+        builtAt: dataset.builtAt,
+        playerCount: dataset.players.length,
+      });
+    } catch (thrown) {
+      warn(`Could not write the general dataset store: ${describeThrown(thrown)}`);
+    }
+  };
+
+  const build = async (): Promise<DataResult<GeneralDataset>> => {
+    try {
+      const result = await buildGeneralDataset(provider, options);
+      if (!result.ok) return result;
+      return isPartialBuild(result.value, options) ? ok(flagPartial(result.value, options), result.notes) : result;
+    } catch (thrown) {
+      return fail('UPSTREAM', `general dataset build threw: ${describeThrown(thrown)}`, { retryable: true });
+    }
+  };
+
+  const runRefresh = async (): Promise<DataResult<GeneralDataset>> => {
+    const built = await build();
+    if (!built.ok) {
+      warn(`General dataset refresh failed: ${built.error.message}`);
+      return built;
+    }
+    const next = built.value;
+    const baseline = cached ?? (await readStored());
+    let rejection: string | null = null;
+    if (next.players.length === 0) rejection = 'it has no players';
+    else if (baseline !== null) {
+      if (isPartialBuild(next, options)) rejection = 'it is a partial build';
+      else if (next.players.length < baseline.players.length * MIN_REFRESH_PLAYER_RATIO) {
+        rejection = `it has ${next.players.length} players against ${baseline.players.length} currently held`;
+      }
+    }
+    if (rejection !== null) {
+      const message = `General dataset refresh rejected: ${rejection}`;
+      warn(message);
+      return fail('INVALID_RESPONSE', message, { retryable: true });
+    }
+    // A store-write failure does not stop the fresher data being served; it is reported and the next sync retries.
+    await writeStored(next);
+    cached = next;
+    return built;
+  };
+
+  const refresh = (): Promise<DataResult<GeneralDataset>> => {
+    if (refreshing !== null) return refreshing;
+    const running = runRefresh().finally(() => {
+      refreshing = null;
+    });
+    refreshing = running;
+    return running;
+  };
+
+  const loadOnce = async (): Promise<DataResult<GeneralDataset>> => {
+    const stored = await readStored();
+    if (stored !== null) {
+      cached = stored;
+      if (!isSnapshotFresh(stored.builtAt, maxAgeMs, clock)) {
+        void refresh().catch((thrown: unknown) => warn(`Background refresh crashed: ${describeThrown(thrown)}`));
+      }
+      return ok(stored, stored.quality.notes, true);
+    }
+    const built = await build();
+    if (!built.ok) return built;
+    if (store !== undefined && isPartialBuild(built.value, options)) {
+      return fail('INVALID_RESPONSE', 'general dataset build was partial and no stored snapshot is available', {
+        retryable: true,
+      });
+    }
+    cached = built.value;
+    await writeStored(built.value);
+    return built;
+  };
 
   return {
     load: async (): Promise<DataResult<GeneralDataset>> => {
       if (cached !== null) return ok(cached, cached.quality.notes, true);
-      if (building !== null) return building;
-      building = (async (): Promise<DataResult<GeneralDataset>> => {
-        const result = await buildGeneralDataset(provider, options);
-        if (result.ok) cached = result.value;
-        return result;
-      })();
-      try {
-        return await building;
-      } finally {
-        building = null;
-      }
+      if (loading !== null) return loading;
+      const running = loadOnce().finally(() => {
+        loading = null;
+      });
+      loading = running;
+      return running;
     },
     peek: (): GeneralDataset | null => cached,
     invalidate: (): void => {
       cached = null;
     },
+    refresh,
   };
 }
+

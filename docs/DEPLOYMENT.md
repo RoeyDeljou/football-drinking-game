@@ -69,6 +69,37 @@ if not upgraded. Before then: either upgrade `fdg-postgres` to a paid plan in th
 needed — the connection string stays wired the same way), or take a backup and accept the reset. Worth doing before
 this holds anything a real user would mind losing (accounts, friendships, session history).
 
+### General dataset: scheduled sync into Postgres
+
+The general games need a dataset built from ESPN + Wikidata (~36s of rate-limited calls). Building it inside the free
+web service means it is lost on every sleep/restart, so it is built on a schedule instead and stored in the
+`GeneralDatasetSnapshot` table (one row, id `general`):
+
+- **GitHub Actions** (`.github/workflows/sync-dataset.yml`) runs `npm run sync:dataset` every 6 hours (and on demand),
+  builds the dataset live and upserts the row. It refuses to overwrite a good snapshot with a clearly worse build
+  (fewer than 80% of the stored players, partial coverage, or empty) and exits 0 in that case; a failed build exits 1
+  so the workflow goes red.
+- **The server** loads the stored snapshot at startup (the `[warmup]` log line reports `source: snapshot` and the
+  data age, in milliseconds). If the snapshot is older than 12h it is still served immediately and refreshed once in
+  the background. With no row (or a corrupt one) it falls back to the old live build and writes the result back.
+
+**One-time setup:** add a repository secret named `DATABASE_URL` (GitHub repo -> Settings -> Secrets and variables ->
+Actions) containing the Render Postgres **External Database URL** (Render dashboard -> `fdg-postgres` -> Connections).
+The internal URL does not resolve from GitHub. The external endpoint needs TLS, so the URL should end in
+`?sslmode=require` (the script appends it for `*.render.com` hosts if missing). The web service itself keeps using the
+internal URL wired by `render.yaml`; the Prisma datasource just reads `DATABASE_URL`.
+
+**Running it manually:** GitHub -> Actions -> "Sync general dataset" -> Run workflow (`workflow_dispatch`), or locally
+`DATABASE_URL=<external url> FOOTBALL_DATA_PROVIDER=live npm run sync:dataset` from the repo root. It prints one line
+(players, competitions covered, duration, whether it wrote).
+
+**Free-Postgres expiry:** the 30-day deletion above also erases the snapshot. After recreating the database, update the
+`DATABASE_URL` secret and run the workflow once; until then the server falls back to the slow live build.
+
+**Local dev note:** the dataset payload contains non-Latin-1 names, so the local Postgres must use a UTF8 database
+(the docker-compose image does). A Windows-installed Postgres defaulting to WIN1252 rejects the write; the server logs
+a `[dataset] Could not write...` warning and keeps working from memory.
+
 ### Redeploying
 
 Push to `master` — both `fdg-api` (via its GitHub trigger) and `football-drinking-game-web` (via Vercel's git

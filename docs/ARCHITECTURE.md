@@ -51,6 +51,9 @@ broadcast. The client never computes a result, and the server never contains a r
 - `RoomStore` is the realtime-state seam: in-memory now, Redis later, with no call-site changes.
 - Prisma + Postgres everywhere — local dev, tests, and production (a local instance runs via the root
   `docker-compose.yml`; see `apps/api/tests/helpers.ts` for how tests isolate themselves inside it).
+- General dataset: built by a scheduled sync (GitHub Actions, `npm run sync:dataset`), stored as one JSON row in Postgres
+  (`GeneralDatasetSnapshot`) behind the `GeneralDatasetStore` port; the server loads it at startup and refreshes stale
+  data in the background (see `docs/DEPLOYMENT.md`).
 - Rooms are keyed by a 6-character PIN from an unambiguous alphabet (no `0/O`, `1/I`).
 
 ## apps/web

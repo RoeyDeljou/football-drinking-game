@@ -123,13 +123,35 @@ export type {
 } from './prefetch.js';
 export { MatchdayPrefetcher, PREFETCH_STEP_LABELS, PREFETCH_STEP_ORDER } from './prefetch.js';
 
-export type { GeneralDataset, GeneralDatasetLoader, GeneralDatasetOptions } from './general-dataset.js';
+export type {
+  GeneralDataset,
+  GeneralDatasetLoader,
+  GeneralDatasetLoaderOptions,
+  GeneralDatasetOptions,
+  RefreshableGeneralDatasetLoader,
+} from './general-dataset.js';
 export {
   buildGeneralDataset,
   buildLeaderboards,
   createGeneralDatasetLoader,
   DEFAULT_LEADERBOARD_METRICS,
+  DEFAULT_SNAPSHOT_MAX_AGE_MS,
+  MIN_REFRESH_PLAYER_RATIO,
 } from './general-dataset.js';
+
+// ---- General dataset snapshot (persisted form, store port) ---------------------
+export type {
+  GeneralDatasetSnapshot,
+  GeneralDatasetStore,
+  GeneralDatasetStoreWriteMeta,
+} from './general-dataset-snapshot.js';
+export {
+  GENERAL_DATASET_SCHEMA_VERSION,
+  generalDatasetSnapshotSchema,
+  hydrateGeneralDataset,
+  isSnapshotFresh,
+  serializeGeneralDataset,
+} from './general-dataset-snapshot.js';
 
 // ---- Guessable stats (G7 Guess the Number) -----------------------------------
 export type { GuessableStatFact, GuessableStatMetric, GuessableStatUnit } from './guessable-stats.js';

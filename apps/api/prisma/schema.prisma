@@ -174,3 +174,17 @@ model PlayerStat {
   roundsWon      Int      @default(0)
   updatedAt      DateTime @updatedAt
 }
+
+/// The latest built general-games dataset (`@fdg/football-data` `GeneralDatasetSnapshot`), stored as
+/// opaque JSON so the server can load it at startup instead of rebuilding from ESPN/Wikidata (~36s).
+/// One row per key (`id`, currently only "general"); written by the scheduled sync job
+/// (`npm run sync:dataset`) and by the server's own background refresh. The loader validates the
+/// payload with Zod on read — this table never interprets it. `playerCount` and `builtAt` are
+/// denormalised for inspection only.
+model GeneralDatasetSnapshot {
+  id          String   @id @default("general")
+  builtAt     DateTime
+  playerCount Int
+  savedAt     DateTime @updatedAt
+  payload     Json
+}

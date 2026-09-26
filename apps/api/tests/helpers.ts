@@ -7,6 +7,8 @@ import type { Socket as ClientSocket } from 'socket.io-client';
 import type { BuildAppOptions } from '../src/app.js';
 import type { BootedApp, BootOptions } from '../src/boot.js';
 import { bootServer } from '../src/boot.js';
+import { createPrismaClient } from '../src/db/client.js';
+import type { PrismaClient } from '../src/db/client.js';
 import { loadEnv } from '../src/env.js';
 
 const apiDir = fileURLToPath(new URL('..', import.meta.url));
@@ -42,7 +44,11 @@ const withSchema = (url: string, schema: string): string => {
  * production runs (see apps/api/prisma/schema.prisma).
  */
 export const startTestServer = async (
-  options: Partial<Omit<BootOptions, 'port' | 'host'>> & BuildAppOptions = {},
+  options: Partial<Omit<BootOptions, 'port' | 'host'>> &
+    BuildAppOptions & {
+      /** Runs against the freshly migrated (empty) test schema before the server boots - e.g. to seed a dataset snapshot. */
+      prepareDatabase?: (prisma: PrismaClient) => Promise<void>;
+    } = {},
 ): Promise<TestServer> => {
   process.env.FOOTBALL_DATA_PROVIDER = 'fixture';
 
@@ -71,7 +77,17 @@ export const startTestServer = async (
     FOOTBALL_DATA_PROVIDER: 'fixture',
   });
 
-  const built = await bootServer(env, { ...options, port: 0, host: '127.0.0.1' });
+  const { prepareDatabase, ...bootOptions } = options;
+  if (prepareDatabase !== undefined) {
+    const seedClient = createPrismaClient(databaseUrl);
+    try {
+      await prepareDatabase(seedClient);
+    } finally {
+      await seedClient.$disconnect();
+    }
+  }
+
+  const built = await bootServer(env, { ...bootOptions, port: 0, host: '127.0.0.1' });
   const address = built.app.server.address() as AddressInfo;
   const baseUrl = `http://127.0.0.1:${address.port}`;
 

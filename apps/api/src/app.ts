@@ -1,10 +1,6 @@
 import cors from '@fastify/cors';
-import {
-  createFootballDataProvider,
-  createGeneralDatasetLoader,
-  readFootballDataConfigFromEnv,
-} from '@fdg/football-data';
-import type { GeneralDatasetLoader } from '@fdg/football-data';
+import { createGeneralDatasetLoader } from '@fdg/football-data';
+import type { FootballDataProvider, GeneralDatasetLoader } from '@fdg/football-data';
 import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import { Server as SocketIoServer } from 'socket.io';
@@ -12,6 +8,8 @@ import { registerAuthRoutes } from './auth/routes.js';
 import type { AppContext } from './context.js';
 import type { GeneralDatasetAccess } from './engine/general-dataset-access.js';
 import { createGeneralDatasetAccess } from './engine/general-dataset-access.js';
+import { createFootballDataFromEnv } from './engine/football-data-provider.js';
+import { createPrismaGeneralDatasetStore } from './engine/general-dataset-store.js';
 import { createPrismaClient, type PrismaClient } from './db/client.js';
 import type { AppEnv } from './env.js';
 import { loadEnv } from './env.js';
@@ -38,15 +36,22 @@ export interface BuildAppOptions {
   /** Test seam: a slow/failing/fixture-backed loader instead of the provider-backed one. */
   readonly generalDatasetLoader?: GeneralDatasetLoader;
   readonly generalDatasetCooldownMs?: number;
+  /** Test seam: a wrapped/counting provider instead of the one built from the environment. */
+  readonly footballData?: FootballDataProvider;
 }
 
 export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp> => {
   const env = options.env ?? loadEnv();
   const prisma = options.prisma ?? createPrismaClient(env.DATABASE_URL);
 
-  const footballData = createFootballDataProvider(readFootballDataConfigFromEnv(process.env));
+  const footballData = options.footballData ?? createFootballDataFromEnv(process.env);
   const generalDatasetAccess = createGeneralDatasetAccess(
-    options.generalDatasetLoader ?? createGeneralDatasetLoader(footballData),
+    options.generalDatasetLoader ??
+      createGeneralDatasetLoader(footballData, {
+        // Stored snapshot first (instant start); a stale one is refreshed in the background.
+        store: createPrismaGeneralDatasetStore(prisma),
+        onWarning: (message) => console.warn(`[dataset] ${message}`),
+      }),
     options.generalDatasetCooldownMs === undefined ? {} : { cooldownMs: options.generalDatasetCooldownMs },
   );
 

@@ -20,7 +20,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "sync:dataset": "npm run sync:dataset --workspace=apps/api"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",

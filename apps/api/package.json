@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:tests": "tsc -p tsconfig.tests.json",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "sync:dataset": "tsx src/scripts/sync-general-dataset.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.0",

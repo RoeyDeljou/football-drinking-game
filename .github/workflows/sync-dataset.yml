@@ -1,0 +1,59 @@
+# Scheduled sync of the general-games dataset into Postgres.
+#
+# Why this runs on GitHub Actions and not inside the API: the Render free web service sleeps after
+# 15 minutes idle and its in-memory dataset (built live from ESPN + Wikidata, ~36s) is lost every
+# time. This job builds the dataset on a schedule, independent of whether the web service is awake,
+# and stores it in the `GeneralDatasetSnapshot` table. The server loads that snapshot at startup
+# (milliseconds) and only refreshes in the background when it is stale. The reference app uses the
+# same pattern.
+#
+# REQUIRED REPO SECRET: DATABASE_URL = the Render Postgres *External* Database URL (Render dashboard
+# -> fdg-postgres -> Connections -> External Database URL). The internal URL only resolves inside
+# Render's network and will not work from GitHub. Render's external endpoint requires TLS: the URL
+# should end in `?sslmode=require` (the sync script adds it automatically for *.render.com hosts
+# that lack it, but set it explicitly anyway). apps/api's Prisma datasource just reads DATABASE_URL
+# (no SSL config of its own); on Render the web service uses the internal URL, which needs no SSL.
+#
+# Free Render Postgres is deleted 30 days after creation; the snapshot goes with it until the next
+# run after the database is recreated (update the secret to the new URL, then run this workflow).
+
+name: Sync general dataset
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: sync-dataset
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # repo engines: >=20.11
+          cache: npm
+
+      - run: npm ci
+
+      - name: Generate Prisma client
+        run: npm exec --workspace=apps/api -- prisma generate
+
+      - name: Build workspace packages (the sync imports @fdg/football-data from dist)
+        run: npx tsc -b tsconfig.build.json
+
+      - name: Sync dataset
+        run: npm run sync:dataset --workspace=apps/api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FOOTBALL_DATA_PROVIDER: live
+          FOOTBALL_DATA_USER_AGENT: 'FootballDrinkingGame/1.0 (+https://github.com/fdg-app; contact: ops@fdg.app)'
