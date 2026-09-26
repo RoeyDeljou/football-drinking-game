@@ -1,10 +1,12 @@
 /**
  * `GeneralDataset` — the season data the general games draw from.
  *
- * Built once at app start and cached for the process lifetime: the general games (`G1`–`G9`) need a pool of
- * players, their season stats, their career history and a set of leaderboards, and none of that changes during a
- * session. `createGeneralDatasetLoader` coalesces concurrent `load()` calls, so twenty rooms starting at once
- * still build it exactly once.
+ * The general games (`G1`–`G9`) need a pool of players, their season stats, their career history and a set of
+ * leaderboards. `createGeneralDatasetLoader` serves it from memory, else from a persisted snapshot (when a
+ * `GeneralDatasetStore` is configured; a stale one is served at once and refreshed in the background), else from a
+ * live build, coalescing concurrent `load()` calls. A scheduled sync job calls `refresh()` / `refreshDetailed()`,
+ * which writes a new snapshot only if the build is non-empty, not partial and not much smaller than what is held or
+ * stored; if the stored baseline cannot be read, nothing is written.
  *
  * A competition that fails to load is noted and skipped rather than failing the build: five leagues' worth of
  * players is still a playable general dataset.
@@ -27,7 +29,7 @@ import type {
 } from './domain.js';
 import { asFootballPlayerId } from './domain.js';
 import type { FootballDataProvider } from './provider.js';
-import type { DataResult } from './result.js';
+import type { DataError, DataResult } from './result.js';
 import { describeThrown, fail, ok } from './result.js';
 import { buildGuessableStats } from './guessable-stats.js';
 import type { GeneralDataset } from './general-dataset-core.js';
@@ -284,7 +286,48 @@ export interface RefreshableGeneralDatasetLoader extends GeneralDatasetLoader {
    * returns a failure and leaves the store and the served dataset untouched.
    */
   refresh(): Promise<DataResult<GeneralDataset>>;
+  /** Same as `refresh()` with a typed outcome; never throws; concurrent calls share one run. */
+  refreshDetailed(): Promise<RefreshResult>;
 }
+
+export type RefreshRejectionReason = 'build-failed' | 'empty' | 'partial' | 'smaller' | 'baseline-unreadable';
+
+/** What a refresh did. `written` and `write-failed` both swap the in-memory dataset; only `written` persisted it. */
+export type RefreshResult =
+  | {
+      readonly outcome: 'written';
+      readonly dataset: GeneralDataset;
+      readonly playerCount: number;
+      /** The legacy DataResult for this run (what `refresh()` returns). */
+      readonly result: DataResult<GeneralDataset>;
+    }
+  | {
+      readonly outcome: 'rejected';
+      readonly reason: RefreshRejectionReason;
+      readonly detail: string;
+      /** The legacy failure for this run (what `refresh()` returns). */
+      readonly error: DataError;
+    }
+  | {
+      readonly outcome: 'write-failed';
+      readonly dataset: GeneralDataset;
+      readonly detail: string;
+      readonly result: DataResult<GeneralDataset>;
+    };
+
+/** What `createGeneralDatasetLoader` returns: the refreshable loader plus `flushWrites()` for deterministic tests/shutdown. */
+export interface FlushableGeneralDatasetLoader extends RefreshableGeneralDatasetLoader {
+  /** Resolves once every fire-and-forget store write started by `load()` has settled. Never rejects. */
+  flushWrites(): Promise<void>;
+}
+
+/** Message prefix a rejected refresh uses (kept for callers that still string-match; prefer `refreshDetailed()`). */
+export const REFRESH_REJECTED_PREFIX = 'General dataset refresh rejected';
+
+type StoredRead =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'ok'; readonly dataset: GeneralDataset }
+  | { readonly kind: 'error'; readonly detail: string };
 
 export interface GeneralDatasetLoaderOptions extends GeneralDatasetOptions {
   /** Where the built snapshot is persisted. Omit for the original process-lifetime in-memory behaviour. */
@@ -332,7 +375,7 @@ function flagPartial(dataset: GeneralDataset, options: GeneralDatasetOptions): G
 export function createGeneralDatasetLoader(
   provider: FootballDataProvider,
   options: GeneralDatasetLoaderOptions = {},
-): RefreshableGeneralDatasetLoader {
+): FlushableGeneralDatasetLoader {
   const store = options.store;
   const clock = options.clock ?? systemDataClock;
   const maxAgeMs = options.maxAgeMs ?? DEFAULT_SNAPSHOT_MAX_AGE_MS;
@@ -346,34 +389,41 @@ export function createGeneralDatasetLoader(
 
   let cached: GeneralDataset | null = null;
   let loading: Promise<DataResult<GeneralDataset>> | null = null;
-  let refreshing: Promise<DataResult<GeneralDataset>> | null = null;
+  let refreshing: Promise<RefreshResult> | null = null;
+  const pendingWrites = new Set<Promise<unknown>>();
 
-  const readStored = async (): Promise<GeneralDataset | null> => {
-    if (store === undefined) return null;
+  const readStored = async (): Promise<StoredRead> => {
+    if (store === undefined) return { kind: 'none' };
     try {
       const stored = await store.read();
-      if (stored === null) return null;
+      if (stored === null) return { kind: 'none' };
       const hydrated = hydrateGeneralDataset(stored.snapshot);
       if (!hydrated.ok) {
+        // A corrupt row is not a read error: there is nothing usable to protect, so it counts as "none".
         warn(`Stored general dataset snapshot is unusable: ${hydrated.error.message}`);
-        return null;
+        return { kind: 'none' };
       }
-      return hydrated.value;
+      return { kind: 'ok', dataset: hydrated.value };
     } catch (thrown) {
-      warn(`Could not read the general dataset store: ${describeThrown(thrown)}`);
-      return null;
+      const detail = describeThrown(thrown);
+      warn(`Could not read the general dataset store: ${detail}`);
+      return { kind: 'error', detail };
     }
   };
 
-  const writeStored = async (dataset: GeneralDataset): Promise<void> => {
-    if (store === undefined) return;
+  /** Never rejects. Returns the failure detail, or null on success (or when there is no store). */
+  const writeStored = async (dataset: GeneralDataset): Promise<string | null> => {
+    if (store === undefined) return null;
     try {
       await store.write(serializeGeneralDataset(dataset), {
         builtAt: dataset.builtAt,
         playerCount: dataset.players.length,
       });
+      return null;
     } catch (thrown) {
-      warn(`Could not write the general dataset store: ${describeThrown(thrown)}`);
+      const detail = describeThrown(thrown);
+      warn(`Could not write the general dataset store: ${detail}`);
+      return detail;
     }
   };
 
@@ -387,34 +437,50 @@ export function createGeneralDatasetLoader(
     }
   };
 
-  const runRefresh = async (): Promise<DataResult<GeneralDataset>> => {
+  const reject = (reason: RefreshRejectionReason, detail: string): RefreshResult => {
+    const message = `${REFRESH_REJECTED_PREFIX}: ${detail}`;
+    warn(message);
+    return { outcome: 'rejected', reason, detail, error: fail('INVALID_RESPONSE', message, { retryable: true }).error };
+  };
+
+  const runRefresh = async (): Promise<RefreshResult> => {
+    // Read the baseline first: if it cannot be read we must not spend upstream quota on a build we would refuse.
+    const stored = await readStored();
+    if (stored.kind === 'error') {
+      return reject(
+        'baseline-unreadable',
+        `the stored snapshot could not be read (${stored.detail}), so the build cannot be compared`,
+      );
+    }
     const built = await build();
     if (!built.ok) {
       warn(`General dataset refresh failed: ${built.error.message}`);
-      return built;
+      return { outcome: 'rejected', reason: 'build-failed', detail: built.error.message, error: built.error };
     }
     const next = built.value;
-    const baseline = cached ?? (await readStored());
-    let rejection: string | null = null;
-    if (next.players.length === 0) rejection = 'it has no players';
-    else if (baseline !== null) {
-      if (isPartialBuild(next, options)) rejection = 'it is a partial build';
-      else if (next.players.length < baseline.players.length * MIN_REFRESH_PLAYER_RATIO) {
-        rejection = `it has ${next.players.length} players against ${baseline.players.length} currently held`;
-      }
+    // Compare against the larger of what we hold in memory and what is stored, so an older in-memory copy can never
+    // overwrite a newer, bigger snapshot written by another process.
+    const storedDataset = stored.kind === 'ok' ? stored.dataset : null;
+    let baseline: GeneralDataset | null = cached;
+    if (storedDataset !== null && (baseline === null || storedDataset.players.length > baseline.players.length)) {
+      baseline = storedDataset;
     }
-    if (rejection !== null) {
-      const message = `General dataset refresh rejected: ${rejection}`;
-      warn(message);
-      return fail('INVALID_RESPONSE', message, { retryable: true });
+
+    if (next.players.length === 0) return reject('empty', 'it has no players');
+    // A partial build is never written, with or without a baseline. There is deliberately no way to seed a first
+    // snapshot from a partial build: an operator who wants that must fix the upstream gap and rerun.
+    if (isPartialBuild(next, options)) return reject('partial', 'it is a partial build');
+    if (baseline !== null && next.players.length < baseline.players.length * MIN_REFRESH_PLAYER_RATIO) {
+      return reject('smaller', `it has ${next.players.length} players against ${baseline.players.length} currently held`);
     }
     // A store-write failure does not stop the fresher data being served; it is reported and the next sync retries.
-    await writeStored(next);
+    const writeError = await writeStored(next);
     cached = next;
-    return built;
+    if (writeError !== null) return { outcome: 'write-failed', dataset: next, detail: writeError, result: built };
+    return { outcome: 'written', dataset: next, playerCount: next.players.length, result: built };
   };
 
-  const refresh = (): Promise<DataResult<GeneralDataset>> => {
+  const refreshDetailed = (): Promise<RefreshResult> => {
     if (refreshing !== null) return refreshing;
     const running = runRefresh().finally(() => {
       refreshing = null;
@@ -423,12 +489,18 @@ export function createGeneralDatasetLoader(
     return running;
   };
 
+  const refresh = async (): Promise<DataResult<GeneralDataset>> => {
+    const detailed = await refreshDetailed();
+    return detailed.outcome === 'rejected' ? { ok: false, error: detailed.error } : detailed.result;
+  };
+
   const loadOnce = async (): Promise<DataResult<GeneralDataset>> => {
-    const stored = await readStored();
-    if (stored !== null) {
+    const read = await readStored();
+    if (read.kind === 'ok') {
+      const stored = read.dataset;
       cached = stored;
       if (!isSnapshotFresh(stored.builtAt, maxAgeMs, clock)) {
-        void refresh().catch((thrown: unknown) => warn(`Background refresh crashed: ${describeThrown(thrown)}`));
+        void refreshDetailed().catch((thrown: unknown) => warn(`Background refresh crashed: ${describeThrown(thrown)}`));
       }
       return ok(stored, stored.quality.notes, true);
     }
@@ -440,7 +512,13 @@ export function createGeneralDatasetLoader(
       });
     }
     cached = built.value;
-    await writeStored(built.value);
+    // The store read threw: it may hold a good snapshot we could not see, so serve the build but never overwrite.
+    if (read.kind === 'error') return built;
+    // `cached` already serves the data, so callers do not wait for the store. writeStored never rejects.
+    const pending: Promise<unknown> = writeStored(built.value).finally(() => {
+      pendingWrites.delete(pending);
+    });
+    pendingWrites.add(pending);
     return built;
   };
 
@@ -459,6 +537,10 @@ export function createGeneralDatasetLoader(
       cached = null;
     },
     refresh,
+    refreshDetailed,
+    flushWrites: async (): Promise<void> => {
+      while (pendingWrites.size > 0) await Promise.all([...pendingWrites]);
+    },
   };
 }
 

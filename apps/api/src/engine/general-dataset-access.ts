@@ -67,18 +67,24 @@ export const createGeneralDatasetAccess = (
   const log = options.log ?? ((message, error) => console.error(message, error ?? ''));
   const fallback = emptyGeneralDataset();
   let failedAt: number | null = null;
-  let lastLoad: GeneralDatasetLoadInfo | null = null;
+  // What the loader held when we last recorded a successful load, and where it came from. The loader's own
+  // `fromCache` flag is true for ANY in-memory hit (including one that was live-built earlier), so it cannot
+  // be used alone: 'snapshot' is claimed only when the dataset was first loaded into an empty loader and came
+  // from the store. If the loader later swaps its dataset (a refresh), the source becomes 'live build'.
+  let recorded: { dataset: GeneralDataset; source: 'snapshot' | 'live build' } | null = null;
 
   const attempt = async (): Promise<GeneralDataset | null> => {
     try {
+      const wasEmpty = loader.peek() === null;
       const result = await loader.load();
       if (result.ok) {
         failedAt = null;
-        const builtAt = Date.parse(result.value.builtAt);
-        lastLoad = {
-          source: result.fromCache ? 'snapshot' : 'live build',
-          ageMs: Number.isNaN(builtAt) ? 0 : Math.max(0, now() - builtAt),
-        };
+        if (recorded === null || recorded.dataset !== result.value) {
+          recorded = {
+            dataset: result.value,
+            source: wasEmpty && result.fromCache ? 'snapshot' : 'live build',
+          };
+        }
         return result.value;
       }
       log(`[general-dataset] load failed: ${result.error.message}`);
@@ -97,7 +103,17 @@ export const createGeneralDatasetAccess = (
       return (await attempt()) ?? fallback;
     },
     warm: async () => (await attempt()) !== null,
-    lastLoad: () => lastLoad,
+    lastLoad: () => {
+      if (recorded === null) return null;
+      const current = loader.peek();
+      if (current !== null && current !== recorded.dataset)
+        recorded = { dataset: current, source: 'live build' };
+      const builtAt = Date.parse(recorded.dataset.builtAt);
+      return {
+        source: recorded.source,
+        ageMs: Number.isNaN(builtAt) ? 0 : Math.max(0, now() - builtAt),
+      };
+    },
   };
 };
 

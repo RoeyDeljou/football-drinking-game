@@ -76,11 +76,13 @@ web service means it is lost on every sleep/restart, so it is built on a schedul
 `GeneralDatasetSnapshot` table (one row, id `general`):
 
 - **GitHub Actions** (`.github/workflows/sync-dataset.yml`) runs `npm run sync:dataset` every 6 hours (and on demand),
-  builds the dataset live and upserts the row. It refuses to overwrite a good snapshot with a clearly worse build
-  (fewer than 80% of the stored players, partial coverage, or empty) and exits 0 in that case; a failed build exits 1
-  so the workflow goes red.
+  builds the dataset live and upserts the row. It refuses to overwrite a good snapshot with a clearly worse build. Exit codes: 0 when written, or when rejected
+  as "smaller" (under 80% of the stored players) while a snapshot exists (a no-op is fine); 1 for everything else
+  (partial coverage, empty, failed build, unreadable baseline, failed store write, or "smaller" with nothing stored) so
+  the workflow goes red and a broken upstream is noticed. It checks the database is readable BEFORE the live build, so
+  a bad `DATABASE_URL` fails in seconds with exit 1 rather than after minutes.
 - **The server** loads the stored snapshot at startup (the `[warmup]` log line reports `source: snapshot` and the
-  data age, in milliseconds). If the snapshot is older than 12h it is still served immediately and refreshed once in
+  data age, e.g. 0m or 13.0h). If the snapshot is older than 12h it is still served immediately and refreshed once in
   the background. With no row (or a corrupt one) it falls back to the old live build and writes the result back.
 
 **One-time setup:** add a repository secret named `DATABASE_URL` (GitHub repo -> Settings -> Secrets and variables ->
@@ -95,6 +97,14 @@ internal URL wired by `render.yaml`; the Prisma datasource just reads `DATABASE_
 
 **Free-Postgres expiry:** the 30-day deletion above also erases the snapshot. After recreating the database, update the
 `DATABASE_URL` secret and run the workflow once; until then the server falls back to the slow live build.
+The snapshot table only exists once a Render redeploy has run `prisma migrate deploy` against the new database; until
+then the workflow exits 1 on the missing table (redeploy the API first, then run the workflow).
+
+**Scheduled workflows can be disabled:** GitHub disables scheduled workflows after 60 days without repository activity.
+If the snapshot goes stale, re-enable the workflow in the Actions tab or push a commit.
+
+**Duration:** a live build takes about 3 minutes on Render-class networking (171-185s observed), well inside the
+workflow's 15-minute timeout.
 
 **Local dev note:** the dataset payload contains non-Latin-1 names, so the local Postgres must use a UTF8 database
 (the docker-compose image does). A Windows-installed Postgres defaulting to WIN1252 rejects the write; the server logs

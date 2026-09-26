@@ -37,15 +37,12 @@ const main = async (): Promise<number> => {
   const prisma = createPrismaClient(withTlsForRender(databaseUrl));
   try {
     const store = createPrismaGeneralDatasetStore(prisma);
-    const warnings: string[] = [];
     const loader = createGeneralDatasetLoader(createFootballDataFromEnv(process.env), {
       store,
-      onWarning: (message) => {
-        warnings.push(message);
-        console.warn(`[dataset] ${message}`);
-      },
+      onWarning: (message) => console.warn(`[dataset] ${message}`),
     });
-    const outcome = await runDatasetSync({ loader, store, warnings });
+    const outcome = await runDatasetSync({ loader, store });
+    await loader.flushWrites();
     return outcome.exitCode;
   } finally {
     await prisma.$disconnect();

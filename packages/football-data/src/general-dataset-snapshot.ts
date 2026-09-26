@@ -18,6 +18,9 @@ import {
   asSeasonId,
   asTeamId,
   type Competition,
+  type CompetitionCode,
+  type PlayerPosition,
+  type SeasonLeaderboardMetric,
   type DataQuality,
   type Player,
   type PlayerProfile,
@@ -25,7 +28,7 @@ import {
   type SeasonLeaderboard,
   type Team,
 } from './domain.js';
-import type { GuessableStatFact } from './guessable-stats.js';
+import type { GuessableStatFact, GuessableStatMetric, GuessableStatUnit } from './guessable-stats.js';
 import type { DataResult } from './result.js';
 import { fail, ok } from './result.js';
 
@@ -72,6 +75,54 @@ export function serializeGeneralDataset(dataset: GeneralDataset): GeneralDataset
   };
 }
 
+/**
+ * Enum members for the schema. `exhaustive<Union>()` makes each list fail typecheck when a member of the domain
+ * union is missing, so adding a union member cannot silently make every stored snapshot unreadable.
+ */
+function exhaustive<Union extends string>() {
+  return <const List extends readonly [Union, ...Union[]]>(
+    list: List & ([Union] extends [List[number]] ? unknown : { readonly missingMembers: Exclude<Union, List[number]> }),
+  ): List => list;
+}
+
+const COMPETITION_CODES = exhaustive<CompetitionCode>()([
+  'PREMIER_LEAGUE',
+  'LA_LIGA',
+  'SERIE_A',
+  'BUNDESLIGA',
+  'LIGUE_1',
+  'CHAMPIONS_LEAGUE',
+]);
+const PLAYER_POSITIONS = exhaustive<PlayerPosition>()(['GK', 'DF', 'MF', 'FW', 'UNKNOWN']);
+const LEADERBOARD_METRICS = exhaustive<SeasonLeaderboardMetric>()([
+  'GOALS',
+  'ASSISTS',
+  'APPEARANCES',
+  'MINUTES_PLAYED',
+  'YELLOW_CARDS',
+  'RATING',
+]);
+const GUESSABLE_METRICS = exhaustive<GuessableStatMetric>()([
+  'GOALS',
+  'ASSISTS',
+  'APPEARANCES',
+  'MINUTES_PLAYED',
+  'YELLOW_CARDS',
+  'AGE',
+  'HEIGHT_CM',
+  'SHIRT_NUMBER',
+]);
+const GUESSABLE_UNITS = exhaustive<GuessableStatUnit>()([
+  'goals',
+  'assists',
+  'appearances',
+  'minutes',
+  'cards',
+  'years',
+  'cm',
+  'number',
+]);
+
 const competitionId = z.string().transform(asCompetitionId);
 const seasonId = z.string().transform(asSeasonId);
 const teamId = z.string().transform(asTeamId);
@@ -81,7 +132,7 @@ const nullableNumber = z.number().nullable();
 
 const competitionSchema = z.object({
   id: competitionId,
-  code: z.enum(['PREMIER_LEAGUE', 'LA_LIGA', 'SERIE_A', 'BUNDESLIGA', 'LIGUE_1', 'CHAMPIONS_LEAGUE']),
+  code: z.enum(COMPETITION_CODES),
   name: z.string(),
   country: z.string(),
   logoUrl: nullableString,
@@ -104,7 +155,7 @@ const playerSchema = z.object({
   dateOfBirth: nullableString,
   age: nullableNumber,
   heightCm: nullableNumber,
-  position: z.enum(['GK', 'DF', 'MF', 'FW', 'UNKNOWN']),
+  position: z.enum(PLAYER_POSITIONS),
   shirtNumber: nullableNumber,
   teamId,
   photoUrl: nullableString,
@@ -143,7 +194,7 @@ const profileSchema = z.object({ player: playerSchema, career: z.array(careerEnt
 const leaderboardSchema = z.object({
   competitionId,
   season: seasonId,
-  metric: z.enum(['GOALS', 'ASSISTS', 'APPEARANCES', 'MINUTES_PLAYED', 'YELLOW_CARDS', 'RATING']),
+  metric: z.enum(LEADERBOARD_METRICS),
   entries: z.array(
     z.object({
       rank: z.number(),
@@ -161,18 +212,9 @@ const guessableStatSchema = z.object({
   playerName: z.string(),
   teamId,
   teamName: z.string(),
-  metric: z.enum([
-    'GOALS',
-    'ASSISTS',
-    'APPEARANCES',
-    'MINUTES_PLAYED',
-    'YELLOW_CARDS',
-    'AGE',
-    'HEIGHT_CM',
-    'SHIRT_NUMBER',
-  ]),
+  metric: z.enum(GUESSABLE_METRICS),
   value: z.number(),
-  unit: z.enum(['goals', 'assists', 'appearances', 'minutes', 'cards', 'years', 'cm', 'number']),
+  unit: z.enum(GUESSABLE_UNITS),
   season: seasonId.nullable(),
   competitionId: competitionId.nullable(),
 });

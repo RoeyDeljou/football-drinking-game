@@ -1,7 +1,7 @@
 # Scheduled sync of the general-games dataset into Postgres.
 #
 # Why this runs on GitHub Actions and not inside the API: the Render free web service sleeps after
-# 15 minutes idle and its in-memory dataset (built live from ESPN + Wikidata, ~36s) is lost every
+# 15 minutes idle and its in-memory dataset (built live from ESPN + Wikidata, ~3 min on Render) is lost every
 # time. This job builds the dataset on a schedule, independent of whether the web service is awake,
 # and stores it in the `GeneralDatasetSnapshot` table. The server loads that snapshot at startup
 # (milliseconds) and only refreshes in the background when it is stale. The reference app uses the

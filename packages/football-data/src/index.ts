@@ -127,8 +127,11 @@ export type {
   GeneralDataset,
   GeneralDatasetLoader,
   GeneralDatasetLoaderOptions,
+  FlushableGeneralDatasetLoader,
   GeneralDatasetOptions,
   RefreshableGeneralDatasetLoader,
+  RefreshRejectionReason,
+  RefreshResult,
 } from './general-dataset.js';
 export {
   buildGeneralDataset,
@@ -137,6 +140,7 @@ export {
   DEFAULT_LEADERBOARD_METRICS,
   DEFAULT_SNAPSHOT_MAX_AGE_MS,
   MIN_REFRESH_PLAYER_RATIO,
+  REFRESH_REJECTED_PREFIX,
 } from './general-dataset.js';
 
 // ---- General dataset snapshot (persisted form, store port) ---------------------

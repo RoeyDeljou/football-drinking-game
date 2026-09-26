@@ -40,18 +40,22 @@ export interface BuildAppOptions {
   readonly footballData?: FootballDataProvider;
 }
 
+const FLUSH_WRITES_TIMEOUT_MS = 3000;
+
 export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp> => {
   const env = options.env ?? loadEnv();
   const prisma = options.prisma ?? createPrismaClient(env.DATABASE_URL);
 
   const footballData = options.footballData ?? createFootballDataFromEnv(process.env);
-  const generalDatasetAccess = createGeneralDatasetAccess(
+  const generalDatasetLoader =
     options.generalDatasetLoader ??
-      createGeneralDatasetLoader(footballData, {
-        // Stored snapshot first (instant start); a stale one is refreshed in the background.
-        store: createPrismaGeneralDatasetStore(prisma),
-        onWarning: (message) => console.warn(`[dataset] ${message}`),
-      }),
+    createGeneralDatasetLoader(footballData, {
+      // Stored snapshot first (instant start); a stale one is refreshed in the background.
+      store: createPrismaGeneralDatasetStore(prisma),
+      onWarning: (message) => console.warn(`[dataset] ${message}`),
+    });
+  const generalDatasetAccess = createGeneralDatasetAccess(
+    generalDatasetLoader,
     options.generalDatasetCooldownMs === undefined ? {} : { cooldownMs: options.generalDatasetCooldownMs },
   );
 
@@ -98,6 +102,16 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
       io.disconnectSockets(true);
       await new Promise<void>((resolve) => io.close(() => resolve()));
       await app.close();
+      // Let an in-flight fire-and-forget snapshot write settle before Prisma goes away, but never hang shutdown on it.
+      if ('flushWrites' in generalDatasetLoader && typeof generalDatasetLoader.flushWrites === 'function') {
+        const flush = (generalDatasetLoader.flushWrites as () => Promise<void>)().catch(() => undefined);
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const timeout = new Promise<void>((resolve) => {
+          timer = setTimeout(resolve, FLUSH_WRITES_TIMEOUT_MS);
+        });
+        await Promise.race([flush, timeout]);
+        clearTimeout(timer);
+      }
       await prisma.$disconnect();
     },
   };

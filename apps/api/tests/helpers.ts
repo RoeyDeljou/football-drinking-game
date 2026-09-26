@@ -82,6 +82,10 @@ export const startTestServer = async (
     const seedClient = createPrismaClient(databaseUrl);
     try {
       await prepareDatabase(seedClient);
+    } catch (error) {
+      // Do not leak the migrated schema when seeding fails: nothing else will ever drop it.
+      await seedClient.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`).catch(() => undefined);
+      throw error;
     } finally {
       await seedClient.$disconnect();
     }
