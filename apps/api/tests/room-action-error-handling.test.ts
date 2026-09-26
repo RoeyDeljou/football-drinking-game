@@ -75,6 +75,7 @@ describe('room:action error handling', () => {
     // The failing dispatch must not vanish into silence: the client gets a room:error for it.
     const result = await errorOrState;
     expect(result.kind).toBe('error');
+    if (result.kind === 'error') expect(result.error.code).toBe('INTERNAL_ERROR');
 
     // The room is not wedged afterwards — a retried action succeeds normally.
     const retried = host.state.waitFor((state) => state.selection?.moduleId === 'G6', 5_000);

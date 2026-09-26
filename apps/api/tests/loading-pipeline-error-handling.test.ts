@@ -80,7 +80,34 @@ describe('loading pipeline error handling', () => {
       5_000,
     );
     expect(failedState.phase).toBe('loading');
+    // (b) failedReason is set...
     expect(failedState.loading?.failedReason).toBeTruthy();
+    // (a) ...and, crucially, at least one projected step is 'failed': the web LoadingScreen shows
+    // the retry button / hides the spinner from step statuses (`steps.some(s => s.status ===
+    // 'failed')`), not from failedReason, so without this the host has no way out.
+    const failedSteps = await host.state.waitFor(
+      (state) => state.loading?.steps.some((step) => step.status === 'failed') === true,
+      5_000,
+    );
+    expect(failedSteps.loading?.steps.some((step) => step.status === 'failed')).toBe(true);
+
+    // (c) The host's retry (the same START_LOADING the retry button sends) recovers: every step
+    // returns to 'done', the failure clears, and the room continues into a session.
+    host.socket.emit('room:action', {
+      type: 'START_LOADING',
+      actorId: hostPlayerId,
+      stepKeys: ['general'],
+    });
+    const recovered = await host.state.waitFor(
+      (state) =>
+        state.loading?.failedReason === null && state.loading.steps.every((step) => step.status === 'done'),
+      5_000,
+    );
+    expect(recovered.loading?.steps.every((step) => step.status === 'done')).toBe(true);
+
+    host.socket.emit('room:action', { type: 'START_SESSION', actorId: hostPlayerId });
+    const playing = await host.state.waitFor((state) => state.phase === 'playing', 5_000);
+    expect(playing.phase).toBe('playing');
 
     host.socket.close();
   }, 30_000);

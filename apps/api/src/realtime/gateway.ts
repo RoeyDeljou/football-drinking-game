@@ -84,9 +84,12 @@ const guarded =
  * action's response) — so a throw inside it (a football-data fetch, `ctx.generalDataset()`, ...)
  * had nowhere to land: the host was stuck on the loading screen forever with no `room:state` update
  * and no `room:error` (reproduced in `tests/loading-pipeline-error-handling.test.ts`). On failure,
- * this dispatches the same `LOADING_FAILED` the pipeline already uses for an ordinary "could not
- * load the fixture" outcome, so the host sees it through the existing loading-retry UX rather than a
- * bare error toast; only if *that* dispatch also fails does it fall back to `room:error`.
+ * this first marks every not-yet-done requested step `failed` (the web LoadingScreen decides
+ * whether to show the retry button / hide the spinner from the *step statuses*, not from
+ * `failedReason`), then dispatches the same `LOADING_FAILED` the pipeline already uses for an
+ * ordinary "could not load the fixture" outcome — all sequentially, through the per-room queue — so
+ * the host sees the existing loading-retry UX. Only if that recovery itself fails does it fall back
+ * to a bare `room:error`.
  */
 const runLoadingPipelineSafely = async (
   ctx: AppContext,
@@ -99,6 +102,17 @@ const runLoadingPipelineSafely = async (
   } catch (error) {
     console.error(`[gateway] loading pipeline failed for room=${roomId}:`, error);
     try {
+      const current = await ctx.roomStore.load(roomId);
+      const stepsToFail = (current?.state.loading?.steps ?? []).filter((step) => step.status !== 'done');
+      for (const step of stepsToFail) {
+        const progress = await dispatchAction(ctx, roomId, {
+          type: 'LOADING_PROGRESS',
+          stepKey: step.key,
+          status: 'failed',
+          detail: null,
+        });
+        if (progress !== null && progress.changed) onBroadcast(progress.record);
+      }
       const outcome = await dispatchAction(ctx, roomId, {
         type: 'LOADING_FAILED',
         reason: 'Loading failed unexpectedly. Please try again.',
@@ -270,7 +284,9 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
       return;
     }
 
-    void socket.join(identity.roomId);
+    void Promise.resolve(socket.join(identity.roomId)).catch((error: unknown) => {
+      console.error(`[gateway] socket.join failed for room=${identity.roomId}:`, error);
+    });
     trackSocket(identity.roomId, identity.playerId, socket.id);
 
     guarded('post-connect room:joined', async () => {
@@ -382,7 +398,9 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
           socket.emit('room:error', { code: 'INTERNAL_ERROR', detail: null });
         } finally {
           untrackSocket(current.roomId, current.playerId, socket.id);
-          void socket.leave(current.roomId);
+          void Promise.resolve(socket.leave(current.roomId)).catch((error: unknown) => {
+            console.error(`[gateway] socket.leave failed for room=${current.roomId}:`, error);
+          });
         }
       }),
     );
