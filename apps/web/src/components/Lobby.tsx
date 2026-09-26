@@ -18,7 +18,7 @@ export const Lobby = ({
   readonly room: ProjectedRoom;
   readonly category: 'matchday' | 'general' | null;
   readonly isHost: boolean;
-  readonly onSelectGame: (moduleId: string) => void;
+  readonly onSelectGame: (moduleId: string) => boolean;
   readonly onStartLoading: () => void;
 }): React.JSX.Element => {
   const [joinUrl, setJoinUrl] = useState('');

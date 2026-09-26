@@ -5,7 +5,8 @@
  * Matchday rooms are prefetched once (see `runMatchdayPrefetch`, driven from the loading screen)
  * and the resulting bundle is cached per room (`matchday-cache.ts`) — every later dispatch reads
  * the cache instead of hitting the network again. General rooms share one process-wide dataset
- * built at server start (`AppContext.generalDataset`).
+ * built lazily on first use, or earlier by the boot warm-up (`AppContext.generalDataset`,
+ * see general-dataset-access.ts).
  */
 
 import type { GameCategory, RoundDataContext } from '@fdg/game-core';

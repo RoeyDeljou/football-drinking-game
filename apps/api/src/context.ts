@@ -15,7 +15,9 @@ export interface AppContext {
   readonly identity: IdentityProvider;
   readonly roomStore: RoomStore;
   readonly footballData: FootballDataProvider;
-  /** Built once at startup and cached; general games draw from this. */
+  /** The general-games dataset: built lazily by the loader (or earlier by the boot warm-up), cached
+   * for the process lifetime, and an empty dataset during a failure cool-down. See
+   * engine/general-dataset-access.ts. */
   readonly generalDataset: () => Promise<GeneralDataset>;
   readonly roomTokenSecret: Uint8Array;
 }

@@ -4,8 +4,9 @@ import { fileURLToPath } from 'node:url';
 import type { AddressInfo } from 'node:net';
 import { io as ioClient } from 'socket.io-client';
 import type { Socket as ClientSocket } from 'socket.io-client';
-import type { BuiltApp } from '../src/app.js';
-import { buildApp } from '../src/app.js';
+import type { BuildAppOptions } from '../src/app.js';
+import type { BootedApp, BootOptions } from '../src/boot.js';
+import { bootServer } from '../src/boot.js';
 import { loadEnv } from '../src/env.js';
 
 const apiDir = fileURLToPath(new URL('..', import.meta.url));
@@ -14,7 +15,7 @@ process.on('unhandledRejection', (reason) => {
   console.error('UNHANDLED REJECTION', reason);
 });
 
-export interface TestServer extends BuiltApp {
+export interface TestServer extends BootedApp {
   readonly baseUrl: string;
   readonly socketUrl: string;
   stop(): Promise<void>;
@@ -40,7 +41,9 @@ const withSchema = (url: string, schema: string): string => {
  * never the fixture-provider network. Postgres, not SQLite, so the suite exercises exactly what
  * production runs (see apps/api/prisma/schema.prisma).
  */
-export const startTestServer = async (): Promise<TestServer> => {
+export const startTestServer = async (
+  options: Partial<Omit<BootOptions, 'port' | 'host'>> & BuildAppOptions = {},
+): Promise<TestServer> => {
   process.env.FOOTBALL_DATA_PROVIDER = 'fixture';
 
   const schema = `test_${randomBytes(8).toString('hex')}`;
@@ -68,8 +71,7 @@ export const startTestServer = async (): Promise<TestServer> => {
     FOOTBALL_DATA_PROVIDER: 'fixture',
   });
 
-  const built = await buildApp({ env });
-  await built.app.listen({ port: 0, host: '127.0.0.1' });
+  const built = await bootServer(env, { ...options, port: 0, host: '127.0.0.1' });
   const address = built.app.server.address() as AddressInfo;
   const baseUrl = `http://127.0.0.1:${address.port}`;
 
@@ -86,10 +88,7 @@ export const startTestServer = async (): Promise<TestServer> => {
   };
 };
 
-export const connectSocket = (
-  server: TestServer,
-  auth: Record<string, unknown>,
-): Promise<ClientSocket> =>
+export const connectSocket = (server: TestServer, auth: Record<string, unknown>): Promise<ClientSocket> =>
   new Promise((resolve, reject) => {
     const socket = ioClient(server.socketUrl, { auth, transports: ['websocket'], forceNew: true });
     socket.once('connect', () => resolve(socket));

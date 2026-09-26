@@ -18,7 +18,7 @@ export const IntermissionScreen = ({
   readonly category: 'matchday' | 'general' | null;
   readonly isHost: boolean;
   readonly onNextRound: () => void;
-  readonly onSelectGame: (moduleId: string) => void;
+  readonly onSelectGame: (moduleId: string) => boolean;
   /** Starts a brand-new session from `intermission` (`SELECT_GAME` already dispatched, then
    * `START_SESSION` — never `START_LOADING`, which the engine only accepts from `'lobby'`). */
   readonly onPlayAgain: () => void;

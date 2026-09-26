@@ -1,4 +1,4 @@
-import { buildApp } from './app.js';
+import { bootServer } from './boot.js';
 import { loadEnv } from './env.js';
 
 // Defense-in-depth, not the primary fix: every real fire-and-forget call site in this codebase
@@ -14,8 +14,8 @@ process.on('unhandledRejection', (reason) => {
 
 const main = async (): Promise<void> => {
   const env = loadEnv();
-  const { app } = await buildApp({ env });
-  await app.listen({ port: env.PORT, host: env.HOST });
+  // Listens first, then warms the general dataset in the background (see boot.ts).
+  await bootServer(env, { port: env.PORT, host: env.HOST });
 };
 
 main().catch((error: unknown) => {

@@ -49,9 +49,10 @@ export default function RoomPage(): React.JSX.Element {
 
   const actorId = self?.playerId;
 
-  const selectGame = (moduleId: string): void => {
-    if (actorId === undefined) return;
+  const selectGame = (moduleId: string): boolean => {
+    if (actorId === undefined || status !== 'connected') return false;
     send({ type: 'SELECT_GAME', actorId, moduleId, config: null });
+    return true;
   };
 
   const startLoading = (): void => {

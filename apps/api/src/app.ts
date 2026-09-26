@@ -2,15 +2,16 @@ import cors from '@fastify/cors';
 import {
   createFootballDataProvider,
   createGeneralDatasetLoader,
-  EMPTY_DATA_QUALITY,
   readFootballDataConfigFromEnv,
 } from '@fdg/football-data';
-import type { GeneralDataset } from '@fdg/football-data';
+import type { GeneralDatasetLoader } from '@fdg/football-data';
 import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import { Server as SocketIoServer } from 'socket.io';
 import { registerAuthRoutes } from './auth/routes.js';
 import type { AppContext } from './context.js';
+import type { GeneralDatasetAccess } from './engine/general-dataset-access.js';
+import { createGeneralDatasetAccess } from './engine/general-dataset-access.js';
 import { createPrismaClient, type PrismaClient } from './db/client.js';
 import type { AppEnv } from './env.js';
 import { loadEnv } from './env.js';
@@ -26,29 +27,17 @@ export interface BuiltApp {
   readonly io: SocketIoServer;
   readonly ctx: AppContext;
   readonly gateway: RealtimeGateway;
+  /** Real-load / warm-up access to the general dataset (see engine/general-dataset-access.ts). */
+  readonly generalDatasetAccess: GeneralDatasetAccess;
   close(): Promise<void>;
 }
-
-const emptyGeneralDataset = (): GeneralDataset => ({
-  builtAt: new Date(0).toISOString(),
-  competitions: [],
-  teams: [],
-  players: [],
-  seasonStats: [],
-  profiles: [],
-  leaderboards: [],
-  guessableStats: [],
-  quality: EMPTY_DATA_QUALITY,
-  gameAvailability: [],
-  playersById: new Map(),
-  statsByPlayer: new Map(),
-  profilesByPlayer: new Map(),
-  guessableStatsByPlayer: new Map(),
-});
 
 export interface BuildAppOptions {
   readonly env?: AppEnv;
   readonly prisma?: PrismaClient;
+  /** Test seam: a slow/failing/fixture-backed loader instead of the provider-backed one. */
+  readonly generalDatasetLoader?: GeneralDatasetLoader;
+  readonly generalDatasetCooldownMs?: number;
 }
 
 export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp> => {
@@ -56,8 +45,10 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
   const prisma = options.prisma ?? createPrismaClient(env.DATABASE_URL);
 
   const footballData = createFootballDataProvider(readFootballDataConfigFromEnv(process.env));
-  const generalDatasetLoader = createGeneralDatasetLoader(footballData);
-  let generalDatasetFallback: GeneralDataset | null = null;
+  const generalDatasetAccess = createGeneralDatasetAccess(
+    options.generalDatasetLoader ?? createGeneralDatasetLoader(footballData),
+    options.generalDatasetCooldownMs === undefined ? {} : { cooldownMs: options.generalDatasetCooldownMs },
+  );
 
   const ctx: AppContext = {
     env,
@@ -71,12 +62,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
     }),
     roomStore: new InMemoryRoomStore(),
     footballData,
-    generalDataset: async () => {
-      const result = await generalDatasetLoader.load();
-      if (result.ok) return result.value;
-      generalDatasetFallback ??= emptyGeneralDataset();
-      return generalDatasetFallback;
-    },
+    generalDataset: () => generalDatasetAccess.get(),
     roomTokenSecret: new TextEncoder().encode(env.ROOM_TOKEN_SECRET),
   };
 
@@ -101,6 +87,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
     io,
     ctx,
     gateway,
+    generalDatasetAccess,
     close: async () => {
       gateway.close();
       io.disconnectSockets(true);
