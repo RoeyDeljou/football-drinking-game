@@ -56,6 +56,17 @@ export type FixtureStatus =
   | 'POSTPONED'
   | 'CANCELLED';
 
+/**
+ * The statuses that mean "this fixture is being played right now" — the same set
+ * `apps/api/src/competitions/routes.ts` filters a fixture list down to for its "live" view. Kept here as the single
+ * source of truth so `listLiveFixtures` (and any other consumer) never re-spells the list.
+ */
+export const LIVE_FIXTURE_STATUSES: readonly FixtureStatus[] = ['LIVE', 'HALF_TIME', 'EXTRA_TIME', 'PENALTIES'];
+
+export function isLiveFixtureStatus(status: FixtureStatus): boolean {
+  return LIVE_FIXTURE_STATUSES.includes(status);
+}
+
 export interface Score {
   readonly home: number;
   readonly away: number;

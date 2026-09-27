@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { fetchRoomByPin } from '@/lib/api';
 import { getValidAuthSession } from '@/lib/authSession';
+import { markUpcomingNavigationAsReplace } from '@/lib/backNavigation';
 import { shouldAutoJoinRedirect } from '@/lib/joinGuard';
 import { useRoom } from '@/lib/room-context';
 import { Banner, BigButton, Card } from './ui';
@@ -30,7 +31,12 @@ export const JoinForm = ({ initialPin = '' }: { readonly initialPin?: string }):
 
   useEffect(() => {
     if (shouldAutoJoinRedirect({ targetPin: joinTargetPin, selfPin: self?.pin ?? null, status })) {
-      router.push(`/room/${self?.roomId}`);
+      // This is a redirect the app is performing once the join completes, not a navigation the user
+      // chose to make — it must never be recorded as in-app history (see NavigationTracker /
+      // backNavigation.ts), or a browser Back from /room/<id> would bounce back to this join screen
+      // and could trap forward history. Matches how the room page's own redirect effect does this.
+      markUpcomingNavigationAsReplace();
+      router.replace(`/room/${self?.roomId}`);
     }
   }, [self, status, joinTargetPin, router]);
 

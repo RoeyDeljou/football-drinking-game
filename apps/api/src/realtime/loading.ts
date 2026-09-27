@@ -13,7 +13,7 @@ import type { PrefetchStepStatus } from '@fdg/football-data';
 import type { LoadingStepStatus, RoomId } from '@fdg/game-core';
 import { activeSession } from '@fdg/game-core';
 import type { AppContext } from '../context.js';
-import { runMatchdayPrefetch } from '../engine/data-context.js';
+import { runGamedayPrefetch, runMatchdayPrefetch } from '../engine/data-context.js';
 import { registry } from '../engine/deps.js';
 import { dispatchAction } from '../engine/dispatch.js';
 import type { RoomRecord } from '../rooms/store.js';
@@ -73,6 +73,25 @@ export const runLoadingPipeline = async (
   };
 
   if (category === 'matchday') {
+    const gamedayCompetitionId = record.meta.gamedayCompetitionId ?? null;
+
+    if (gamedayCompetitionId !== null) {
+      // Same four step keys (`fixture`/`lineups`/`squads`/`stats`, `MATCHDAY_STEP_KEYS` in
+      // apps/web) as the single-fixture flow — `runGamedayPrefetch` aggregates progress across
+      // every live fixture's own pipeline into that same shape, so the loading screen renders
+      // identically regardless of which flow is actually running underneath.
+      const bundle = await runGamedayPrefetch(ctx, roomId, gamedayCompetitionId, (steps) => {
+        for (const step of steps) {
+          void dispatchProgress(step.id, toLoadingStatus(step.status), step.notes[0] ?? null);
+        }
+      });
+      await lastDispatch;
+      if (bundle === null || bundle.fixtures.length === 0) {
+        await dispatchFailure(ctx, roomId, 'Could not load any live fixture for this competition.', onBroadcast);
+      }
+      return;
+    }
+
     if (record.meta.fixtureId === null) {
       await dispatchFailure(ctx, roomId, 'No fixture selected for this matchday room.', onBroadcast);
       return;

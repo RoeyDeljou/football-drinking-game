@@ -4,12 +4,13 @@ import { asPlayerId, asRoomId, createRoom, MULBERRY32 } from '@fdg/game-core';
 import type { CreateRoomInput, RoomState } from '@fdg/game-core';
 import { optionalAuth } from '../auth/plugin.js';
 import type { AppContext } from '../context.js';
-import { asFixtureId } from '@fdg/football-data';
-import { runMatchdayPrefetch } from '../engine/data-context.js';
+import type { CompetitionId } from '@fdg/football-data';
+import { asCompetitionId, asFixtureId, competitionConfigById } from '@fdg/football-data';
+import { runGamedayPrefetch, runMatchdayPrefetch } from '../engine/data-context.js';
 import { signRoomToken } from '../realtime/room-token.js';
 import { generatePin } from './pin.js';
 import { createRoomBodySchema, pinParamsSchema, roomIdParamsSchema } from './schemas.js';
-import type { RoomRecord, RoomStore } from './store.js';
+import type { RoomMeta, RoomRecord, RoomStore } from './store.js';
 
 /**
  * Public room summary — deliberately excludes `hostPlayerId`. A `PlayerId` is a bare credential in
@@ -20,14 +21,16 @@ import type { RoomRecord, RoomStore } from './store.js';
  * every other player learns who the host is only through `isHost` on the per-recipient socket
  * projection (`ProjectedPlayer.isHost`), never a raw id.
  */
-const summarize = (state: RoomState, fixtureId: string | null) => ({
+const summarize = (state: RoomState, meta: RoomMeta) => ({
   roomId: state.id,
   pin: state.pin,
   phase: state.phase,
   playerCount: state.players.filter((player) => player.leftAt === null).length,
   hostNickname: state.players.find((player) => player.id === state.hostPlayerId)?.nickname ?? null,
   category: state.selection === null ? null : state.selection.moduleId,
-  fixtureId,
+  fixtureId: meta.fixtureId,
+  /** Set only for a gameday room (see `RoomMeta`); `null` otherwise. */
+  gamedayCompetitionId: meta.gamedayCompetitionId ?? null,
 });
 
 const generateUniquePin = async (store: RoomStore): Promise<string> => {
@@ -53,6 +56,50 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
         .send({ error: { code: 'NICKNAME_REQUIRED', message: 'hostNickname is required for a guest host.' } });
     }
 
+    // Gameday rooms are validated up front, before allocating a PIN or writing any row: a room with
+    // nothing to rotate through is never worth creating, and this mirrors the "no live games" case the
+    // web picker already handles for the single-fixture flow (`GET /competitions/:id/fixtures`).
+    let gamedayCompetitionId: CompetitionId | null = null;
+    if (parsed.data.category === 'matchday' && parsed.data.gameday === true) {
+      const rawCompetitionId = parsed.data.competitionId;
+      if (rawCompetitionId === undefined) {
+        return reply
+          .code(400)
+          .send({ error: { code: 'INVALID_BODY', message: 'competitionId is required for a gameday room.' } });
+      }
+      const config = competitionConfigById(rawCompetitionId);
+      if (config === null) {
+        return reply.code(400).send({
+          error: { code: 'UNKNOWN_COMPETITION', message: `${rawCompetitionId} is not a supported competition.` },
+        });
+      }
+      const competitionId = asCompetitionId(config.id);
+      let liveResult: Awaited<ReturnType<typeof ctx.footballData.listLiveFixtures>>;
+      try {
+        liveResult = await ctx.footballData.listLiveFixtures(competitionId);
+      } catch (error) {
+        console.error(`[rooms] provider threw checking live fixtures for ${competitionId}:`, error);
+        return reply.code(503).send({
+          error: { code: 'DATA_UNAVAILABLE', message: `Could not check live fixtures for ${config.name}.` },
+        });
+      }
+      if (!liveResult.ok) {
+        console.error(`[rooms] provider failed checking live fixtures for ${competitionId}:`, liveResult.error);
+        return reply.code(503).send({
+          error: { code: 'DATA_UNAVAILABLE', message: `Could not check live fixtures for ${config.name}.` },
+        });
+      }
+      if (liveResult.value.length === 0) {
+        return reply.code(400).send({
+          error: {
+            code: 'NO_LIVE_FIXTURES',
+            message: `No live fixtures right now in ${config.name} — nothing to rotate through.`,
+          },
+        });
+      }
+      gamedayCompetitionId = competitionId;
+    }
+
     const roomId = asRoomId(randomUUID());
     const hostPlayerId = asPlayerId(randomUUID());
     const pin = await generateUniquePin(ctx.roomStore);
@@ -70,8 +117,13 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
     };
     const state = createRoom(createInput);
 
-    const fixtureId = parsed.data.category === 'matchday' ? (parsed.data.fixtureId ?? null) : null;
-    const record: RoomRecord = { state, meta: { fixtureId: fixtureId === null ? null : asFixtureId(fixtureId) } };
+    const fixtureId =
+      parsed.data.category === 'matchday' && gamedayCompetitionId === null ? (parsed.data.fixtureId ?? null) : null;
+    const meta: RoomMeta = {
+      fixtureId: fixtureId === null ? null : asFixtureId(fixtureId),
+      gamedayCompetitionId,
+    };
+    const record: RoomRecord = { state, meta };
     await ctx.roomStore.save(record);
 
     await ctx.prisma.room.create({
@@ -92,10 +144,12 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
       },
     });
 
-    // Best-effort warm the matchday bundle so the game picker can grey out unplayable games
+    // Best-effort warm the matchday/gameday bundle so the game picker can grey out unplayable games
     // immediately; failure here is not fatal — SELECT_GAME will simply see no quality yet, and the
     // loading screen re-runs the prefetch (with progress) before the session starts regardless.
-    if (record.meta.fixtureId !== null) {
+    if (record.meta.gamedayCompetitionId !== null && record.meta.gamedayCompetitionId !== undefined) {
+      await runGamedayPrefetch(ctx, roomId, record.meta.gamedayCompetitionId).catch(() => null);
+    } else if (record.meta.fixtureId !== null) {
       await runMatchdayPrefetch(ctx, roomId, record.meta.fixtureId).catch(() => null);
     }
 
@@ -109,7 +163,7 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
       pin,
       hostPlayerId,
       roomToken,
-      room: summarize(state, record.meta.fixtureId),
+      room: summarize(state, record.meta),
     });
   });
 
@@ -122,7 +176,7 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
     if (record === null) {
       return reply.code(404).send({ error: { code: 'ROOM_NOT_FOUND', message: 'No room with that PIN.' } });
     }
-    return reply.send(summarize(record.state, record.meta.fixtureId));
+    return reply.send(summarize(record.state, record.meta));
   });
 
   app.get('/rooms/:roomId', async (request, reply) => {
@@ -134,6 +188,6 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
     if (record === null) {
       return reply.code(404).send({ error: { code: 'ROOM_NOT_FOUND', message: 'No such room.' } });
     }
-    return reply.send(summarize(record.state, record.meta.fixtureId));
+    return reply.send(summarize(record.state, record.meta));
   });
 };

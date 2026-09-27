@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { RoomProvider } from '@/lib/room-context';
+import { NavigationTracker } from '@/components/NavigationTracker';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className="min-h-dvh bg-ink-950 font-sans antialiased">
+        <NavigationTracker />
         <RoomProvider>{children}</RoomProvider>
       </body>
     </html>

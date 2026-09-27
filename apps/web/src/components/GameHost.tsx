@@ -1,5 +1,5 @@
-import type { ProjectedRoom } from '@fdg/game-core';
 import { GAME_SCREENS } from '@/games/registry';
+import type { ClientRoom } from '@/lib/currentFixture';
 import { useNow } from '@/lib/useNow';
 import { Banner, BigButton } from './ui';
 
@@ -10,7 +10,7 @@ export const GameHost = ({
   onAdvance,
   onRevealNow,
 }: {
-  readonly room: ProjectedRoom;
+  readonly room: ClientRoom;
   readonly isHost: boolean;
   readonly onSubmit: (payload: unknown) => void;
   readonly onAdvance: () => void;

@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { useEffect } from 'react';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -51,6 +52,65 @@ export const Banner = ({
         ? 'border-amber-500/50 bg-amber-500/10 text-amber-200'
         : 'border-white/20 bg-white/5 text-white/80';
   return <div className={`rounded-2xl border px-4 py-3 text-sm ${toneClasses}`} role="status">{children}</div>;
+};
+
+/**
+ * A blocking confirm step for irreversible/destructive actions (e.g. deleting a room) — a plain
+ * tap must never fire the action itself. Keyboard reachable (native buttons, Escape cancels) and
+ * traps nothing beyond what a same-page overlay needs; respects reduced motion by not animating.
+ */
+export const ConfirmDialog = ({
+  title,
+  message,
+  confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
+  tone = 'danger',
+  onConfirm,
+  onCancel,
+}: {
+  readonly title: string;
+  readonly message: string;
+  readonly confirmLabel?: string;
+  readonly cancelLabel?: string;
+  readonly tone?: 'danger' | 'primary';
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
+}): React.JSX.Element => {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') onCancel();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onCancel]);
+
+  return (
+    <div
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-md rounded-3xl border border-white/10 bg-neutral-900 p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h2 id="confirm-dialog-title" className="text-xl font-black">
+          {title}
+        </h2>
+        <p className="mt-2 text-sm text-white/70">{message}</p>
+        <div className="mt-5 flex flex-col gap-3">
+          <BigButton variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm}>
+            {confirmLabel}
+          </BigButton>
+          <BigButton variant="ghost" onClick={onCancel}>
+            {cancelLabel}
+          </BigButton>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export const PinBadge = ({ pin }: { readonly pin: string }): React.JSX.Element => (

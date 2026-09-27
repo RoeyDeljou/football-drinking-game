@@ -1,4 +1,6 @@
-import type { ProjectedRoom, ProjectedRound } from '@fdg/game-core';
+import type { ProjectedRound } from '@fdg/game-core';
+import type { ClientRoom } from '@/lib/currentFixture';
+import { NowPlayingBanner } from './NowPlayingBanner';
 import { CountdownBar } from './ui';
 
 export const RoundShell = ({
@@ -10,7 +12,7 @@ export const RoundShell = ({
 }: {
   readonly title: string;
   readonly round: ProjectedRound;
-  readonly room: ProjectedRoom;
+  readonly room: ClientRoom;
   readonly now: number;
   readonly children: React.ReactNode;
 }): React.JSX.Element => {
@@ -20,6 +22,7 @@ export const RoundShell = ({
 
   return (
     <div className="flex flex-col gap-4">
+      <NowPlayingBanner currentFixture={room.currentFixture} />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-black">{title}</h1>
         <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white/60">

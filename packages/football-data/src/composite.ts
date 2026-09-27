@@ -42,6 +42,7 @@ import type {
   ProviderKind,
   SeasonStatsQuery,
 } from './provider.js';
+import { listLiveFixturesFor } from './provider.js';
 import type { DataResult } from './result.js';
 import { ok, withNotes } from './result.js';
 import { createTeamNameResolver } from './team-names.js';
@@ -99,6 +100,11 @@ export class CompositeProvider implements FootballDataProvider {
       (source) => source.getFixturesByCompetition(competitionId, query),
       (fixtures, source) => this.rememberFixtures(fixtures, source),
     );
+  }
+
+  /** Routed through `getFixturesByCompetition` above, so it gets the same primary → fallback behaviour for free. */
+  listLiveFixtures(competitionId: CompetitionId): Promise<DataResult<readonly Fixture[]>> {
+    return listLiveFixturesFor(this, competitionId);
   }
 
   getFixturesByDate(query: FixturesByDateQuery): Promise<DataResult<readonly Fixture[]>> {

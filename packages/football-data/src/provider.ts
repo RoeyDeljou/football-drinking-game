@@ -25,7 +25,9 @@ import type {
   SeasonId,
   TeamId,
 } from './domain.js';
+import { isLiveFixtureStatus } from './domain.js';
 import type { DataResult } from './result.js';
+import { ok } from './result.js';
 
 export type ProviderKind = 'espn' | 'api-football' | 'fixture' | 'composite';
 
@@ -67,6 +69,15 @@ export interface FootballDataProvider {
     competitionId: CompetitionId,
     query?: FixtureQuery,
   ): Promise<DataResult<readonly Fixture[]>>;
+
+  /**
+   * Fixtures in one competition that are LIVE right now (`LIVE`, `HALF_TIME`, `EXTRA_TIME` or `PENALTIES` —
+   * `LIVE_FIXTURE_STATUSES` in `domain.ts`). Zero live fixtures is a normal, valid result (`ok: true, value: []`),
+   * never an error — that is what lets a caller decide "no gameday mode right now" versus "the call failed".
+   * Cheap enough to poll every few seconds: it is a thin filter over `getFixturesByCompetition`'s current-fixtures
+   * call (no date window), so it rides that method's existing per-endpoint TTL cache and request coalescing.
+   */
+  listLiveFixtures(competitionId: CompetitionId): Promise<DataResult<readonly Fixture[]>>;
 
   /** Everything kicking off on one calendar date across the supported competitions. */
   getFixturesByDate(query: FixturesByDateQuery): Promise<DataResult<readonly Fixture[]>>;
@@ -140,6 +151,23 @@ export async function loadProfilesSequentially(
   }
   if (profiles.length === 0 && lastFailure !== null && failures === new Set(playerIds).size) return lastFailure;
   return { ok: true, value: profiles, notes: [...new Set(notes)], fromCache: false };
+}
+
+/**
+ * The straightforward `listLiveFixtures` every provider shares: ask `getFixturesByCompetition` for the current
+ * fixture list (no date window — for `EspnProvider` that is the live scoreboard call it already makes; for
+ * `FixtureProvider` it is the recorded fixtures for the competition's current season) and filter to the live
+ * statuses. Deliberately not a second network call path: a failure here is exactly `getFixturesByCompetition`'s
+ * failure, and a provider that caches/coalesces that call gets the same behaviour for free here.
+ */
+export async function listLiveFixturesFor(
+  provider: Pick<FootballDataProvider, 'getFixturesByCompetition'>,
+  competitionId: CompetitionId,
+): Promise<DataResult<readonly Fixture[]>> {
+  const result = await provider.getFixturesByCompetition(competitionId);
+  if (!result.ok) return result;
+  const live = result.value.filter((fixture) => isLiveFixtureStatus(fixture.status));
+  return ok(live, result.notes, result.fromCache);
 }
 
 export const DEFAULT_POLL_INTERVALS: PollIntervalConfig = {

@@ -30,7 +30,7 @@ export type {
   ProviderKind,
   SeasonStatsQuery,
 } from './provider.js';
-export { DEFAULT_POLL_INTERVALS, loadProfilesSequentially } from './provider.js';
+export { DEFAULT_POLL_INTERVALS, listLiveFixturesFor, loadProfilesSequentially } from './provider.js';
 
 export type { DataError, DataErrorKind, DataFail, DataOk, DataResult } from './result.js';
 export { describeThrown, fail, isFail, isOk, mapResult, ok, unwrapOr, withNotes } from './result.js';
@@ -113,6 +113,8 @@ export { DATASET_INDEX_FILE, loadRecordedDataset, profileFor } from './fixture/d
 
 // ---- Prefetch and datasets ---------------------------------------------------
 export type {
+  GamedayBundle,
+  GamedayPrefetchOptions,
   MatchdayBundle,
   MatchdayPrefetchOptions,
   MatchdayPrefetchProgress,

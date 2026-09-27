@@ -8,11 +8,16 @@
  * Failure policy: only the first step is fatal (with no fixture there is nothing to play). Every later failure
  * marks its step `failed`, adds a `DataQuality` note and lets the bundle through partially filled — the engine
  * then disables the games that needed the missing piece instead of the whole session collapsing.
+ *
+ * `runGameday` builds on the same `run()` to serve a whole live matchday: one `MatchdayBundle` per fixture in a
+ * competition that is currently live, for "gameday mode" (one room, rounds rotating across every live match in a
+ * competition). See the type doc on `GamedayBundle` below for the failure/concurrency policy.
  */
 
 import { assessFixtureDataQuality, evaluateGameAvailability } from './data-quality.js';
 import type { GameAvailability } from './data-quality.js';
 import type {
+  CompetitionId,
   DataQuality,
   Fixture,
   FixtureId,
@@ -86,6 +91,35 @@ export interface MatchdayPrefetchOptions {
   readonly profileCount?: number | undefined;
   /** Cap on season-stat rows fetched per team. Default 40. */
   readonly seasonStatsLimit?: number | undefined;
+}
+
+/**
+ * Data for a whole live matchday in one competition: one full `MatchdayBundle` per fixture that is currently live.
+ * This is what backs "gameday mode" — one room, rounds rotating across `fixtures[0]`, `fixtures[1]`, … for as long
+ * as those games stay live. `apps/api` is expected to re-poll `FootballDataProvider.listLiveFixtures` on its own
+ * schedule and diff against `fixtures.map(b => b.fixture.id)` to notice a match finishing or a new one kicking off
+ * mid-session — that polling/diffing lives there, not here.
+ */
+export interface GamedayBundle {
+  readonly competitionId: CompetitionId;
+  /** One bundle per live fixture that could be prefetched, in the same order `listLiveFixtures` returned them. */
+  readonly fixtures: readonly MatchdayBundle[];
+  /** Live fixtures whose prefetch failed outright (no fixture, step 1) and were skipped rather than failing the batch. */
+  readonly skipped: readonly { readonly fixtureId: FixtureId; readonly error: DataError }[];
+}
+
+export interface GamedayPrefetchOptions extends MatchdayPrefetchOptions {
+  /**
+   * How many fixtures' prefetch pipelines run at once. Default 3. This bounds *pipeline* concurrency, not raw HTTP
+   * concurrency — every fixture's `run()` still goes through the same provider instance, so its own per-endpoint
+   * TTL cache, request coalescing and rate limiter (e.g. `EspnProvider`'s 5-requests-per-5-seconds / 2-in-flight
+   * limiter) still gate the actual upstream calls. A small number here just caps how many fixtures are mid-flight
+   * (and therefore how many concurrent step-1 fixture calls, step-3 squad calls, etc. queue up at once) so a
+   * ten-fixture Champions League night doesn't fire all ten prefetch pipelines' worth of requests simultaneously.
+   */
+  readonly concurrency?: number | undefined;
+  /** Called once per live fixture as its own `MatchdayPrefetcher.run()` reports progress. */
+  readonly onFixtureProgress?: ((fixtureId: FixtureId, progress: MatchdayPrefetchProgress) => void) | undefined;
 }
 
 export class MatchdayPrefetcher {
@@ -252,6 +286,72 @@ export class MatchdayPrefetcher {
     );
   }
 
+  /**
+   * Build one `MatchdayBundle` per fixture currently live in `competitionId` — the data behind gameday mode.
+   *
+   * Failure policy:
+   *  - `listLiveFixtures` itself failing (upstream down) propagates as this call's failure.
+   *  - Zero live fixtures is not a failure: `ok: true` with an empty `fixtures` array, so `apps/api` can offer
+   *    "nothing live right now" instead of an error screen.
+   *  - One fixture's `run()` failing (its step-1 fixture fetch failed) is *not* fatal to the batch: that fixture is
+   *    recorded in `skipped` and every other live fixture's bundle still comes back. This mirrors the general
+   *    dataset's "skip a competition that failed to load rather than failing the whole build" policy.
+   *  - The whole call only fails if every live fixture's prefetch failed (nothing to serve at all).
+   *
+   * Runs with bounded concurrency (`options.concurrency`, default 3) — see `GamedayPrefetchOptions.concurrency`
+   * for why that bound is about pipeline count, not raw request count. Each fixture gets its own `MatchdayPrefetcher`
+   * instance (this instance's own step/progress state is untouched), so `options.onFixtureProgress` can distinguish
+   * which live fixture is reporting.
+   */
+  async runGameday(competitionId: CompetitionId, options: GamedayPrefetchOptions = {}): Promise<DataResult<GamedayBundle>> {
+    const liveResult = await this.provider.listLiveFixtures(competitionId);
+    if (!liveResult.ok) return liveResult;
+    const liveFixtures = liveResult.value;
+    if (liveFixtures.length === 0) {
+      return ok({ competitionId, fixtures: [], skipped: [] }, liveResult.notes);
+    }
+
+    const concurrency = Math.max(1, options.concurrency ?? 3);
+    const perFixtureOptions: MatchdayPrefetchOptions = {
+      profileCount: options.profileCount,
+      seasonStatsLimit: options.seasonStatsLimit,
+    };
+
+    const outcomes = await mapWithConcurrency(liveFixtures, concurrency, async (fixture) => {
+      const sub = new MatchdayPrefetcher(this.provider, {
+        ...perFixtureOptions,
+        onProgress:
+          options.onFixtureProgress === undefined
+            ? undefined
+            : (progress) => options.onFixtureProgress?.(fixture.id, progress),
+      });
+      return sub.run(fixture.id);
+    });
+
+    const bundles: MatchdayBundle[] = [];
+    const skipped: { fixtureId: FixtureId; error: DataError }[] = [];
+    const notes: string[] = [...liveResult.notes];
+    for (const [index, result] of outcomes.entries()) {
+      const fixture = liveFixtures[index];
+      if (fixture === undefined) continue;
+      if (result.ok) {
+        bundles.push(result.value);
+        notes.push(...result.notes);
+      } else {
+        skipped.push({ fixtureId: fixture.id, error: result.error });
+        notes.push(`Gameday: fixture ${fixture.id} skipped — ${result.error.message}`);
+      }
+    }
+
+    if (bundles.length === 0) {
+      return fail('UPSTREAM', `gameday prefetch for competition ${competitionId} failed for every live fixture`, {
+        retryable: true,
+      });
+    }
+
+    return ok({ competitionId, fixtures: bundles, skipped }, [...new Set(notes)]);
+  }
+
   /** Profiles (and therefore career history) for a handful of starters, which is what `G1`/`G3` need. */
   private async loadProfiles(
     lineups: FixtureLineups | null,
@@ -312,4 +412,30 @@ export class MatchdayPrefetcher {
   private emit(): void {
     this.options.onProgress?.(this.progress());
   }
+}
+
+/**
+ * Run `task` over `items` with at most `concurrency` in flight at once, preserving input order in the returned
+ * array regardless of completion order (a fast fixture finishing before a slow one must not reshuffle round order).
+ */
+async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  concurrency: number,
+  task: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+  const workerCount = Math.max(1, Math.min(concurrency, items.length));
+  const workers = Array.from({ length: workerCount }, async () => {
+    for (;;) {
+      const index = cursor;
+      cursor += 1;
+      if (index >= items.length) return;
+      const item = items[index];
+      if (item === undefined) continue;
+      results[index] = await task(item, index);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }

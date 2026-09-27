@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { BackButton } from '@/components/BackButton';
 import { Banner, BigButton, Card } from '@/components/ui';
 import type { FriendRequestEntry, PublicUser } from '@/lib/api';
 import { listFriendRequests, listFriends, respondFriendRequest, searchUsers, sendFriendRequest } from '@/lib/api';
@@ -40,6 +41,7 @@ export default function FriendsPage(): React.JSX.Element {
   if (auth === null) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6 py-10 text-center">
+        <BackButton fallbackHref="/" className="self-start" />
         <p className="text-white/70">Sign in to add friends.</p>
         <Link href="/auth">
           <BigButton>Sign in</BigButton>
@@ -76,6 +78,7 @@ export default function FriendsPage(): React.JSX.Element {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-6 py-8">
+      <BackButton fallbackHref="/" />
       <h1 className="text-3xl font-black">Friends</h1>
 
       <Card>

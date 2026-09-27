@@ -8,11 +8,11 @@
  * screens send `room:action` payloads verbatim.
  */
 
-import type { ProjectedRoom } from '@fdg/game-core';
 import type { ReactNode } from 'react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { API_BASE_URL } from './config';
+import type { ClientRoom } from './currentFixture';
 import { FATAL_CONNECT_ERROR_CODES, isTerminalRoomPhase } from './roomLifecycle';
 import { clearRoom, loadRoom, saveRoom, type StoredRoom } from './storage';
 
@@ -40,7 +40,7 @@ interface RoomErrorPayload {
 
 interface RoomContextValue {
   readonly status: ConnectionStatus;
-  readonly room: ProjectedRoom | null;
+  readonly room: ClientRoom | null;
   readonly self: StoredRoom | null;
   readonly lastError: RoomErrorPayload | null;
   readonly joinByPin: (pin: string, nickname: string, accessToken?: string) => void;
@@ -56,7 +56,7 @@ const RoomContext = createContext<RoomContextValue | null>(null);
 export const RoomProvider = ({ children }: { children: ReactNode }): React.JSX.Element => {
   const socketRef = useRef<Socket | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('idle');
-  const [room, setRoom] = useState<ProjectedRoom | null>(null);
+  const [room, setRoom] = useState<ClientRoom | null>(null);
   const [self, setSelf] = useState<StoredRoom | null>(null);
   const [lastError, setLastError] = useState<RoomErrorPayload | null>(null);
   // An error banner (e.g. a late-answer rejection) belongs to the round/phase it happened in — it
@@ -104,7 +104,7 @@ export const RoomProvider = ({ children }: { children: ReactNode }): React.JSX.E
         setStatus('connected');
       });
 
-      socket.on('room:state', (payload: ProjectedRoom) => {
+      socket.on('room:state', (payload: ClientRoom) => {
         setRoom(payload);
         const transitionKey = `${payload.phase}:${payload.round?.id ?? ''}:${payload.round?.status ?? ''}`;
         if (lastTransitionKeyRef.current !== null && lastTransitionKeyRef.current !== transitionKey) {

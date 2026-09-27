@@ -33,7 +33,7 @@ import type {
   ProviderKind,
   SeasonStatsQuery,
 } from '../provider.js';
-import { loadProfilesSequentially } from '../provider.js';
+import { listLiveFixturesFor, loadProfilesSequentially } from '../provider.js';
 import type { DataResult } from '../result.js';
 import { fail, ok } from '../result.js';
 import type { RecordedDataset } from './dataset.js';
@@ -129,6 +129,17 @@ export class FixtureProvider implements FootballDataProvider {
     const notes =
       limited.length === 0 ? [...loaded.notes, `No recorded fixtures for ${config.name} in ${season}.`] : loaded.notes;
     return ok(limited, notes);
+  }
+
+  /**
+   * Fixtures marked `LIVE`/`HALF_TIME`/`EXTRA_TIME`/`PENALTIES` in the recorded snapshot for this competition. The
+   * offline dataset is static, so this is genuinely "whatever the recorded data says is live right now" — tests
+   * control it by recording fixtures with those statuses (see `fixture-provider.test.ts`), and a configured replay
+   * projects its one fixture's status through `MatchReplay`, so a replayed match can move in and out of this list
+   * as it plays through kick-off and full-time.
+   */
+  listLiveFixtures(competitionId: CompetitionId): Promise<DataResult<readonly Fixture[]>> {
+    return listLiveFixturesFor(this, competitionId);
   }
 
   async getFixturesByDate(query: FixturesByDateQuery): Promise<DataResult<readonly Fixture[]>> {

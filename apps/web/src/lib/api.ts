@@ -66,17 +66,25 @@ export interface RoomSummary {
   readonly hostNickname: string | null;
   readonly category: string | null;
   readonly fixtureId: string | null;
+  /** Set only for a gameday room (rounds rotating across a competition's live fixtures); `null`
+   * otherwise, including for single-fixture matchday rooms. */
+  readonly gamedayCompetitionId: string | null;
 }
 
 export const createRoom = (input: {
   readonly category: 'matchday' | 'general';
   readonly fixtureId?: string;
+  /** Mutually exclusive with `fixtureId` — see `apps/api/src/rooms/schemas.ts`. */
+  readonly gameday?: boolean;
+  readonly competitionId?: string;
   readonly hostNickname?: string;
   readonly settings?: Record<string, unknown>;
   readonly accessToken?: string;
 }): Promise<ApiResult<CreateRoomResponse>> => {
   const body: Record<string, unknown> = { category: input.category };
   if (input.fixtureId !== undefined) body.fixtureId = input.fixtureId;
+  if (input.gameday === true) body.gameday = true;
+  if (input.competitionId !== undefined) body.competitionId = input.competitionId;
   if (input.hostNickname !== undefined) body.hostNickname = input.hostNickname;
   if (input.settings !== undefined) body.settings = input.settings;
   const init: RequestInit & { accessToken?: string } = { method: 'POST', body: JSON.stringify(body) };

@@ -10,16 +10,24 @@
  * which live fixture (if any) a matchday room is tied to, so `buildRoundDataContext` knows what to
  * fetch. It travels next to `RoomState` rather than inside it, because it is transport bookkeeping,
  * not game state.
+ *
+ * A matchday room is either tied to one specific fixture (`fixtureId`) or, for "gameday mode", to a
+ * whole competition whose currently-live fixtures rotate round to round (`gamedayCompetitionId`) —
+ * never both. `gamedayCompetitionId` is optional (not just nullable) so every pre-existing call site
+ * and test that only ever constructed `{ fixtureId }` literals keeps compiling unchanged; read it
+ * through `meta.gamedayCompetitionId ?? null`.
  */
 
-import type { FixtureId } from '@fdg/football-data';
+import type { CompetitionId, FixtureId } from '@fdg/football-data';
 import type { RoomId, RoomState } from '@fdg/game-core';
 
 export interface RoomMeta {
   readonly fixtureId: FixtureId | null;
+  /** Set only for a gameday room; absent/`null` for a single-fixture matchday room or a general room. */
+  readonly gamedayCompetitionId?: CompetitionId | null;
 }
 
-export const EMPTY_ROOM_META: RoomMeta = { fixtureId: null };
+export const EMPTY_ROOM_META: RoomMeta = { fixtureId: null, gamedayCompetitionId: null };
 
 export interface RoomRecord {
   readonly state: RoomState;

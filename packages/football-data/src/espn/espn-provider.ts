@@ -59,7 +59,7 @@ import type {
   ProviderKind,
   SeasonStatsQuery,
 } from '../provider.js';
-import { DEFAULT_POLL_INTERVALS, loadProfilesSequentially } from '../provider.js';
+import { DEFAULT_POLL_INTERVALS, listLiveFixturesFor, loadProfilesSequentially } from '../provider.js';
 import type { RateLimitConfig } from '../rate-limiter.js';
 import type { DataResult } from '../result.js';
 import { fail, ok } from '../result.js';
@@ -207,6 +207,10 @@ export class EspnProvider implements FootballDataProvider {
     fixtures = dedupeFixtures(fixtures);
     const limited = query.limit === undefined ? fixtures : fixtures.slice(0, Math.max(0, query.limit));
     return ok(limited, dedupeNotes(notes));
+  }
+
+  listLiveFixtures(competitionId: CompetitionId): Promise<DataResult<readonly Fixture[]>> {
+    return listLiveFixturesFor(this, competitionId);
   }
 
   async getFixturesByDate(query: FixturesByDateQuery): Promise<DataResult<readonly Fixture[]>> {

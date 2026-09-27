@@ -1,16 +1,19 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ConnectionStatusBanner } from '@/components/ConnectionStatusBanner';
 import { FinalResultsScreen } from '@/components/FinalResultsScreen';
 import { GameHost } from '@/components/GameHost';
 import { IntermissionScreen } from '@/components/IntermissionScreen';
 import { Lobby } from '@/components/Lobby';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { RoomExitControls } from '@/components/RoomExitControls';
 import { Banner, BigButton, Spinner } from '@/components/ui';
 import { fetchRoomById } from '@/lib/api';
+import { markUpcomingNavigationAsReplace } from '@/lib/backNavigation';
 import { errorMessage } from '@/lib/errorCopy';
+import { shouldShowGamedayExhaustedBanner } from '@/lib/gamedayEnd';
 import { intermissionContinueAction } from '@/lib/intermissionActions';
 import { useRoom } from '@/lib/room-context';
 import { loadRoom } from '@/lib/storage';
@@ -24,7 +27,9 @@ export default function RoomPage(): React.JSX.Element {
   const router = useRouter();
   const { room, self, status, send, lastError, clearError, leaveRoom } = useRoom();
   const [category, setCategory] = useState<'matchday' | 'general' | null>(null);
+  const [isGameday, setIsGameday] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [deletingRoom, setDeletingRoom] = useState(false);
 
   useEffect(() => {
     const stored = loadRoom();
@@ -32,6 +37,10 @@ export default function RoomPage(): React.JSX.Element {
     setRedirecting(true);
     void (async (): Promise<void> => {
       const summary = await fetchRoomById(roomId);
+      // This is a redirect, not a user-chosen navigation: it must never be recorded as in-app
+      // history (see NavigationTracker / backNavigation.ts), or Back after it would pop the tab's
+      // real history and leave the app entirely.
+      markUpcomingNavigationAsReplace();
       if (summary.ok) {
         router.replace(`/join/${summary.value.pin}`);
       } else {
@@ -43,14 +52,24 @@ export default function RoomPage(): React.JSX.Element {
   useEffect(() => {
     void (async (): Promise<void> => {
       const summary = await fetchRoomById(roomId);
-      if (summary.ok) setCategory(summary.value.fixtureId !== null ? 'matchday' : 'general');
+      if (summary.ok) {
+        setCategory(summary.value.fixtureId !== null || summary.value.gamedayCompetitionId !== null ? 'matchday' : 'general');
+        setIsGameday(summary.value.gamedayCompetitionId !== null);
+      }
     })();
   }, [roomId]);
 
   const actorId = self?.playerId;
 
+  // Which action the *last* `room:error` (if any) is a rejection of — the gameday-exhausted banner
+  // (see `lib/gamedayEnd.ts`) only ever applies to a rejected `ADVANCE`; the exact same error code
+  // can also mean "this specific game needs data this room doesn't have" from `SELECT_GAME`, which
+  // must keep the ordinary generic error banner instead.
+  const lastActionTypeRef = useRef<string | null>(null);
+
   const selectGame = (moduleId: string): boolean => {
     if (actorId === undefined || status !== 'connected') return false;
+    lastActionTypeRef.current = 'SELECT_GAME';
     send({ type: 'SELECT_GAME', actorId, moduleId, config: null });
     return true;
   };
@@ -58,27 +77,32 @@ export default function RoomPage(): React.JSX.Element {
   const startLoading = (): void => {
     if (actorId === undefined) return;
     const stepKeys = category === 'matchday' ? MATCHDAY_STEP_KEYS : GENERAL_STEP_KEYS;
+    lastActionTypeRef.current = 'START_LOADING';
     send({ type: 'START_LOADING', actorId, stepKeys });
   };
 
   const startSession = (): void => {
     if (actorId === undefined) return;
+    lastActionTypeRef.current = 'START_SESSION';
     send({ type: 'START_SESSION', actorId });
   };
 
   const submitAnswer = (payload: unknown): void => {
     const currentRound = room?.round;
     if (actorId === undefined || currentRound === null || currentRound === undefined) return;
+    lastActionTypeRef.current = 'SUBMIT_ANSWER';
     send({ type: 'SUBMIT_ANSWER', playerId: actorId, roundId: currentRound.id, payload });
   };
 
   const revealNow = (): void => {
     if (actorId === undefined) return;
+    lastActionTypeRef.current = 'REVEAL_ROUND';
     send({ type: 'REVEAL_ROUND', actorId });
   };
 
   const advance = (): void => {
     if (actorId === undefined) return;
+    lastActionTypeRef.current = 'ADVANCE';
     send({ type: 'ADVANCE', actorId });
   };
 
@@ -88,6 +112,7 @@ export default function RoomPage(): React.JSX.Element {
   const continueFromIntermission = (): void => {
     if (actorId === undefined) return;
     const action = intermissionContinueAction(room?.session?.finished ?? true);
+    lastActionTypeRef.current = action.type;
     if (action.type === 'START_SESSION') {
       send({ type: 'START_SESSION', actorId });
     } else {
@@ -109,6 +134,25 @@ export default function RoomPage(): React.JSX.Element {
     leaveRoom();
     router.push('/host');
   };
+
+  // The UI trigger for the engine's host-only ABORT_ROOM action (packages/game-core/src/reducer.ts
+  // `abortRoom`) — ends the room for every player right now. `HOST_ABORTED` is the abort reason
+  // that already exists specifically for this case (see `AbortReason` in state.ts and the copy in
+  // FinalResultsScreen). Once the room:state broadcast confirms the phase actually flipped to
+  // 'aborted' (below), the host is taken straight back to "/" rather than sitting on the "Room
+  // closed" screen they just triggered themselves.
+  const deleteRoom = (): void => {
+    if (actorId === undefined) return;
+    setDeletingRoom(true);
+    send({ type: 'ABORT_ROOM', actorId, reason: 'HOST_ABORTED' });
+  };
+
+  useEffect(() => {
+    if (deletingRoom && room?.phase === 'aborted') {
+      leaveRoom();
+      router.push('/');
+    }
+  }, [deletingRoom, room?.phase, leaveRoom, router]);
 
   if (redirecting) {
     return (
@@ -140,7 +184,21 @@ export default function RoomPage(): React.JSX.Element {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-4 py-6 safe-bottom">
       <ConnectionStatusBanner status={status} />
-      {lastError !== null ? (
+      {lastError !== null &&
+      shouldShowGamedayExhaustedBanner(isGameday, lastError.code, lastActionTypeRef.current === 'ADVANCE') ? (
+        <div role="alert">
+          <Banner tone="warn">
+            No more live matches in this competition — there’s nothing left to rotate through.
+            {isHost ? (
+              <button type="button" onClick={finishRoom} className="ml-3 underline">
+                End room
+              </button>
+            ) : (
+              <span className="ml-3 text-white/60">Waiting for the host to end the room…</span>
+            )}
+          </Banner>
+        </div>
+      ) : lastError !== null ? (
         <div role="alert">
           <Banner tone="error">
             {errorMessage(lastError)}
@@ -150,6 +208,14 @@ export default function RoomPage(): React.JSX.Element {
           </Banner>
         </div>
       ) : null}
+
+      <RoomExitControls
+        phase={room.phase}
+        isHost={isHost}
+        deletingRoom={deletingRoom}
+        onLeaveRoom={leaveAndGoHome}
+        onDeleteRoom={deleteRoom}
+      />
 
       {room.phase === 'lobby' ? (
         <Lobby room={room} category={category} isHost={isHost} onSelectGame={selectGame} onStartLoading={startLoading} />

@@ -1,9 +1,10 @@
-import type { ProjectedRoom } from '@fdg/game-core';
 import { gameName } from '@/games/registry';
+import type { ClientRoom } from '@/lib/currentFixture';
 import { Banner, BigButton } from './ui';
 import { DrinkTally } from './DrinkTally';
 import { GamePicker } from './GamePicker';
 import { Leaderboard } from './Leaderboard';
+import { NowPlayingBanner } from './NowPlayingBanner';
 
 export const IntermissionScreen = ({
   room,
@@ -14,7 +15,7 @@ export const IntermissionScreen = ({
   onPlayAgain,
   onFinishRoom,
 }: {
-  readonly room: ProjectedRoom;
+  readonly room: ClientRoom;
   readonly category: 'matchday' | 'general' | null;
   readonly isHost: boolean;
   readonly onNextRound: () => void;
@@ -29,6 +30,7 @@ export const IntermissionScreen = ({
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-center text-3xl font-black">{sessionFinished ? 'Game over' : 'Leaderboard'}</h1>
+      <NowPlayingBanner currentFixture={room.currentFixture} />
       <Leaderboard rows={room.leaderboard} viewerId={room.viewerId} />
       <DrinkTally rows={room.drinkTally} viewerId={room.viewerId} />
 

@@ -89,13 +89,15 @@ export const COMPETITIONS: Readonly<Record<CompetitionCode, CompetitionConfig>> 
   ),
 };
 
+// Champions League leads: it's the one competition every host recognizes regardless of which
+// domestic league they follow, so it's the default first option in the league picker.
 export const COMPETITION_CODES: readonly CompetitionCode[] = [
+  'CHAMPIONS_LEAGUE',
   'PREMIER_LEAGUE',
   'LA_LIGA',
   'SERIE_A',
   'BUNDESLIGA',
   'LIGUE_1',
-  'CHAMPIONS_LEAGUE',
 ];
 
 export const COMPETITION_CONFIGS: readonly CompetitionConfig[] = COMPETITION_CODES.map(

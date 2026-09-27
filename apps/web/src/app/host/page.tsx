@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { BackButton } from '@/components/BackButton';
 import { Banner, BigButton, Card } from '@/components/ui';
 import type { ApiResult, Competition, FixtureSummary } from '@/lib/api';
 import { createRoom, listCompetitionFixtures, listCompetitions } from '@/lib/api';
@@ -10,9 +11,12 @@ import {
   competitionsView,
   fixturesView,
   formatKickoffLocal,
+  gamedayOptionLabel,
   isFixtureLive,
   kickoffCountdown,
   liveBadgeLabel,
+  liveFixtureCount,
+  shouldOfferGameday,
 } from '@/lib/matchdayPicker';
 import { useNow } from '@/lib/useNow';
 import { useRoom } from '@/lib/room-context';
@@ -32,6 +36,7 @@ export default function HostPage(): React.JSX.Element {
   const [selectedCompetitionId, setSelectedCompetitionId] = useState<string | null>(null);
   const [fixturesResult, setFixturesResult] = useState<ApiResult<{ fixtures: readonly FixtureSummary[] }> | null>(null);
   const [selectedFixture, setSelectedFixture] = useState<FixtureSummary | null>(null);
+  const [gamedaySelected, setGamedaySelected] = useState(false);
 
   const [rounds, setRounds] = useState(8);
   const [hostNickname, setHostNickname] = useState('');
@@ -77,6 +82,7 @@ export default function HostPage(): React.JSX.Element {
   const chooseCompetition = (competitionId: string): void => {
     setSelectedCompetitionId(competitionId);
     setSelectedFixture(null);
+    setGamedaySelected(false);
     fetchFixturesFor(competitionId);
   };
 
@@ -92,6 +98,17 @@ export default function HostPage(): React.JSX.Element {
     setSelectedCompetitionId(null);
     setFixturesResult(null);
     setSelectedFixture(null);
+    setGamedaySelected(false);
+  };
+
+  const chooseFixture = (fixture: FixtureSummary): void => {
+    setGamedaySelected(false);
+    setSelectedFixture(fixture);
+  };
+
+  const chooseGameday = (): void => {
+    setSelectedFixture(null);
+    setGamedaySelected(true);
   };
 
   const compView = competitionsView(competitionsResult);
@@ -111,21 +128,36 @@ export default function HostPage(): React.JSX.Element {
       setError('Enter a nickname.');
       return;
     }
-    if (category === 'matchday' && selectedFixture === null) {
-      setError('Pick a fixture first.');
+    if (category === 'matchday' && !gamedaySelected && selectedFixture === null) {
+      setError('Pick a fixture, or play the whole live gameday.');
       return;
     }
-    const fixtureId = category === 'matchday' ? selectedFixture?.fixtureId : undefined;
+    if (category === 'matchday' && gamedaySelected && selectedCompetitionId === null) {
+      setError('Pick a league first.');
+      return;
+    }
+    const fixtureId = category === 'matchday' && !gamedaySelected ? selectedFixture?.fixtureId : undefined;
     setBusy(true);
     const result = await createRoom({
       category,
       ...(fixtureId !== undefined ? { fixtureId } : {}),
+      ...(category === 'matchday' && gamedaySelected && selectedCompetitionId !== null
+        ? { gameday: true, competitionId: selectedCompetitionId }
+        : {}),
       ...(session === null ? { hostNickname: hostNickname.trim() } : {}),
       settings: { roundsPerSession: rounds, minPlayersToStart: 1 },
       ...(session !== null ? { accessToken: session.accessToken } : {}),
     });
     setBusy(false);
     if (!result.ok) {
+      // A race between the gameday option being offered (>= 2 live fixtures at picker-render time)
+      // and every one of them finishing right before the room was created — treat it exactly like
+      // the ordinary "no live games" empty state, not a raw error: drop back to individual fixtures
+      // and refresh the list so the host immediately sees what's actually still playable.
+      if (result.code === 'NO_LIVE_FIXTURES') {
+        setGamedaySelected(false);
+        retryFixtures();
+      }
       setError(result.message);
       return;
     }
@@ -141,6 +173,7 @@ export default function HostPage(): React.JSX.Element {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-6 py-8">
+      <BackButton fallbackHref="/" />
       <h1 className="text-3xl font-black">Host a room</h1>
 
       <Card>
@@ -219,10 +252,8 @@ export default function HostPage(): React.JSX.Element {
           ) : (
             <>
               <div className="mb-1 flex items-center justify-between">
+                <BackButton onBack={backToLeagues} label="Change league" className="px-0 text-pitch-400" />
                 <h2 className="text-sm font-bold uppercase tracking-wide text-white/50">Pick a fixture</h2>
-                <button type="button" onClick={backToLeagues} className="tap-target px-2 text-sm font-semibold text-pitch-400">
-                  Change league
-                </button>
               </div>
               {selectedCompetitionName !== null ? (
                 <p className="mb-3 text-sm text-white/60">
@@ -245,18 +276,40 @@ export default function HostPage(): React.JSX.Element {
               ) : null}
               {fixView.status === 'empty' ? <Banner>No fixtures found for this competition right now.</Banner> : null}
               {fixView.status === 'ready' ? (
-                <div className="flex max-h-80 snap-y flex-col gap-3 overflow-y-auto pr-1" role="listbox" aria-label="Fixtures">
+                <div className="flex flex-col gap-3">
+                  {shouldOfferGameday(liveFixtureCount(fixView.fixtures)) ? (
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={gamedaySelected}
+                      onClick={chooseGameday}
+                      className={`tap-target flex shrink-0 flex-col gap-1 rounded-2xl border-2 px-4 py-3 text-left ${
+                        gamedaySelected ? 'border-pitch-500 bg-pitch-500/20' : 'border-white/15 bg-white/5'
+                      }`}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="font-bold">Play the whole live gameday</span>
+                        <span className="shrink-0 rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-bold text-red-300">
+                          LIVE
+                        </span>
+                      </span>
+                      <span className="text-xs text-white/50">
+                        {gamedayOptionLabel(liveFixtureCount(fixView.fixtures))} — rounds rotate across every one
+                      </span>
+                    </button>
+                  ) : null}
+                  <div className="flex max-h-80 snap-y flex-col gap-3 overflow-y-auto pr-1" role="listbox" aria-label="Fixtures">
                   {fixView.fixtures.map((fixture) => {
                     const live = isFixtureLive(fixture);
                     const badge = liveBadgeLabel(fixture);
-                    const selected = selectedFixture?.fixtureId === fixture.fixtureId;
+                    const selected = !gamedaySelected && selectedFixture?.fixtureId === fixture.fixtureId;
                     return (
                       <button
                         key={fixture.fixtureId}
                         type="button"
                         role="option"
                         aria-selected={selected}
-                        onClick={() => setSelectedFixture(fixture)}
+                        onClick={() => chooseFixture(fixture)}
                         className={`tap-target flex shrink-0 snap-start flex-col gap-1 rounded-2xl border-2 px-4 py-3 text-left ${
                           selected ? 'border-pitch-500 bg-pitch-500/20' : 'border-white/15 bg-white/5'
                         }`}
@@ -279,6 +332,7 @@ export default function HostPage(): React.JSX.Element {
                       </button>
                     );
                   })}
+                  </div>
                 </div>
               ) : null}
             </>

@@ -8,6 +8,7 @@ import { registerAuthRoutes } from './auth/routes.js';
 import { registerCompetitionRoutes } from './competitions/routes.js';
 import { createFixtureListCache } from './competitions/fixture-list-cache.js';
 import type { AppContext } from './context.js';
+import { GAMEDAY_LIVE_POLL_MS } from './engine/data-context.js';
 import type { GeneralDatasetAccess } from './engine/general-dataset-access.js';
 import { createGeneralDatasetAccess } from './engine/general-dataset-access.js';
 import { createFootballDataFromEnv } from './engine/football-data-provider.js';
@@ -42,6 +43,9 @@ export interface BuildAppOptions {
   readonly footballData?: FootballDataProvider;
   /** Test seam: override the fixture-list cache TTL (default 90s, see competitions/fixture-list-cache.ts). */
   readonly fixtureListCacheTtlMs?: number;
+  /** Test seam: override how often a gameday room's live-fixture pool is re-polled (default 90s, see
+   * engine/data-context.ts's `GAMEDAY_LIVE_POLL_MS`). */
+  readonly gamedayLivePollMs?: number;
 }
 
 const FLUSH_WRITES_TIMEOUT_MS = 3000;
@@ -80,6 +84,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
     fixtureListCache: createFixtureListCache(
       options.fixtureListCacheTtlMs === undefined ? {} : { ttlMs: options.fixtureListCacheTtlMs },
     ),
+    gamedayLivePollMs: options.gamedayLivePollMs ?? GAMEDAY_LIVE_POLL_MS,
   };
 
   const app = Fastify({ logger: env.NODE_ENV !== 'test' });

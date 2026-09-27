@@ -23,4 +23,7 @@ export interface AppContext {
   readonly roomTokenSecret: Uint8Array;
   /** Short-TTL cache in front of `getFixturesByCompetition`, see competitions/fixture-list-cache.ts. */
   readonly fixtureListCache: FixtureListCache;
+  /** How often a gameday room's live-fixture pool is re-polled, see engine/data-context.ts's
+   * `refreshGamedayLiveSet` (default `GAMEDAY_LIVE_POLL_MS`, overridable in tests). */
+  readonly gamedayLivePollMs: number;
 }

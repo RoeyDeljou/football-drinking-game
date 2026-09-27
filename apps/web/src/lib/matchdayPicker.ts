@@ -39,6 +39,19 @@ const LIVE_STATUSES: readonly FixtureSummary['status'][] = ['LIVE', 'HALF_TIME',
 export const isFixtureLive = (fixture: Pick<FixtureSummary, 'status'>): boolean =>
   LIVE_STATUSES.includes(fixture.status);
 
+/** How many of a fixture list's entries are currently live — the basis for whether "play the whole
+ * live gameday" is worth offering at all. */
+export const liveFixtureCount = (fixtures: readonly Pick<FixtureSummary, 'status'>[]): number =>
+  fixtures.filter(isFixtureLive).length;
+
+/** Gameday mode only makes sense with something to *rotate* through — one live fixture is already
+ * covered fine by picking it directly, and zero means the option shouldn't render at all. */
+export const shouldOfferGameday = (liveCount: number): boolean => liveCount >= 2;
+
+/** e.g. "3 live matches — play them all". */
+export const gamedayOptionLabel = (liveCount: number): string =>
+  `${liveCount} live match${liveCount === 1 ? '' : 'es'} — play them all`;
+
 /** `LIVE 63'`, `HALF-TIME`, or nothing for a not-yet-started fixture. */
 export const liveBadgeLabel = (fixture: Pick<FixtureSummary, 'status' | 'minute'>): string | null => {
   if (fixture.status === 'HALF_TIME') return 'HALF-TIME';

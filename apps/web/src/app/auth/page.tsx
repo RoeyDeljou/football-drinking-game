@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { BackButton } from '@/components/BackButton';
 import { Banner, BigButton, Card } from '@/components/ui';
 import { login, register, toStoredAuth } from '@/lib/api';
 import { RESPONSIBLE_DRINKING_NOTICE } from '@/lib/drinkCopy';
@@ -42,6 +43,7 @@ export default function AuthPage(): React.JSX.Element {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6 py-10">
+      <BackButton fallbackHref="/" />
       <h1 className="text-center text-3xl font-black">{mode === 'login' ? 'Sign in' : 'Create account'}</h1>
 
       <div className="flex gap-2 rounded-2xl bg-white/5 p-1">

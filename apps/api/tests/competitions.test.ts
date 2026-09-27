@@ -63,6 +63,8 @@ class StubProvider implements FootballDataProvider {
     return ok([]);
   }
 
+  listLiveFixtures: FootballDataProvider['listLiveFixtures'] = () => Promise.resolve(ok([]));
+
   private notImplemented(): never {
     throw new Error('not implemented in StubProvider');
   }
