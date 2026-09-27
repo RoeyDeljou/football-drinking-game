@@ -320,14 +320,23 @@ describe('N1: projection without the module leaks nothing module-owned', () => {
     const room = startGame(G1_ID, deps);
     const blind = { modules: createModuleRegistry([]), clock };
 
+    // G1 varies its clue order per round, so read the opening and final clue kinds off the stored round.
+    const clueKinds = (currentRound(room)?.publicPayload as { clues: readonly { kind: string }[] }).clues.map(
+      (clue) => clue.kind,
+    );
+    const opening = clueKinds[0] ?? 'missing';
+    const last = clueKinds[clueKinds.length - 1] ?? 'missing';
+
     const view = projectFor(room, HOST, blind);
     expect(view.round?.publicPayload).toBeNull();
     expect(view.round?.privatePayload).toBeNull();
-    expect(JSON.stringify(view)).not.toContain('NATIONALITY');
-    expect(JSON.stringify(view)).not.toContain('CAREER');
+    expect(JSON.stringify(view)).not.toContain(opening);
+    expect(JSON.stringify(view)).not.toContain(last);
 
-    // With the module the first clue is visible, so the difference is the missing module alone.
-    expect(JSON.stringify(projectFor(room, HOST, deps))).toContain('NATIONALITY');
+    // With the module only the opening clue is visible, so the difference is the missing module alone.
+    const withModule = JSON.stringify(projectFor(room, HOST, deps));
+    expect(withModule).toContain(opening);
+    expect(withModule).not.toContain(last);
   });
 
   it('withholds the solution after reveal too', () => {

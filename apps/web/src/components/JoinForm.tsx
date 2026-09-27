@@ -3,9 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { fetchRoomByPin } from '@/lib/api';
+import { getValidAuthSession } from '@/lib/authSession';
 import { shouldAutoJoinRedirect } from '@/lib/joinGuard';
 import { useRoom } from '@/lib/room-context';
-import { loadAuth } from '@/lib/storage';
 import { Banner, BigButton, Card } from './ui';
 
 export const JoinForm = ({ initialPin = '' }: { readonly initialPin?: string }): React.JSX.Element => {
@@ -23,9 +23,9 @@ export const JoinForm = ({ initialPin = '' }: { readonly initialPin?: string }):
   );
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const auth = loadAuth();
-    if (auth !== null) setNickname(auth.displayName);
+    void getValidAuthSession().then((auth) => {
+      if (auth !== null) setNickname(auth.displayName);
+    });
   }, []);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export const JoinForm = ({ initialPin = '' }: { readonly initialPin?: string }):
       setError('No room with that PIN. Double-check with the host.');
       return;
     }
-    const auth = loadAuth();
+    const auth = await getValidAuthSession();
     setJoinTargetPin(cleanPin);
     joinByPin(cleanPin, nickname.trim(), auth?.accessToken);
   };

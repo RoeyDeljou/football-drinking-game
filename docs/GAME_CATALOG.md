@@ -31,7 +31,7 @@ land in Phases 5 and 6. Changes to this list after those phases start cost real 
 
 | id | Game | Concept | Data needed |
 |---|---|---|---|
-| `G1` | **Guess the Player** `P1` | Progressive clues — nationality → position → age → club history → shirt number. Guess earlier, score more. | Player bios + squads |
+| `G1` | **Guess the Player** `P1` | Progressive clues, order varies each round (nationality/position/age first, career/shirt number last); options are chosen so each clue rules some out. Guess earlier, score more. | Player bios + squads |
 | `G6` | **Trivia Rush** `P1` | Rapid-fire multiple choice per league, Kahoot-style speed scoring. | Season stats, tables, squads |
 | `G2` | **Higher or Lower** | Two players compared on goals, assists, appearances, age, height, or market value. | Season stats |
 | `G3` | **Career Path** | Club sequence revealed one club at a time; name the player. | Career history |

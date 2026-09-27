@@ -1,4 +1,5 @@
 import type { FootballDataProvider, GeneralDataset } from '@fdg/football-data';
+import type { FixtureListCache } from './competitions/fixture-list-cache.js';
 import type { PrismaClient } from './db/client.js';
 import type { AppEnv } from './env.js';
 import type { IdentityProvider } from './identity/types.js';
@@ -20,4 +21,6 @@ export interface AppContext {
    * engine/general-dataset-access.ts. */
   readonly generalDataset: () => Promise<GeneralDataset>;
   readonly roomTokenSecret: Uint8Array;
+  /** Short-TTL cache in front of `getFixturesByCompetition`, see competitions/fixture-list-cache.ts. */
+  readonly fixtureListCache: FixtureListCache;
 }

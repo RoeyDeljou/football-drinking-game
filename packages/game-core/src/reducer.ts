@@ -335,31 +335,48 @@ const buildRound = (
       ? { order: turnOrder, activeIndex: 0, eliminated: [] }
       : null;
 
+  const round: RoundRecord = {
+    id: asRoundId(`${session.id}:r${roundIndex + 1}`),
+    index: roundIndex,
+    moduleId: module.id,
+    kind: module.kind,
+    status: 'open',
+    startedAt: now,
+    answerWindowMs: generated.answerWindowMs,
+    deadlineAt: generated.answerWindowMs === null ? null : now + generated.answerWindowMs,
+    lockedAt: null,
+    revealedAt: null,
+    contentKey: generated.contentKey,
+    publicPayload: generated.publicPayload,
+    privatePayloads: generated.privatePayloads,
+    solution: generated.solution,
+    submissions: [],
+    outcome: null,
+    observedEventIds: [],
+    turn,
+    contentChangeAt: null,
+  };
+
   return {
     ok: true,
     detail: null,
-    round: {
-      id: asRoundId(`${session.id}:r${roundIndex + 1}`),
-      index: roundIndex,
-      moduleId: module.id,
-      kind: module.kind,
-      status: 'open',
-      startedAt: now,
-      answerWindowMs: generated.answerWindowMs,
-      deadlineAt: generated.answerWindowMs === null ? null : now + generated.answerWindowMs,
-      lockedAt: null,
-      revealedAt: null,
-      contentKey: generated.contentKey,
-      publicPayload: generated.publicPayload,
-      privatePayloads: generated.privatePayloads,
-      solution: generated.solution,
-      submissions: [],
-      outcome: null,
-      observedEventIds: [],
-      turn,
-    },
+    round: { ...round, contentChangeAt: scheduleContentChange(module, session, round, now) },
   };
 };
+
+/**
+ * When the round's pre-reveal projection next changes with time alone (see
+ * `GameModuleDefinition.nextContentChangeAt`). Skipped entirely for modules without timed content.
+ */
+const scheduleContentChange = (
+  module: EngineGameModule,
+  session: SessionState,
+  round: RoundRecord,
+  now: number,
+): number | null =>
+  module.hasTimedContent
+    ? module.nextContentChangeAt({ config: session.config, round: toRoundView(round), now })
+    : null;
 
 /* ------------------------------- resolution -------------------------------- */
 
@@ -1141,13 +1158,23 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
       const slice = readActiveSlice(state, deps);
       if (slice === null) return unchanged(state);
       if (slice.round.status !== 'open') return unchanged(state);
-      if (slice.round.deadlineAt === null || now < slice.round.deadlineAt) {
-        return unchanged(state);
-      }
+      const deadlinePassed = slice.round.deadlineAt !== null && now >= slice.round.deadlineAt;
       // For a long-running bet or a private card the deadline closes *submissions* only: the round
       // itself runs until the module says it is resolved (full time, bingo full house, …).
-      if (!DEADLINE_ENDS_ROUND.includes(slice.round.kind)) return unchanged(state);
-      return revealRound(state, deps);
+      if (deadlinePassed && DEADLINE_ENDS_ROUND.includes(slice.round.kind)) return revealRound(state, deps);
+
+      // Time-unlocked content (G1's next clue): nothing in the stored state changes when it unlocks,
+      // so the transport — which rebroadcasts only on a state change — would never push it. Commit a
+      // new state exactly when the module's scheduled instant is reached, never on a plain tick.
+      const dueAt = slice.round.contentChangeAt;
+      if (dueAt === null || now < dueAt) return unchanged(state);
+      const updatedRound: RoundRecord = {
+        ...slice.round,
+        contentChangeAt: scheduleContentChange(slice.module, slice.session, slice.round, now),
+      };
+      return accept(commit(state, { sessions: writeRound(state, slice, updatedRound) }, now), [
+        { type: 'ROUND_UPDATED', roundId: updatedRound.id },
+      ]);
     }
 
     /* --------------------------- progression -------------------------- */

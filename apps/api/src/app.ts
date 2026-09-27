@@ -5,6 +5,8 @@ import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import { Server as SocketIoServer } from 'socket.io';
 import { registerAuthRoutes } from './auth/routes.js';
+import { registerCompetitionRoutes } from './competitions/routes.js';
+import { createFixtureListCache } from './competitions/fixture-list-cache.js';
 import type { AppContext } from './context.js';
 import type { GeneralDatasetAccess } from './engine/general-dataset-access.js';
 import { createGeneralDatasetAccess } from './engine/general-dataset-access.js';
@@ -38,6 +40,8 @@ export interface BuildAppOptions {
   readonly generalDatasetCooldownMs?: number;
   /** Test seam: a wrapped/counting provider instead of the one built from the environment. */
   readonly footballData?: FootballDataProvider;
+  /** Test seam: override the fixture-list cache TTL (default 90s, see competitions/fixture-list-cache.ts). */
+  readonly fixtureListCacheTtlMs?: number;
 }
 
 const FLUSH_WRITES_TIMEOUT_MS = 3000;
@@ -73,6 +77,9 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
     footballData,
     generalDataset: () => generalDatasetAccess.get(),
     roomTokenSecret: new TextEncoder().encode(env.ROOM_TOKEN_SECRET),
+    fixtureListCache: createFixtureListCache(
+      options.fixtureListCacheTtlMs === undefined ? {} : { ttlMs: options.fixtureListCacheTtlMs },
+    ),
   };
 
   const app = Fastify({ logger: env.NODE_ENV !== 'test' });
@@ -83,6 +90,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
   registerAuthRoutes(app, ctx);
   registerFriendsRoutes(app, ctx);
   registerRoomRoutes(app, ctx);
+  registerCompetitionRoutes(app, ctx);
 
   await app.ready();
 

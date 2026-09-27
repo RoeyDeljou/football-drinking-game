@@ -145,6 +145,13 @@ export interface RoundRecord {
   /** `MatchEvent.id`s already folded in, which makes live-event ingestion idempotent. */
   readonly observedEventIds: readonly string[];
   readonly turn: TurnState | null;
+  /**
+   * When this round's pre-reveal projection next changes purely because time passed (G1's next clue
+   * unlocking), as reported by the module's `nextContentChangeAt`. `null` means it never will. `TICK`
+   * commits a new state once `now` reaches it, so the transport's "state changed -> rebroadcast" rule
+   * also covers time-driven content without re-projecting on every tick.
+   */
+  readonly contentChangeAt: number | null;
 }
 
 export interface SessionState {

@@ -97,6 +97,7 @@ export type {
   AfterSubmissionContext,
   AfterSubmissionResult,
   ConfigParseResult,
+  ContentScheduleContext,
   EngineGameModule,
   GameCategory,
   GameModuleDefinition,
@@ -251,7 +252,7 @@ export {
 
 export { M3_DEFAULT_CONFIG, M3_ID, m3ShirtNumber } from './modules/m3-shirt-number.js';
 
-export type { G1Clue } from './modules/g1-guess-the-player.js';
+export type { G1Clue, G1ClueKind } from './modules/g1-guess-the-player.js';
 export {
   G1_DEFAULT_CONFIG,
   G1_ID,

@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BigButton, Card } from '@/components/ui';
-import { loadAuth, loadRoom, type StoredAuth, type StoredRoom } from '@/lib/storage';
+import { getValidAuthSession } from '@/lib/authSession';
+import { loadRoom, type StoredAuth, type StoredRoom } from '@/lib/storage';
 
 export default function LandingPage(): React.JSX.Element {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function LandingPage(): React.JSX.Element {
   const [resumable, setResumable] = useState<StoredRoom | null>(null);
 
   useEffect(() => {
-    setAuth(loadAuth());
+    void getValidAuthSession().then(setAuth);
     const stored = loadRoom();
     setResumable(stored);
     if (stored !== null) router.prefetch(`/room/${stored.roomId}`);

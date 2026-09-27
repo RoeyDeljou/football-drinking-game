@@ -1,4 +1,9 @@
+'use client';
+
 import type { LoadingState } from '@fdg/game-core';
+import { loadingElapsedMessage } from '@/lib/loadingCopy';
+import { loadingElapsedPhase } from '@/lib/loadingElapsed';
+import { useNow } from '@/lib/useNow';
 import { Banner, BigButton, Card, Spinner } from './ui';
 
 const STEP_LABEL: Record<string, string> = {
@@ -18,8 +23,11 @@ export const LoadingScreen = ({
   readonly isHost: boolean;
   readonly onRetry: () => void;
 }): React.JSX.Element => {
+  const now = useNow(1000);
   const failed = loading.steps.some((step) => step.status === 'failed');
   const allDone = loading.steps.every((step) => step.status === 'done');
+  const elapsedPhase = loadingElapsedPhase({ startedAt: loading.startedAt, steps: loading.steps, now });
+  const elapsedMessage = loadingElapsedMessage(elapsedPhase);
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,6 +55,12 @@ export const LoadingScreen = ({
         </ul>
         {!failed && !allDone ? <Spinner label="Hang tight, almost there." /> : null}
       </Card>
+
+      {!failed && elapsedMessage !== null ? (
+        <div role="status" aria-live="polite">
+          <Banner tone={elapsedPhase === 'longer' ? 'warn' : 'info'}>{elapsedMessage}</Banner>
+        </div>
+      ) : null}
 
       {loading.failedReason !== null ? <Banner tone="error">{loading.failedReason}</Banner> : null}
       {failed && !isHost ? <Banner tone="warn">Loading failed. Waiting for the host to retry.</Banner> : null}

@@ -220,6 +220,16 @@ export interface RoundProjection<S extends ModuleShape> {
   readonly solution: S['solution'] | null;
 }
 
+/**
+ * Input to `nextContentChangeAt`. Deliberately the same round/config view `projectRound` gets, so a
+ * module derives its schedule from exactly the data its projection reads.
+ */
+export interface ContentScheduleContext<S extends ModuleShape> {
+  readonly config: S['config'];
+  readonly round: RoundView<S>;
+  readonly now: number;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Live events (long-running bets, private cards)                              */
 /* -------------------------------------------------------------------------- */
@@ -271,6 +281,20 @@ export interface GameModuleDefinition<S extends ModuleShape> {
   projectRound(ctx: ProjectRoundContext<S>): RoundProjection<S>;
   observeEvents?: (ctx: ObserveEventsContext<S>) => ObserveEventsResult<S>;
   afterSubmission?: (ctx: AfterSubmissionContext<S>) => AfterSubmissionResult;
+  /**
+   * **Required if and only if `projectRound` reads `ctx.now`** for a pre-reveal round (time-unlocked
+   * content such as G1's clues). Returns the earliest instant *strictly after* `ctx.now` at which the
+   * pre-reveal projection for any viewer may differ from what it is at `ctx.now`, or `null` when it
+   * will never change again with time alone.
+   *
+   * Nothing in `RoomState` changes when time-derived content unlocks, so without this the transport
+   * (which rebroadcasts only on a state change) would never push the new content. The engine calls
+   * this when a round is built and again on each `TICK` that reaches the stored instant, committing a
+   * new state (with a `ROUND_UPDATED` event) only at those boundaries — never on every tick.
+   *
+   * Must be pure and cheap. Returning a value `<= ctx.now` is a contract violation and throws.
+   */
+  nextContentChangeAt?: (ctx: ContentScheduleContext<S>) => number | null;
 }
 
 export type ConfigParseResult =
@@ -291,6 +315,8 @@ export interface EngineGameModule {
   readonly allowResubmission: boolean;
   readonly defaultConfig: unknown;
   readonly supportsLiveEvents: boolean;
+  /** `true` when the module declares `nextContentChangeAt`, i.e. its projection changes with time. */
+  readonly hasTimedContent: boolean;
   parseConfig(input: unknown): ConfigParseResult;
   generateRound(ctx: RoundGenerationContext<ModuleShape>): GenerateRoundResult<ModuleShape>;
   validateSubmission(ctx: ValidateSubmissionContext<ModuleShape>): SubmissionValidation<ModuleShape>;
@@ -298,6 +324,8 @@ export interface EngineGameModule {
   projectRound(ctx: ProjectRoundContext<ModuleShape>): RoundProjection<ModuleShape>;
   observeEvents(ctx: ObserveEventsContext<ModuleShape>): ObserveEventsResult<ModuleShape> | null;
   afterSubmission(ctx: AfterSubmissionContext<ModuleShape>): AfterSubmissionResult | null;
+  /** `null` for modules without timed content. Validated: never `<= ctx.now`, always finite. */
+  nextContentChangeAt(ctx: ContentScheduleContext<ModuleShape>): number | null;
 }
 
 const parseWith = <T>(schema: ZodType<T, ZodTypeDef, unknown>, value: unknown, label: string): T => {
@@ -373,6 +401,7 @@ export const defineGameModule = <S extends ModuleShape>(
     allowResubmission: definition.allowResubmission,
     defaultConfig: definition.defaultConfig,
     supportsLiveEvents: definition.observeEvents !== undefined,
+    hasTimedContent: definition.nextContentChangeAt !== undefined,
 
     parseConfig: (input: unknown): ConfigParseResult => {
       const result = definition.configSchema.safeParse(input);
@@ -454,6 +483,20 @@ export const defineGameModule = <S extends ModuleShape>(
         players: ctx.players,
         now: ctx.now,
       });
+    },
+
+    nextContentChangeAt: (ctx) => {
+      const schedule = definition.nextContentChangeAt;
+      if (schedule === undefined) return null;
+      const next = schedule({ config: typedConfig(ctx.config), round: typedRound(ctx.round), now: ctx.now });
+      // A time in the past (or now) would make every TICK commit a new state — exactly the
+      // broadcast-every-second spam this hook exists to avoid — so it is a loud contract violation.
+      if (next !== null && (!Number.isFinite(next) || next <= ctx.now)) {
+        throw new EngineInvariantError(
+          `${definition.id} nextContentChangeAt returned ${String(next)}, which is not after now (${ctx.now})`,
+        );
+      }
+      return next;
     },
   };
 };

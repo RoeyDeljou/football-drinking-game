@@ -100,9 +100,9 @@ Owner: `game-ux-engineer`
 
 - [x] Landing page: Host / Join with PIN / Sign in
 - [x] Auth screens with 18+ gate and responsible-drinking notice; friends screen
-- [~] Host flow: choose **Matchday** or **General** → matchday fixture picker (6 competitions, live/upcoming) → game picker → settings —
-  matchday picker is a demo fixture + free-text fixture id, not a real browse-6-competitions picker (no `apps/api`
-  endpoint to list fixtures yet); deferred, tracked below
+- [x] Host flow: choose **Matchday** or **General** → matchday fixture picker (browse all configured competitions,
+  each showing its live/upcoming fixtures via `GET /competitions` + `GET /competitions/:id/fixtures`, with
+  loading/error/empty states and retry) → game picker → settings
 - [x] Matchday loading screen driven by real `MatchdayPrefetcher` progress, with failure + retry
 - [x] Join flow: PIN entry, nickname, link and QR join; lobby with live player list and host start control
 - [x] Play screens for the Phase-1 set: **M1 Match Markets**, **M2 Who's That Player?**, **M3 Shirt Number**, **G1 Guess the Player**, **G6 Trivia Rush**

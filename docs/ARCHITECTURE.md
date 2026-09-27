@@ -55,6 +55,26 @@ broadcast. The client never computes a result, and the server never contains a r
   (`GeneralDatasetSnapshot`) behind the `GeneralDatasetStore` port; the server loads it at startup and refreshes stale
   data in the background (see `docs/DEPLOYMENT.md`).
 - Rooms are keyed by a 6-character PIN from an unambiguous alphabet (no `0/O`, `1/I`).
+- Fixture picker for hosting a matchday room, so a host never has to know a raw provider fixture id:
+  - `GET /competitions` — the six supported competitions straight from `COMPETITION_CONFIGS` (no provider call,
+    instant). `200 { competitions: Competition[] }`.
+  - `GET /competitions/:id/fixtures?window=live|upcoming` — real fixtures for that competition, from
+    `FootballDataProvider.getFixturesByCompetition`. `:id` is one of the internal competition slugs returned by
+    `GET /competitions` (e.g. `premier-league`, `champions-league`), not a provider id.
+    - `window` is optional. Omitted: live fixtures first (soonest-kicked-off first), then `SCHEDULED` fixtures
+      kicking off in the next 14 days (soonest first) — 14 days comfortably spans a domestic
+      midweek/weekend pairing or a UCL group/knockout gap without surfacing fixtures too far out to plan a
+      session around. `window=live` or `window=upcoming` narrows to just one half of that list. Finished,
+      postponed, cancelled and out-of-window fixtures are always excluded. Capped at 20 results.
+    - `200 { fixtures: [{ fixtureId, kickoff, status, minute, competitionId, homeTeam: { name, crestUrl },
+      awayTeam: { name, crestUrl } }] }` — an empty array (still `200`) means "no live games for this
+      competition right now", which is a UI state, not an error.
+    - `400 { error: { code: 'UNKNOWN_COMPETITION' } }` for an id not in `COMPETITION_CONFIGS`; `400
+      { error: { code: 'INVALID_QUERY' } }` for a bad `window`.
+    - `503 { error: { code: 'DATA_UNAVAILABLE' } }` when the provider call fails — never a bare 500.
+    - Cached per competition id for 90s (`apps/api/src/competitions/fixture-list-cache.ts`) so the picker never
+      hammers the free-tier provider; only successes are cached, so a transient upstream failure is retried on
+      the very next request rather than repeated for the whole TTL.
 
 ## apps/web
 

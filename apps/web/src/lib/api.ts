@@ -6,7 +6,21 @@
 import { API_BASE_URL } from './config';
 import type { StoredAuth } from './storage';
 
-export type ApiResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly message: string };
+export type ApiResult<T> =
+  | { readonly ok: true; readonly value: T }
+  | {
+      readonly ok: false;
+      readonly message: string;
+      /**
+       * The server's `error.code` (e.g. `INVALID_REFRESH_TOKEN`), when the server actually responded
+       * with a structured error body. `undefined` for a network failure (fetch threw, no response at
+       * all) — callers that need to distinguish "the server told us this is invalid" from "we
+       * couldn't reach it" must check this, not just `ok`. See `lib/authSession.ts`.
+       */
+      readonly code?: string;
+      /** The HTTP status, when a response was actually received (absent on a network failure). */
+      readonly status?: number;
+    };
 
 const request = async <T>(
   path: string,
@@ -21,13 +35,12 @@ const request = async <T>(
     const text = await response.text();
     const body: unknown = text.length === 0 ? null : JSON.parse(text);
     if (!response.ok) {
-      const message =
+      const errorBody =
         body !== null && typeof body === 'object' && 'error' in body
-          ? String((body as { error: { message?: string; code?: string } }).error.message ??
-              (body as { error: { message?: string; code?: string } }).error.code ??
-              'Request failed')
-          : `Request failed (${response.status})`;
-      return { ok: false, message };
+          ? (body as { error: { message?: string; code?: string } }).error
+          : undefined;
+      const message = errorBody !== undefined ? String(errorBody.message ?? errorBody.code ?? 'Request failed') : `Request failed (${response.status})`;
+      return { ok: false, message, code: errorBody?.code, status: response.status };
     }
     return { ok: true, value: body as T };
   } catch {
@@ -77,6 +90,53 @@ export const fetchRoomByPin = (pin: string): Promise<ApiResult<RoomSummary>> =>
 export const fetchRoomById = (roomId: string): Promise<ApiResult<RoomSummary>> =>
   request<RoomSummary>(`/rooms/${encodeURIComponent(roomId)}`);
 
+/* ------------------------------- competitions ------------------------------- */
+
+export interface Competition {
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly country: string;
+  readonly logoUrl: string | null;
+  readonly currentSeason: string;
+}
+
+export type FixtureStatus =
+  | 'SCHEDULED'
+  | 'LIVE'
+  | 'HALF_TIME'
+  | 'EXTRA_TIME'
+  | 'PENALTIES'
+  | 'FINISHED'
+  | 'POSTPONED'
+  | 'CANCELLED';
+
+export interface FixtureTeamSummary {
+  readonly name: string;
+  readonly crestUrl: string | null;
+}
+
+export interface FixtureSummary {
+  readonly fixtureId: string;
+  readonly kickoff: string;
+  readonly status: FixtureStatus;
+  readonly minute: number | null;
+  readonly competitionId: string;
+  readonly homeTeam: FixtureTeamSummary;
+  readonly awayTeam: FixtureTeamSummary;
+}
+
+export const listCompetitions = (): Promise<ApiResult<{ competitions: readonly Competition[] }>> =>
+  request('/competitions');
+
+export const listCompetitionFixtures = (
+  competitionId: string,
+  window?: 'live' | 'upcoming',
+): Promise<ApiResult<{ fixtures: readonly FixtureSummary[] }>> =>
+  request(
+    `/competitions/${encodeURIComponent(competitionId)}/fixtures${window !== undefined ? `?window=${window}` : ''}`,
+  );
+
 /* ---------------------------------- auth ---------------------------------- */
 
 export interface AuthSessionResponse {
@@ -99,6 +159,14 @@ export const register = (input: {
 export const login = (input: { readonly email: string; readonly password: string }): Promise<
   ApiResult<AuthSessionResponse>
 > => request<AuthSessionResponse>('/auth/login', { method: 'POST', body: JSON.stringify(input) });
+
+/**
+ * Exchanges a refresh token for a fresh access + refresh token pair (the server rotates the refresh
+ * token on every use). Used by `lib/authSession.ts` to transparently keep a signed-in session alive
+ * past the access token's short TTL — never call this directly from a screen.
+ */
+export const refreshAccessToken = (refreshToken: string): Promise<ApiResult<AuthSessionResponse>> =>
+  request<AuthSessionResponse>('/auth/refresh', { method: 'POST', body: JSON.stringify({ refreshToken }) });
 
 export const toStoredAuth = (session: AuthSessionResponse): StoredAuth => ({
   accessToken: session.tokens.accessToken,

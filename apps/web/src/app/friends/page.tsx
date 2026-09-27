@@ -5,7 +5,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Banner, BigButton, Card } from '@/components/ui';
 import type { FriendRequestEntry, PublicUser } from '@/lib/api';
 import { listFriendRequests, listFriends, respondFriendRequest, searchUsers, sendFriendRequest } from '@/lib/api';
-import { loadAuth, type StoredAuth } from '@/lib/storage';
+import { getValidAuthSession } from '@/lib/authSession';
+import type { StoredAuth } from '@/lib/storage';
 
 export default function FriendsPage(): React.JSX.Element {
   const [auth, setAuth] = useState<StoredAuth | null | undefined>(undefined);
@@ -17,7 +18,7 @@ export default function FriendsPage(): React.JSX.Element {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setAuth(loadAuth());
+    void getValidAuthSession().then(setAuth);
   }, []);
 
   const refresh = useCallback(async (token: string): Promise<void> => {
@@ -49,19 +50,28 @@ export default function FriendsPage(): React.JSX.Element {
 
   const runSearch = async (): Promise<void> => {
     if (query.trim().length === 0) return;
-    const result = await searchUsers(query.trim(), auth.accessToken);
+    const session = await getValidAuthSession();
+    setAuth(session);
+    if (session === null) return;
+    const result = await searchUsers(query.trim(), session.accessToken);
     if (result.ok) setResults(result.value.users);
   };
 
   const request = async (targetUserId: string): Promise<void> => {
-    const result = await sendFriendRequest(targetUserId, auth.accessToken);
+    const session = await getValidAuthSession();
+    setAuth(session);
+    if (session === null) return;
+    const result = await sendFriendRequest(targetUserId, session.accessToken);
     setMessage(result.ok ? 'Friend request sent.' : result.message);
-    if (result.ok) await refresh(auth.accessToken);
+    if (result.ok) await refresh(session.accessToken);
   };
 
   const respond = async (requestId: string, action: 'accept' | 'decline'): Promise<void> => {
-    await respondFriendRequest(requestId, action, auth.accessToken);
-    await refresh(auth.accessToken);
+    const session = await getValidAuthSession();
+    setAuth(session);
+    if (session === null) return;
+    await respondFriendRequest(requestId, action, session.accessToken);
+    await refresh(session.accessToken);
   };
 
   return (
