@@ -16,6 +16,14 @@
  * never both. `gamedayCompetitionId` is optional (not just nullable) so every pre-existing call site
  * and test that only ever constructed `{ fixtureId }` literals keeps compiling unchanged; read it
  * through `meta.gamedayCompetitionId ?? null`.
+ *
+ * A general room may optionally scope itself to one competition (`generalCompetitionId`) instead of
+ * drawing from every competition's combined data — see `engine/general-scope.ts` for how
+ * `buildRoundDataContext` turns this into a filtered `GeneralDataset` view. `null`/absent (the
+ * default) keeps drawing from the combined dataset, exactly as before this existed. Mutually
+ * exclusive with `fixtureId`/`gamedayCompetitionId` in practice (only set on a `category: 'general'`
+ * room), but not modelled as a discriminated union here for the same reason `gamedayCompetitionId`
+ * isn't either — every field next to it already defaults independently.
  */
 
 import type { CompetitionId, FixtureId } from '@fdg/football-data';
@@ -25,9 +33,15 @@ export interface RoomMeta {
   readonly fixtureId: FixtureId | null;
   /** Set only for a gameday room; absent/`null` for a single-fixture matchday room or a general room. */
   readonly gamedayCompetitionId?: CompetitionId | null;
+  /** Set only for a competition-scoped general room; absent/`null` for the default combined dataset. */
+  readonly generalCompetitionId?: CompetitionId | null;
 }
 
-export const EMPTY_ROOM_META: RoomMeta = { fixtureId: null, gamedayCompetitionId: null };
+export const EMPTY_ROOM_META: RoomMeta = {
+  fixtureId: null,
+  gamedayCompetitionId: null,
+  generalCompetitionId: null,
+};
 
 export interface RoomRecord {
   readonly state: RoomState;

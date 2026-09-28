@@ -225,7 +225,38 @@ export { projectFor, projectForHostScreen } from './projection.js';
 
 /* modules + registry */
 export type { GameModuleRegistry, ModulePlayability } from './modules/registry.js';
-export { createDefaultRegistry, createModuleRegistry, PHASE_1_MODULES } from './modules/registry.js';
+export {
+  createDefaultRegistry,
+  createModuleRegistry,
+  generalMixed,
+  matchdayMixed,
+  PHASE_1_MODULES,
+  STANDALONE_MODULES,
+} from './modules/registry.js';
+
+export type {
+  MixedConfig,
+  MixedModuleOptions,
+  MixedPublicPayload,
+  MixedSolution,
+  MixedSummary,
+  ParsedMixedContentKey,
+} from './modules/mixed.js';
+export {
+  createMixedModule,
+  G_MIX_ID,
+  isMixable,
+  M_MIX_ID,
+  MIXABLE_ROUND_KINDS,
+  MIXED_CONTENT_KEY_SEPARATOR,
+  mixedContentKey,
+  orderMixedCandidates,
+  parseMixedContentKey,
+  SHIRT_NUMBER_DISPLAYS,
+  SHIRT_NUMBER_QUIZZES,
+  suppressesShirtNumbers,
+  suppressOptionShirtNumbers,
+} from './modules/mixed.js';
 
 export type {
   M1Counters,
@@ -262,6 +293,15 @@ export {
   g1GuessThePlayer,
   visibleClueCount,
 } from './modules/g1-guess-the-player.js';
+
+export type { G3ClubStep } from './modules/g3-career-path.js';
+export {
+  careerEliminationStep,
+  careerPath,
+  G3_DEFAULT_CONFIG,
+  G3_ID,
+  g3CareerPath,
+} from './modules/g3-career-path.js';
 
 export type { G6QuestionKind } from './modules/g6-trivia-rush.js';
 export { G6_DEFAULT_CONFIG, G6_ID, g6TriviaRush } from './modules/g6-trivia-rush.js';

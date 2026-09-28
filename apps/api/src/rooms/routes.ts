@@ -31,6 +31,8 @@ const summarize = (state: RoomState, meta: RoomMeta) => ({
   fixtureId: meta.fixtureId,
   /** Set only for a gameday room (see `RoomMeta`); `null` otherwise. */
   gamedayCompetitionId: meta.gamedayCompetitionId ?? null,
+  /** Set only for a competition-scoped general room (see `RoomMeta`); `null` otherwise. */
+  generalCompetitionId: meta.generalCompetitionId ?? null,
 });
 
 const generateUniquePin = async (store: RoomStore): Promise<string> => {
@@ -100,6 +102,19 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
       gamedayCompetitionId = competitionId;
     }
 
+    // A general room may optionally scope itself to one competition — validated up front, before
+    // allocating a PIN or writing any row, same as the gameday check above.
+    let generalCompetitionId: CompetitionId | null = null;
+    if (parsed.data.category === 'general' && parsed.data.competitionId !== undefined) {
+      const config = competitionConfigById(parsed.data.competitionId);
+      if (config === null) {
+        return reply.code(400).send({
+          error: { code: 'UNKNOWN_COMPETITION', message: `${parsed.data.competitionId} is not a supported competition.` },
+        });
+      }
+      generalCompetitionId = asCompetitionId(config.id);
+    }
+
     const roomId = asRoomId(randomUUID());
     const hostPlayerId = asPlayerId(randomUUID());
     const pin = await generateUniquePin(ctx.roomStore);
@@ -122,6 +137,7 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
     const meta: RoomMeta = {
       fixtureId: fixtureId === null ? null : asFixtureId(fixtureId),
       gamedayCompetitionId,
+      generalCompetitionId,
     };
     const record: RoomRecord = { state, meta };
     await ctx.roomStore.save(record);

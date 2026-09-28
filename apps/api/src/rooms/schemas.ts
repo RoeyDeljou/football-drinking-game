@@ -4,7 +4,11 @@ import { roomSettingsPatchSchema } from '@fdg/game-core';
 /**
  * A matchday room is either tied to one specific fixture (`fixtureId`, unchanged) or, for "gameday
  * mode", to a whole competition whose currently-live fixtures rotate round to round
- * (`gameday: true` + `competitionId`) — never both. `general` rooms use neither.
+ * (`gameday: true` + `competitionId`) — never both. A `general` room uses neither of those, but may
+ * itself optionally carry `competitionId` to scope every general game in the room to that one
+ * competition instead of the combined dataset (see `RoomMeta.generalCompetitionId`); omitting it
+ * keeps today's combined-dataset behaviour unchanged. The same `competitionId` field is reused for
+ * both meanings — they are mutually exclusive by `category`, never ambiguous for a given request.
  */
 export const createRoomBodySchema = z
   .object({
@@ -31,6 +35,18 @@ export const createRoomBodySchema = z
   .refine((value) => value.gameday !== true || value.fixtureId === undefined, {
     message: 'fixtureId and gameday are mutually exclusive',
     path: ['fixtureId'],
+  })
+  .refine((value) => value.category === 'general' || value.gameday === true || value.competitionId === undefined, {
+    message: 'competitionId is only accepted for a general room or a gameday matchday room',
+    path: ['competitionId'],
+  })
+  .refine((value) => value.category !== 'general' || value.fixtureId === undefined, {
+    message: 'fixtureId does not apply to a general room',
+    path: ['fixtureId'],
+  })
+  .refine((value) => value.category !== 'general' || value.gameday === undefined, {
+    message: 'gameday does not apply to a general room',
+    path: ['gameday'],
   });
 
 export const pinParamsSchema = z.object({

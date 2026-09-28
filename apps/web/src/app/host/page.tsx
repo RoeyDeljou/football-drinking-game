@@ -8,6 +8,7 @@ import { Banner, BigButton, Card } from '@/components/ui';
 import type { ApiResult, Competition, FixtureSummary } from '@/lib/api';
 import { createRoom, listCompetitionFixtures, listCompetitions } from '@/lib/api';
 import { fixtureLoadElapsedPhase } from '@/lib/fixtureLoadElapsed';
+import { matchdayAvailability, type CompetitionLiveCheck } from '@/lib/matchdayAvailability';
 import {
   competitionsView,
   fixturesView,
@@ -23,6 +24,11 @@ import { useNow } from '@/lib/useNow';
 import { useRoom } from '@/lib/room-context';
 
 type Category = 'matchday' | 'general';
+
+/** How often to re-sweep every competition for a newly-live match while the host sits on this
+ * page. Matches the server's own fixture-list cache TTL, so a tighter interval would just be
+ * hammering a cache that hasn't changed. */
+const MATCHDAY_SWEEP_INTERVAL_MS = 90_000;
 
 export default function HostPage(): React.JSX.Element {
   return (
@@ -45,6 +51,10 @@ function HostPageContent(): React.JSX.Element {
   const [fixturesLoadStartedAt, setFixturesLoadStartedAt] = useState<number | null>(null);
   const [selectedFixture, setSelectedFixture] = useState<FixtureSummary | null>(null);
   const [gamedaySelected, setGamedaySelected] = useState(false);
+  /** General-room competition scope. `null` = "all competitions combined" (today's default, unchanged
+   * request shape). Separate from `selectedCompetitionId`, which drives the Matchday league→fixture
+   * flow and must never be disturbed by picking a General scope. */
+  const [generalCompetitionId, setGeneralCompetitionId] = useState<string | null>(null);
 
   const [rounds, setRounds] = useState(8);
   const [hostNickname, setHostNickname] = useState('');
@@ -53,6 +63,54 @@ function HostPageContent(): React.JSX.Element {
 
   const now = useNow(30_000);
   const fastNow = useNow(1_000);
+
+  // Background sweep across every competition for a fresh live fixture, driving whether the
+  // Matchday category can be selected at all. Kept separate from the league/fixture pickers above
+  // (which only run once a league is chosen) — this runs unconditionally as soon as the page mounts.
+  const [matchdayChecks, setMatchdayChecks] = useState<readonly CompetitionLiveCheck[]>([]);
+  const matchdaySweepId = useRef(0);
+  const matchdaySweepInFlight = useRef(false);
+
+  const runMatchdaySweep = (): void => {
+    // Don't stack overlapping sweeps if the previous one (competitions list + per-competition
+    // fixture fan-out) is still in flight when the next interval tick fires.
+    if (matchdaySweepInFlight.current) return;
+    matchdaySweepInFlight.current = true;
+    const sweepId = ++matchdaySweepId.current;
+    void listCompetitions().then(async (competitionsResult) => {
+      if (sweepId !== matchdaySweepId.current) return;
+      if (!competitionsResult.ok) {
+        // Can't even get the competition list — nothing to sweep. Report it as one failed check so
+        // the decision function still resolves (to "unavailable") instead of sitting in "searching"
+        // forever.
+        setMatchdayChecks([{ status: 'settled', result: competitionsResult }]);
+        matchdaySweepInFlight.current = false;
+        return;
+      }
+      const competitions = competitionsResult.value.competitions;
+      setMatchdayChecks(competitions.map(() => ({ status: 'pending' })));
+      // Fan out in parallel, one live-fixture request per competition. listCompetitionFixtures
+      // never rejects (network failures are caught and returned as an ApiResult), so Promise.all is
+      // safe here: a single competition's failure can't derail the others.
+      const results = await Promise.all(
+        competitions.map((competition) => listCompetitionFixtures(competition.id, 'live')),
+      );
+      if (sweepId !== matchdaySweepId.current) return;
+      setMatchdayChecks(results.map((result) => ({ status: 'settled', result })));
+      matchdaySweepInFlight.current = false;
+    });
+  };
+
+  useEffect(() => {
+    runMatchdaySweep();
+    const id = window.setInterval(runMatchdaySweep, MATCHDAY_SWEEP_INTERVAL_MS);
+    return () => window.clearInterval(id);
+    // Intentionally run once on mount: runMatchdaySweep reads refs, not state, so it doesn't need to
+    // be re-created on every render.
+  }, []);
+
+  const matchdayState = matchdayAvailability(matchdayChecks, now);
+  const matchdayLocked = matchdayState === 'unavailable' && category !== 'matchday';
 
   // Request guards: a slow response from a request that's no longer "the current one" (the user
   // switched category/league again before it resolved) must never overwrite state for whatever is
@@ -70,7 +128,9 @@ function HostPageContent(): React.JSX.Element {
   };
 
   useEffect(() => {
-    if (category === 'matchday' && competitionsResult === null) loadCompetitions();
+    // Both Matchday (league→fixture) and General (optional competition scope) draw from the same
+    // `GET /competitions` list — fetch it once, lazily, the first time either category needs it.
+    if ((category === 'matchday' || category === 'general') && competitionsResult === null) loadCompetitions();
     // loadCompetitions and competitionsResult are intentionally excluded: this should only
     // re-fire when the category toggle changes, not on every re-render once results arrive.
   }, [category]);
@@ -146,6 +206,9 @@ function HostPageContent(): React.JSX.Element {
       ...(category === 'matchday' && gamedaySelected && selectedCompetitionId !== null
         ? { gameday: true, competitionId: selectedCompetitionId }
         : {}),
+      // Omitted entirely (not sent as null/'') when unset, so "all competitions" stays byte-identical
+      // to today's default request shape.
+      ...(category === 'general' && generalCompetitionId !== null ? { competitionId: generalCompetitionId } : {}),
       hostNickname: hostNickname.trim(),
       settings: { roundsPerSession: rounds, minPlayersToStart: 1 },
     });
@@ -182,13 +245,29 @@ function HostPageContent(): React.JSX.Element {
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => setCategory('matchday')}
+            onClick={() => {
+              // A brief flicker to "available" right before the host taps, followed by a re-check
+              // that flips it back, must never retroactively un-select them once they're already on
+              // this category — the lock only gates a *new* selection.
+              if (matchdayLocked) return;
+              setCategory('matchday');
+            }}
+            disabled={matchdayLocked}
+            aria-disabled={matchdayLocked}
             className={`tap-target rounded-2xl border-2 px-3 font-bold ${
-              category === 'matchday' ? 'border-pitch-500 bg-pitch-500/20' : 'border-white/15 bg-white/5'
+              category === 'matchday'
+                ? 'border-pitch-500 bg-pitch-500/20'
+                : matchdayLocked
+                  ? 'cursor-not-allowed border-white/10 bg-white/5 opacity-40'
+                  : 'border-white/15 bg-white/5'
             }`}
           >
             Matchday
             <div className="mt-1 text-xs font-normal text-white/50">Tied to a real fixture</div>
+            <div role="status" aria-live="polite" className="mt-1 text-[10px] font-semibold uppercase tracking-wide">
+              {matchdayState === 'searching' ? <span className="text-white/40">Searching…</span> : null}
+              {matchdayState === 'unavailable' ? <span className="text-red-300/70">No live games for now</span> : null}
+            </div>
           </button>
           <button
             type="button"
@@ -350,6 +429,67 @@ function HostPageContent(): React.JSX.Element {
               ) : null}
             </>
           )}
+        </Card>
+      ) : null}
+
+      {category === 'general' ? (
+        <Card>
+          <h2 className="mb-1 text-sm font-bold uppercase tracking-wide text-white/50">Competition</h2>
+          <p className="mb-3 text-xs text-white/40">
+            Optional — leave on &quot;All competitions&quot; to draw players from every league combined.
+          </p>
+          {compView.status === 'loading' ? (
+            <div role="status" aria-live="polite" className="py-4 text-center text-sm text-white/60">
+              Loading competitions…
+            </div>
+          ) : null}
+          {compView.status === 'error' ? (
+            <div className="flex flex-col gap-3">
+              <Banner tone="error">{compView.message}</Banner>
+              <BigButton variant="secondary" onClick={loadCompetitions}>
+                Try again
+              </BigButton>
+            </div>
+          ) : null}
+          {compView.status === 'ready' ? (
+            <div className="flex snap-x gap-3 overflow-x-auto pb-1" role="listbox" aria-label="Competitions">
+              <button
+                type="button"
+                role="option"
+                aria-selected={generalCompetitionId === null}
+                onClick={() => setGeneralCompetitionId(null)}
+                className={`tap-target flex min-w-[9rem] shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-center active:border-pitch-500 ${
+                  generalCompetitionId === null ? 'border-pitch-500 bg-pitch-500/20' : 'border-white/15 bg-white/5'
+                }`}
+              >
+                <span className="text-sm font-bold leading-tight">All competitions</span>
+              </button>
+              {compView.competitions.map((competition) => (
+                <button
+                  key={competition.id}
+                  type="button"
+                  role="option"
+                  aria-selected={generalCompetitionId === competition.id}
+                  aria-label={competition.name}
+                  onClick={() => setGeneralCompetitionId(competition.id)}
+                  className={`tap-target flex min-w-[9rem] shrink-0 snap-start flex-col items-center gap-2 rounded-2xl border-2 px-4 py-3 text-center active:border-pitch-500 ${
+                    generalCompetitionId === competition.id
+                      ? 'border-pitch-500 bg-pitch-500/20'
+                      : 'border-white/15 bg-white/5'
+                  }`}
+                >
+                  {competition.logoUrl !== null ? (
+                    // A remote, provider-hosted crest URL — not a build-time asset, so next/image's
+                    // static optimization doesn't apply here.
+                    <img src={competition.logoUrl} alt="" className="h-10 w-10 object-contain" />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-white/10" aria-hidden />
+                  )}
+                  <span className="text-sm font-bold leading-tight">{competition.name}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
         </Card>
       ) : null}
 

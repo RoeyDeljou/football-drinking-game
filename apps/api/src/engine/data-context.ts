@@ -26,6 +26,7 @@ import type { AppContext } from '../context.js';
 import { getCachedBundle, setCachedBundle } from './matchday-cache.js';
 import type { GamedayCacheEntry, RoundKey } from './gameday-cache.js';
 import { getCachedGameday, getPinnedRoundFixture, setCachedGameday } from './gameday-cache.js';
+import { getScopedGeneralDataset } from './general-scope.js';
 import type { RoomMeta } from '../rooms/store.js';
 
 /**
@@ -479,7 +480,9 @@ export const buildRoundDataContext = async (
     return singleCandidate(bundle === null ? EMPTY_DATA_CONTEXT : bundleToContext(bundle));
   }
 
-  const dataset = await ctx.generalDataset();
+  const fullDataset = await ctx.generalDataset();
+  const generalCompetitionId = meta.generalCompetitionId ?? null;
+  const dataset = generalCompetitionId === null ? fullDataset : getScopedGeneralDataset(fullDataset, generalCompetitionId);
   return singleCandidate({
     fixture: null,
     lineups: null,

@@ -6,10 +6,12 @@
 
 import type { ComponentType } from 'react';
 import { G1GuessThePlayer } from './G1GuessThePlayer';
+import { G3CareerPath } from './G3CareerPath';
 import { G6TriviaRush } from './G6TriviaRush';
 import { M1MatchMarkets } from './M1MatchMarkets';
 import { M2WhoIsThatPlayer } from './M2WhoIsThatPlayer';
 import { M3ShirtNumber } from './M3ShirtNumber';
+import { MixedGameScreen } from './MixedGameScreen';
 import type { GameScreenProps } from './types';
 
 export const GAME_SCREENS: Record<string, ComponentType<GameScreenProps>> = {
@@ -17,7 +19,10 @@ export const GAME_SCREENS: Record<string, ComponentType<GameScreenProps>> = {
   M2: M2WhoIsThatPlayer,
   M3: M3ShirtNumber,
   G1: G1GuessThePlayer,
+  G3: G3CareerPath,
   G6: G6TriviaRush,
+  'G-MIX': MixedGameScreen,
+  'M-MIX': MixedGameScreen,
 };
 
 export const GAME_CATALOG: readonly {
@@ -26,6 +31,12 @@ export const GAME_CATALOG: readonly {
   readonly category: 'matchday' | 'general';
   readonly blurb: string;
 }[] = [
+  {
+    id: 'M-MIX',
+    name: 'Full Match Mix',
+    category: 'matchday',
+    blurb: 'Every matchday question game in one rotation — never the same round twice.',
+  },
   {
     id: 'M1',
     name: 'Match Markets',
@@ -45,10 +56,22 @@ export const GAME_CATALOG: readonly {
     blurb: "See a real starter, guess their shirt number — closest guess wins.",
   },
   {
+    id: 'G-MIX',
+    name: 'All-Star Mix',
+    category: 'general',
+    blurb: 'Every general game in one rotation — a different question style each round.',
+  },
+  {
     id: 'G1',
     name: 'Guess the Player',
     category: 'general',
     blurb: 'Clues about a real footballer reveal one at a time — name them before your friends.',
+  },
+  {
+    id: 'G3',
+    name: 'Career Path',
+    category: 'general',
+    blurb: 'Their clubs reveal one at a time, oldest first — name the player before the big reveal.',
   },
   {
     id: 'G6',

@@ -16,6 +16,7 @@ import type { AppContext } from '../context.js';
 import { runGamedayPrefetch, runMatchdayPrefetch } from '../engine/data-context.js';
 import { registry } from '../engine/deps.js';
 import { dispatchAction } from '../engine/dispatch.js';
+import { getScopedGeneralDataset } from '../engine/general-scope.js';
 import type { RoomRecord } from '../rooms/store.js';
 
 const toLoadingStatus = (status: PrefetchStepStatus): LoadingStepStatus => {
@@ -113,7 +114,9 @@ export const runLoadingPipeline = async (
     for (const stepKey of requestedKeys) {
       await dispatchProgress(stepKey, 'active', null);
     }
-    const dataset = await ctx.generalDataset();
+    const fullDataset = await ctx.generalDataset();
+    const generalCompetitionId = record.meta.generalCompetitionId ?? null;
+    const dataset = generalCompetitionId === null ? fullDataset : getScopedGeneralDataset(fullDataset, generalCompetitionId);
     const status: LoadingStepStatus = dataset.players.length === 0 ? 'failed' : 'done';
     for (const stepKey of requestedKeys) {
       await dispatchProgress(stepKey, status, null);

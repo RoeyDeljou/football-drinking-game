@@ -12,7 +12,9 @@ import type { RoomAction } from './actions.js';
 import type { GameModuleId, PlayerId } from './ids.js';
 import { asPlayerId, asRoundId, asSessionId } from './ids.js';
 import { G1_ID } from './modules/g1-guess-the-player.js';
+import { G3_ID } from './modules/g3-career-path.js';
 import { G6_ID } from './modules/g6-trivia-rush.js';
+import { G_MIX_ID, M_MIX_ID } from './modules/mixed.js';
 import { ROLLED_PENALTY_META, rolledSelfPenalties, selfPenalties } from './modules/helpers.js';
 import { M1_ID } from './modules/m1-match-markets.js';
 import { M2_ID } from './modules/m2-who-is-that-player.js';
@@ -230,7 +232,7 @@ const rolledFor = (room: RoomState): readonly RecordedPenalty[] => {
 };
 
 const REVEAL: RoomAction = { type: 'REVEAL_ROUND', actorId: HOST };
-const MODULES_WITH_ROLLS: readonly GameModuleId[] = [G1_ID, G6_ID, M1_ID, M2_ID, M3_ID];
+const MODULES_WITH_ROLLS: readonly GameModuleId[] = [G1_ID, G3_ID, G6_ID, M1_ID, M2_ID, M3_ID, G_MIX_ID, M_MIX_ID];
 
 describe('reducer: scoreRound draws from the committed RNG state and commits the advance', () => {
   it('rolls every silent player from the pre-reveal rngState and commits exactly those draws', () => {

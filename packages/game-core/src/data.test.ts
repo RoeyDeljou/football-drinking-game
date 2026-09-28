@@ -9,6 +9,42 @@ const quality = (overrides: Partial<DataQuality> = {}): DataQuality => ({
   ...overrides,
 });
 
+describe('checkModulePlayable with dataRequirementsAnyOf', () => {
+  const mixedLike = {
+    dataRequirements: ['hasLineups'] as const,
+    dataRequirementsAnyOf: [['hasLineups', 'hasPlayerSeasonStats'], ['hasLineups', 'hasShirtNumbers']] as const,
+  };
+
+  it('is playable when the base and at least one alternative are met', () => {
+    expect(checkModulePlayable(mixedLike, quality({ hasShirtNumbers: false })).playable).toBe(true);
+    expect(checkModulePlayable(mixedLike, quality({ hasPlayerSeasonStats: false })).playable).toBe(true);
+  });
+
+  it('is not playable when no alternative is met, and reports the closest one', () => {
+    const result = checkModulePlayable(
+      { dataRequirements: [], dataRequirementsAnyOf: [['hasCareerHistory', 'hasMarketValues'], ['hasPlayerSeasonStats']] },
+      quality({ hasCareerHistory: false, hasMarketValues: false, hasPlayerSeasonStats: false }),
+    );
+    expect(result).toMatchObject({ playable: false, code: 'MISSING_DATA', missing: ['hasPlayerSeasonStats'] });
+  });
+
+  it('combines base gaps with the closest alternative, without duplicates', () => {
+    const result = checkModulePlayable(mixedLike, quality({ hasLineups: false, hasShirtNumbers: false }));
+    expect(result.playable).toBe(false);
+    expect(result.missing).toEqual(['hasLineups']);
+  });
+
+  it('refuses when quality is unknown and an alternative has requirements', () => {
+    const result = checkModulePlayable({ dataRequirements: [], dataRequirementsAnyOf: [['hasCareerHistory']] }, null);
+    expect(result).toMatchObject({ playable: false, code: 'UNKNOWN_DATA_QUALITY', missing: ['hasCareerHistory'] });
+  });
+
+  it('treats an empty alternative as always met, and an empty list as no extra condition', () => {
+    expect(checkModulePlayable({ dataRequirements: [], dataRequirementsAnyOf: [['hasLineups'], []] }, null).playable).toBe(true);
+    expect(checkModulePlayable({ dataRequirements: [], dataRequirementsAnyOf: [] }, null).playable).toBe(true);
+  });
+});
+
 describe('checkModulePlayable', () => {
   it('always allows a module with no requirements, even with no report', () => {
     expect(checkModulePlayable({ dataRequirements: [] }, null)).toEqual({
@@ -69,7 +105,7 @@ describe('registry playability', () => {
 
   it('splits the catalog by category', () => {
     const registry = createDefaultRegistry();
-    expect(registry.listByCategory('matchday').map((module) => module.id)).toEqual(['M1', 'M2', 'M3']);
-    expect(registry.listByCategory('general').map((module) => module.id)).toEqual(['G1', 'G6']);
+    expect(registry.listByCategory('matchday').map((module) => module.id)).toEqual(['M-MIX', 'M1', 'M2', 'M3']);
+    expect(registry.listByCategory('general').map((module) => module.id)).toEqual(['G-MIX', 'G1', 'G3', 'G6']);
   });
 });

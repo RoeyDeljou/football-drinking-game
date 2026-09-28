@@ -13,7 +13,9 @@ import { asGameModuleId, asPlayerId } from './ids.js';
 import type { PlayerId } from './ids.js';
 import { defineGameModule } from './module.js';
 import { G1_ID } from './modules/g1-guess-the-player.js';
+import { G3_ID } from './modules/g3-career-path.js';
 import { G6_ID } from './modules/g6-trivia-rush.js';
+import { G_MIX_ID, M_MIX_ID } from './modules/mixed.js';
 import { lastCorrectPlayer, scoreChoiceRound } from './modules/helpers.js';
 import { M1_ID } from './modules/m1-match-markets.js';
 import { M2_DEFAULT_CONFIG, M2_ID, m2WhoIsThatPlayer } from './modules/m2-who-is-that-player.js';
@@ -654,8 +656,15 @@ const answerFor = (moduleId: GameModuleId, payload: unknown, index: number, roun
         picks: markets.map((market) => ({ marketId: market.id, optionId: pickFrom(market.options)?.id })),
       };
     }
+    case M_MIX_ID:
+    case G_MIX_ID: {
+      // Mixed rounds take exactly the answer their sub-game takes, unwrapped.
+      const envelope = payload as { moduleId: GameModuleId; inner: unknown };
+      return answerFor(envelope.moduleId, envelope.inner, index, roundIndex);
+    }
     case M2_ID:
     case G1_ID:
+    case G3_ID:
       return { playerId: pickFrom((payload as { options: { playerId: string }[] }).options)?.playerId };
     case M3_ID:
       return { guess: ((index * 7 + roundIndex * 13) % 99) + 1 };
@@ -743,10 +752,19 @@ const playSession = (moduleId: GameModuleId, seed: number, roundTrip: boolean): 
 
 describe('N8: every Phase-1 module replays deterministically', () => {
   it('covers exactly the Phase-1 set', () => {
-    expect(PHASE_1_MODULES.map((module) => module.id)).toEqual([M1_ID, M2_ID, M3_ID, G1_ID, G6_ID]);
+    expect(PHASE_1_MODULES.map((module) => module.id)).toEqual([
+      M_MIX_ID,
+      M1_ID,
+      M2_ID,
+      M3_ID,
+      G_MIX_ID,
+      G1_ID,
+      G3_ID,
+      G6_ID,
+    ]);
   });
 
-  for (const moduleId of [M1_ID, M2_ID, M3_ID, G1_ID, G6_ID]) {
+  for (const moduleId of [M_MIX_ID, M1_ID, M2_ID, M3_ID, G_MIX_ID, G1_ID, G3_ID, G6_ID]) {
     it(`${moduleId}: same seed and actions produce an identical final RoomState`, () => {
       const first = playSession(moduleId, 2024, false);
       const second = playSession(moduleId, 2024, false);

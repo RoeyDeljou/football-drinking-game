@@ -272,6 +272,11 @@ export interface GameModuleDefinition<S extends ModuleShape> {
   readonly category: GameCategory;
   readonly kind: RoundKind;
   readonly dataRequirements: readonly DataRequirementKey[];
+  /**
+   * Optional: at least one of these sets must also be met (see `PlayabilityInput`). Only for modules
+   * whose needs depend on which content they serve, like the Mixed rotations. Omit otherwise.
+   */
+  readonly dataRequirementsAnyOf?: readonly (readonly DataRequirementKey[])[];
   readonly minPlayers: number;
   readonly maxPlayers: number | null;
   /** May a player replace an accepted submission while the round is open? (M1 slip edits.) */
@@ -317,6 +322,8 @@ export interface EngineGameModule {
   readonly category: GameCategory;
   readonly kind: RoundKind;
   readonly dataRequirements: readonly DataRequirementKey[];
+  /** `[]` unless the module declared alternatives. `checkModulePlayable` honours it. */
+  readonly dataRequirementsAnyOf: readonly (readonly DataRequirementKey[])[];
   readonly minPlayers: number;
   readonly maxPlayers: number | null;
   readonly allowResubmission: boolean;
@@ -403,6 +410,7 @@ export const defineGameModule = <S extends ModuleShape>(
     category: definition.category,
     kind: definition.kind,
     dataRequirements: definition.dataRequirements,
+    dataRequirementsAnyOf: definition.dataRequirementsAnyOf ?? [],
     minPlayers: definition.minPlayers,
     maxPlayers: definition.maxPlayers,
     allowResubmission: definition.allowResubmission,

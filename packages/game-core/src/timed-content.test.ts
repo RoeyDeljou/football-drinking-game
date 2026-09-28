@@ -22,6 +22,8 @@ import { asGameModuleId } from './ids.js';
 import type { RoundKind } from './module.js';
 import { defineGameModule } from './module.js';
 import { G1_DEFAULT_CONFIG, G1_ID, nextClueUnlockAt, visibleClueCount } from './modules/g1-guess-the-player.js';
+import { G3_ID } from './modules/g3-career-path.js';
+import { G_MIX_ID, M_MIX_ID } from './modules/mixed.js';
 import { createModuleRegistry, PHASE_1_MODULES } from './modules/registry.js';
 import { projectFor, projectForHostScreen } from './projection.js';
 import type { EngineDeps } from './reducer.js';
@@ -128,9 +130,10 @@ describe('nextClueUnlockAt (G1)', () => {
     }
   });
 
-  it('declares timed content on the erased module; other Phase-1 modules do not', () => {
+  it('declares timed content on the erased module for G1, G3 and the Mixed rotations (which delegate) only', () => {
+    const timed = new Set<GameModuleId>([G1_ID, G3_ID, G_MIX_ID, M_MIX_ID]);
     for (const module of PHASE_1_MODULES) {
-      expect(module.hasTimedContent).toBe(module.id === G1_ID);
+      expect(module.hasTimedContent).toBe(timed.has(module.id));
     }
   });
 });
@@ -264,7 +267,9 @@ describe('TICK never leaves any Phase-1 module showing a stale projection', () =
       const harness = makeHarness();
       const room = start(module.id, harness);
       const { broadcasts } = runTickLoop(room, harness, 90_000);
-      if (module.hasTimedContent) {
+      // A Mixed module declares the hook but only schedules when this round's sub-game is timed.
+      if (currentRound(room)?.contentChangeAt !== null) {
+        expect(module.hasTimedContent).toBe(true);
         expect(broadcasts).toBeGreaterThan(1);
       } else {
         // Untimed modules only ever change on a tick at their deadline (or never, without one).
