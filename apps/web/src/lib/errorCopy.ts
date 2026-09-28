@@ -61,10 +61,29 @@ const SUBMISSION_COPY: Record<string, string> = {
   SLIP_LOCKED: 'Kick-off happened — the slip is locked.',
 };
 
+/**
+ * `DATA_UNAVAILABLE`'s `detail` is a comma-separated list of the `DataQuality` flags the picked
+ * module needed but the fixture doesn't have yet (see `packages/game-core`'s `checkModulePlayable`
+ * and `packages/football-data`'s `DataQuality`) — e.g. `"hasLineups,hasShirtNumbers"`. The single
+ * most common real-world cause, by far: official lineups for a real match aren't published until
+ * roughly an hour before kickoff, so EVERY matchday game needs `hasLineups` and is genuinely
+ * unplayable for any fixture that's still days away — that's expected, not a bug, but the generic
+ * "not enough match data" message reads exactly like one when a host tries to pick a game for a
+ * fixture that kicks off next week. Give the specific, actionable reason when it's the lineups gap.
+ */
+const dataUnavailableMessage = (detail: string | null): string => {
+  const missing = new Set((detail ?? '').split(',').map((flag) => flag.trim()));
+  if (missing.has('hasLineups')) {
+    return 'Lineups for this match aren’t out yet — they’re usually published about an hour before kickoff. Check back closer to kick-off, or pick a General game instead.';
+  }
+  return REJECTION_COPY.DATA_UNAVAILABLE ?? 'Not enough match data to play that game right now.';
+};
+
 export const errorMessage = (error: RoomErrorLike): string => {
   if (error.submissionCode !== undefined && error.submissionCode !== null) {
     const submissionCopy = SUBMISSION_COPY[error.submissionCode];
     if (submissionCopy !== undefined) return submissionCopy;
   }
+  if (error.code === 'DATA_UNAVAILABLE') return dataUnavailableMessage(error.detail);
   return REJECTION_COPY[error.code] ?? 'Something went wrong. Try again.';
 };

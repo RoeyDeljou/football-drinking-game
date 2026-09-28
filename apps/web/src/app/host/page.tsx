@@ -277,6 +277,12 @@ export default function HostPage(): React.JSX.Element {
               {fixView.status === 'empty' ? <Banner>No fixtures found for this competition right now.</Banner> : null}
               {fixView.status === 'ready' ? (
                 <div className="flex flex-col gap-3">
+                  {liveFixtureCount(fixView.fixtures) === 0 ? (
+                    <p className="text-xs text-white/40">
+                      Lineups are published about an hour before kickoff, so games for an upcoming fixture won&apos;t
+                      be selectable until then. Pick a live match for a game you can start now.
+                    </p>
+                  ) : null}
                   {shouldOfferGameday(liveFixtureCount(fixView.fixtures)) ? (
                     <button
                       type="button"
