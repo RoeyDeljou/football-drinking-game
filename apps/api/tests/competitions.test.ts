@@ -131,15 +131,17 @@ describe('GET /competitions', () => {
   });
 
   it(
-    'returns the six supported competitions straight from config',
+    'returns the seven supported competitions straight from config',
     async () => {
       server = await startTestServer({ footballData: new StubProvider() });
       const response = await jsonFetch(`${server.baseUrl}/competitions`);
       expect(response.status).toBe(200);
       const body = response.body as { competitions: readonly { id: string; code: string; name: string }[] };
-      expect(body.competitions).toHaveLength(6);
+      expect(body.competitions).toHaveLength(7);
       expect(body.competitions.map((c) => c.code)).toContain('CHAMPIONS_LEAGUE');
+      expect(body.competitions.map((c) => c.code)).toContain('NATIONAL_TEAMS');
       expect(body.competitions.map((c) => c.id)).toContain('premier-league');
+      expect(body.competitions.map((c) => c.id)).toContain('national-teams');
     },
     SERVER_BOOT_TIMEOUT_MS,
   );

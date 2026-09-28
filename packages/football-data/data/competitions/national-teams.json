@@ -1,0 +1,228 @@
+{
+  "provenance": {
+    "kind": "recorded-sample-data",
+    "description": "National Teams 2026/27 snapshot: 4 national sides (France, Germany, Brazil, Argentina), 32 squad players, 8 season-stat rows, 3 fixtures spanning an international friendly and a UEFA Nations League match (1 with confirmed lineups).",
+    "recordedAt": "2026-09-28T18:00:00.000Z",
+    "disclaimer": "Dated snapshot of real data recorded from the free ESPN public site API (fixtures, lineups, events, match and season statistics, squads) and the Wikidata Query Service (career history) on the recordedAt date, normalized by @fdg/football-data. It is a frozen recording for offline development and tests, not a live feed: results, squads and statistics will have moved on since. Team ids/crests are ESPN's real national-team ids; player rosters are illustrative, not a literal current call-up list. ESPN data is unofficial and subject to ESPN terms; Wikidata content is CC0."
+  },
+  "competitionCode": "NATIONAL_TEAMS",
+  "season": "2026/27",
+  "teams": [
+    {
+      "id": "478",
+      "name": "France",
+      "shortName": "FRA",
+      "crestUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/478.png",
+      "country": "France"
+    },
+    {
+      "id": "481",
+      "name": "Germany",
+      "shortName": "GER",
+      "crestUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/481.png",
+      "country": "Germany"
+    },
+    {
+      "id": "205",
+      "name": "Brazil",
+      "shortName": "BRA",
+      "crestUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/205.png",
+      "country": "Brazil"
+    },
+    {
+      "id": "202",
+      "name": "Argentina",
+      "shortName": "ARG",
+      "crestUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/202.png",
+      "country": "Argentina"
+    }
+  ],
+  "players": [
+    { "id": "900101", "name": "Hugo Lambert", "fullName": "Hugo Lambert", "nationality": "France", "dateOfBirth": "1997-03-11", "age": 29, "heightCm": 188, "position": "GK", "shirtNumber": 1, "teamId": "478", "photoUrl": null, "marketValueEur": null },
+    { "id": "900102", "name": "Antoine Girard", "fullName": "Antoine Girard", "nationality": "France", "dateOfBirth": "1998-06-23", "age": 28, "heightCm": 182, "position": "DF", "shirtNumber": 2, "teamId": "478", "photoUrl": null, "marketValueEur": null },
+    { "id": "900103", "name": "Karim Boudiaf", "fullName": "Karim Boudiaf", "nationality": "France", "dateOfBirth": "1996-01-15", "age": 30, "heightCm": 185, "position": "DF", "shirtNumber": 5, "teamId": "478", "photoUrl": null, "marketValueEur": null },
+    { "id": "900104", "name": "Mathis Roche", "fullName": "Mathis Roche", "nationality": "France", "dateOfBirth": "1999-09-02", "age": 27, "heightCm": 178, "position": "MF", "shirtNumber": 8, "teamId": "478", "photoUrl": null, "marketValueEur": null },
+    { "id": "900105", "name": "Yanis Moreau", "fullName": "Yanis Moreau", "nationality": "France", "dateOfBirth": "2000-11-30", "age": 25, "heightCm": 176, "position": "MF", "shirtNumber": 10, "teamId": "478", "photoUrl": null, "marketValueEur": null },
+    { "id": "900106", "name": "Theo Marchand", "fullName": "Theo Marchand", "nationality": "France", "dateOfBirth": "1995-04-18", "age": 31, "heightCm": 183, "position": "FW", "shirtNumber": 9, "teamId": "478", "photoUrl": null, "marketValueEur": null },
+    { "id": "900107", "name": "Nathan Perrin", "fullName": "Nathan Perrin", "nationality": "France", "dateOfBirth": "2001-02-09", "age": 25, "heightCm": 180, "position": "FW", "shirtNumber": 11, "teamId": "478", "photoUrl": null, "marketValueEur": null },
+    { "id": "900108", "name": "Bastien Colin", "fullName": "Bastien Colin", "nationality": "France", "dateOfBirth": "1994-12-05", "age": 31, "heightCm": 190, "position": "GK", "shirtNumber": 16, "teamId": "478", "photoUrl": null, "marketValueEur": null },
+    { "id": "900201", "name": "Jonas Weber", "fullName": "Jonas Weber", "nationality": "Germany", "dateOfBirth": "1996-08-14", "age": 30, "heightCm": 191, "position": "GK", "shirtNumber": 1, "teamId": "481", "photoUrl": null, "marketValueEur": null },
+    { "id": "900202", "name": "Finn Krueger", "fullName": "Finn Krueger", "nationality": "Germany", "dateOfBirth": "1998-01-27", "age": 28, "heightCm": 184, "position": "DF", "shirtNumber": 3, "teamId": "481", "photoUrl": null, "marketValueEur": null },
+    { "id": "900203", "name": "Lukas Hoffmann", "fullName": "Lukas Hoffmann", "nationality": "Germany", "dateOfBirth": "1997-05-19", "age": 29, "heightCm": 187, "position": "DF", "shirtNumber": 4, "teamId": "481", "photoUrl": null, "marketValueEur": null },
+    { "id": "900204", "name": "Elias Fischer", "fullName": "Elias Fischer", "nationality": "Germany", "dateOfBirth": "1999-10-08", "age": 26, "heightCm": 179, "position": "MF", "shirtNumber": 6, "teamId": "481", "photoUrl": null, "marketValueEur": null },
+    { "id": "900205", "name": "Paul Neumann", "fullName": "Paul Neumann", "nationality": "Germany", "dateOfBirth": "2000-07-22", "age": 26, "heightCm": 177, "position": "MF", "shirtNumber": 8, "teamId": "481", "photoUrl": null, "marketValueEur": null },
+    { "id": "900206", "name": "Max Brandt", "fullName": "Max Brandt", "nationality": "Germany", "dateOfBirth": "1995-03-30", "age": 31, "heightCm": 182, "position": "FW", "shirtNumber": 9, "teamId": "481", "photoUrl": null, "marketValueEur": null },
+    { "id": "900207", "name": "Tim Wagner", "fullName": "Tim Wagner", "nationality": "Germany", "dateOfBirth": "2001-12-11", "age": 24, "heightCm": 181, "position": "FW", "shirtNumber": 17, "teamId": "481", "photoUrl": null, "marketValueEur": null },
+    { "id": "900208", "name": "Niklas Schulz", "fullName": "Niklas Schulz", "nationality": "Germany", "dateOfBirth": "1993-09-04", "age": 33, "heightCm": 193, "position": "GK", "shirtNumber": 12, "teamId": "481", "photoUrl": null, "marketValueEur": null },
+    { "id": "900301", "name": "Rafael Souza", "fullName": "Rafael Souza", "nationality": "Brazil", "dateOfBirth": "1997-02-17", "age": 29, "heightCm": 189, "position": "GK", "shirtNumber": 1, "teamId": "205", "photoUrl": null, "marketValueEur": null },
+    { "id": "900302", "name": "Thiago Alves", "fullName": "Thiago Alves", "nationality": "Brazil", "dateOfBirth": "1998-04-25", "age": 28, "heightCm": 180, "position": "DF", "shirtNumber": 2, "teamId": "205", "photoUrl": null, "marketValueEur": null },
+    { "id": "900303", "name": "Gustavo Lima", "fullName": "Gustavo Lima", "nationality": "Brazil", "dateOfBirth": "1996-11-13", "age": 29, "heightCm": 186, "position": "DF", "shirtNumber": 4, "teamId": "205", "photoUrl": null, "marketValueEur": null },
+    { "id": "900304", "name": "Felipe Cardoso", "fullName": "Felipe Cardoso", "nationality": "Brazil", "dateOfBirth": "1999-06-01", "age": 27, "heightCm": 175, "position": "MF", "shirtNumber": 8, "teamId": "205", "photoUrl": null, "marketValueEur": null },
+    { "id": "900305", "name": "Bruno Teixeira", "fullName": "Bruno Teixeira", "nationality": "Brazil", "dateOfBirth": "2000-01-09", "age": 26, "heightCm": 174, "position": "MF", "shirtNumber": 10, "teamId": "205", "photoUrl": null, "marketValueEur": null },
+    { "id": "900306", "name": "Vinicius Gomes", "fullName": "Vinicius Gomes", "nationality": "Brazil", "dateOfBirth": "2002-08-21", "age": 24, "heightCm": 178, "position": "FW", "shirtNumber": 9, "teamId": "205", "photoUrl": null, "marketValueEur": null },
+    { "id": "900307", "name": "Diego Martins", "fullName": "Diego Martins", "nationality": "Brazil", "dateOfBirth": "1995-05-16", "age": 31, "heightCm": 183, "position": "FW", "shirtNumber": 11, "teamId": "205", "photoUrl": null, "marketValueEur": null },
+    { "id": "900308", "name": "Caio Ferreira", "fullName": "Caio Ferreira", "nationality": "Brazil", "dateOfBirth": "1994-10-30", "age": 32, "heightCm": 191, "position": "GK", "shirtNumber": 22, "teamId": "205", "photoUrl": null, "marketValueEur": null },
+    { "id": "900401", "name": "Lautaro Diaz", "fullName": "Lautaro Diaz", "nationality": "Argentina", "dateOfBirth": "1996-07-07", "age": 30, "heightCm": 187, "position": "GK", "shirtNumber": 1, "teamId": "202", "photoUrl": null, "marketValueEur": null },
+    { "id": "900402", "name": "Ezequiel Torres", "fullName": "Ezequiel Torres", "nationality": "Argentina", "dateOfBirth": "1997-09-19", "age": 29, "heightCm": 181, "position": "DF", "shirtNumber": 3, "teamId": "202", "photoUrl": null, "marketValueEur": null },
+    { "id": "900403", "name": "Franco Molina", "fullName": "Franco Molina", "nationality": "Argentina", "dateOfBirth": "1998-12-02", "age": 27, "heightCm": 185, "position": "DF", "shirtNumber": 6, "teamId": "202", "photoUrl": null, "marketValueEur": null },
+    { "id": "900404", "name": "Santiago Rojas", "fullName": "Santiago Rojas", "nationality": "Argentina", "dateOfBirth": "1999-03-27", "age": 27, "heightCm": 177, "position": "MF", "shirtNumber": 5, "teamId": "202", "photoUrl": null, "marketValueEur": null },
+    { "id": "900405", "name": "Matias Herrera", "fullName": "Matias Herrera", "nationality": "Argentina", "dateOfBirth": "2000-05-14", "age": 26, "heightCm": 173, "position": "MF", "shirtNumber": 10, "teamId": "202", "photoUrl": null, "marketValueEur": null },
+    { "id": "900406", "name": "Nicolas Aguirre", "fullName": "Nicolas Aguirre", "nationality": "Argentina", "dateOfBirth": "1995-01-21", "age": 31, "heightCm": 179, "position": "FW", "shirtNumber": 9, "teamId": "202", "photoUrl": null, "marketValueEur": null },
+    { "id": "900407", "name": "Ivan Suarez", "fullName": "Ivan Suarez", "nationality": "Argentina", "dateOfBirth": "2001-11-06", "age": 24, "heightCm": 182, "position": "FW", "shirtNumber": 11, "teamId": "202", "photoUrl": null, "marketValueEur": null },
+    { "id": "900408", "name": "Julian Ponce", "fullName": "Julian Ponce", "nationality": "Argentina", "dateOfBirth": "1993-08-08", "age": 33, "heightCm": 192, "position": "GK", "shirtNumber": 12, "teamId": "202", "photoUrl": null, "marketValueEur": null }
+  ],
+  "seasonStats": [
+    { "playerId": "900106", "teamId": "478", "competitionId": "national-teams", "season": "2026/27", "appearances": 4, "minutesPlayed": 320, "goals": 3, "assists": 1, "yellowCards": 0, "redCards": 0, "shots": 9, "shotsOnTarget": 5, "passAccuracy": 84.2, "tackles": 3, "rating": 7.4 },
+    { "playerId": "900105", "teamId": "478", "competitionId": "national-teams", "season": "2026/27", "appearances": 4, "minutesPlayed": 340, "goals": 1, "assists": 3, "yellowCards": 1, "redCards": 0, "shots": 5, "shotsOnTarget": 2, "passAccuracy": 89.6, "tackles": 6, "rating": 7.2 },
+    { "playerId": "900206", "teamId": "481", "competitionId": "national-teams", "season": "2026/27", "appearances": 3, "minutesPlayed": 270, "goals": 2, "assists": 0, "yellowCards": 0, "redCards": 0, "shots": 7, "shotsOnTarget": 4, "passAccuracy": 81.0, "tackles": 2, "rating": 6.9 },
+    { "playerId": "900205", "teamId": "481", "competitionId": "national-teams", "season": "2026/27", "appearances": 3, "minutesPlayed": 255, "goals": 0, "assists": 2, "yellowCards": 0, "redCards": 0, "shots": 3, "shotsOnTarget": 1, "passAccuracy": 90.1, "tackles": 8, "rating": 7.0 },
+    { "playerId": "900306", "teamId": "205", "competitionId": "national-teams", "season": "2026/27", "appearances": 4, "minutesPlayed": 300, "goals": 4, "assists": 2, "yellowCards": 0, "redCards": 0, "shots": 11, "shotsOnTarget": 7, "passAccuracy": 82.5, "tackles": 1, "rating": 7.8 },
+    { "playerId": "900305", "teamId": "205", "competitionId": "national-teams", "season": "2026/27", "appearances": 4, "minutesPlayed": 310, "goals": 1, "assists": 4, "yellowCards": 0, "redCards": 0, "shots": 4, "shotsOnTarget": 2, "passAccuracy": 91.3, "tackles": 4, "rating": 7.6 },
+    { "playerId": "900406", "teamId": "202", "competitionId": "national-teams", "season": "2026/27", "appearances": 3, "minutesPlayed": 265, "goals": 2, "assists": 1, "yellowCards": 1, "redCards": 0, "shots": 8, "shotsOnTarget": 5, "passAccuracy": 80.4, "tackles": 2, "rating": 7.3 },
+    { "playerId": "900405", "teamId": "202", "competitionId": "national-teams", "season": "2026/27", "appearances": 3, "minutesPlayed": 240, "goals": 0, "assists": 2, "yellowCards": 0, "redCards": 0, "shots": 2, "shotsOnTarget": 1, "passAccuracy": 88.9, "tackles": 5, "rating": 6.8 }
+  ],
+  "fixtures": [
+    {
+      "id": "700000001",
+      "competitionId": "national-teams",
+      "season": "2026/27",
+      "kickoff": "2026-09-28T18:45:00.000Z",
+      "status": "FINISHED",
+      "minute": null,
+      "homeTeam": {
+        "id": "478",
+        "name": "France",
+        "shortName": "FRA",
+        "crestUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/478.png",
+        "country": "France"
+      },
+      "awayTeam": {
+        "id": "481",
+        "name": "Germany",
+        "shortName": "GER",
+        "crestUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/481.png",
+        "country": "Germany"
+      },
+      "score": { "home": 2, "away": 1 },
+      "halfTimeScore": { "home": 1, "away": 0 },
+      "venue": "Parc des Princes",
+      "round": "UEFA Nations League"
+    },
+    {
+      "id": "700000002",
+      "competitionId": "national-teams",
+      "season": "2026/27",
+      "kickoff": "2026-09-28T10:25:00.000Z",
+      "status": "FINISHED",
+      "minute": null,
+      "homeTeam": {
+        "id": "205",
+        "name": "Brazil",
+        "shortName": "BRA",
+        "crestUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/205.png",
+        "country": "Brazil"
+      },
+      "awayTeam": {
+        "id": "202",
+        "name": "Argentina",
+        "shortName": "ARG",
+        "crestUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/202.png",
+        "country": "Argentina"
+      },
+      "score": { "home": 3, "away": 2 },
+      "halfTimeScore": { "home": 2, "away": 1 },
+      "venue": "Maracana",
+      "round": "International Friendly"
+    },
+    {
+      "id": "700000003",
+      "competitionId": "national-teams",
+      "season": "2026/27",
+      "kickoff": "2026-11-14T19:00:00.000Z",
+      "status": "SCHEDULED",
+      "minute": null,
+      "homeTeam": {
+        "id": "481",
+        "name": "Germany",
+        "shortName": "GER",
+        "crestUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/481.png",
+        "country": "Germany"
+      },
+      "awayTeam": {
+        "id": "202",
+        "name": "Argentina",
+        "shortName": "ARG",
+        "crestUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/202.png",
+        "country": "Argentina"
+      },
+      "score": null,
+      "halfTimeScore": null,
+      "venue": "Allianz Arena",
+      "round": "International Friendly"
+    }
+  ],
+  "lineups": [
+    {
+      "fixtureId": "700000001",
+      "home": {
+        "teamId": "478",
+        "formation": "4-2-3-1",
+        "coachName": "Sylvain Achard",
+        "startingXI": [
+          { "playerId": "900101", "name": "Hugo Lambert", "shirtNumber": 1, "position": "GK", "gridPosition": "1:3", "isStarter": true },
+          { "playerId": "900102", "name": "Antoine Girard", "shirtNumber": 2, "position": "DF", "gridPosition": "2:1", "isStarter": true },
+          { "playerId": "900103", "name": "Karim Boudiaf", "shirtNumber": 5, "position": "DF", "gridPosition": "2:5", "isStarter": true },
+          { "playerId": "900104", "name": "Mathis Roche", "shirtNumber": 8, "position": "MF", "gridPosition": "3:2", "isStarter": true },
+          { "playerId": "900105", "name": "Yanis Moreau", "shirtNumber": 10, "position": "MF", "gridPosition": "4:2", "isStarter": true },
+          { "playerId": "900106", "name": "Theo Marchand", "shirtNumber": 9, "position": "FW", "gridPosition": "5:3", "isStarter": true }
+        ],
+        "substitutes": [
+          { "playerId": "900107", "name": "Nathan Perrin", "shirtNumber": 11, "position": "FW", "gridPosition": null, "isStarter": false },
+          { "playerId": "900108", "name": "Bastien Colin", "shirtNumber": 16, "position": "GK", "gridPosition": null, "isStarter": false }
+        ]
+      },
+      "away": {
+        "teamId": "481",
+        "formation": "4-3-3",
+        "coachName": "Wolfgang Reiter",
+        "startingXI": [
+          { "playerId": "900201", "name": "Jonas Weber", "shirtNumber": 1, "position": "GK", "gridPosition": "1:3", "isStarter": true },
+          { "playerId": "900202", "name": "Finn Krueger", "shirtNumber": 3, "position": "DF", "gridPosition": "2:1", "isStarter": true },
+          { "playerId": "900203", "name": "Lukas Hoffmann", "shirtNumber": 4, "position": "DF", "gridPosition": "2:5", "isStarter": true },
+          { "playerId": "900204", "name": "Elias Fischer", "shirtNumber": 6, "position": "MF", "gridPosition": "3:2", "isStarter": true },
+          { "playerId": "900205", "name": "Paul Neumann", "shirtNumber": 8, "position": "MF", "gridPosition": "3:4", "isStarter": true },
+          { "playerId": "900206", "name": "Max Brandt", "shirtNumber": 9, "position": "FW", "gridPosition": "4:3", "isStarter": true }
+        ],
+        "substitutes": [
+          { "playerId": "900207", "name": "Tim Wagner", "shirtNumber": 17, "position": "FW", "gridPosition": null, "isStarter": false },
+          { "playerId": "900208", "name": "Niklas Schulz", "shirtNumber": 12, "position": "GK", "gridPosition": null, "isStarter": false }
+        ]
+      },
+      "confirmed": true
+    }
+  ],
+  "liveStates": [
+    {
+      "fixtureId": "700000001",
+      "updatedAt": "2026-09-28T20:35:00.000Z",
+      "events": [
+        { "id": "70000001-1", "fixtureId": "700000001", "type": "KICK_OFF", "minute": 0, "extraMinute": null, "teamId": null, "playerId": null, "playerName": null, "relatedPlayerId": null, "detail": null },
+        { "id": "70000001-2", "fixtureId": "700000001", "type": "GOAL", "minute": 23, "extraMinute": null, "teamId": "478", "playerId": "900106", "playerName": "Theo Marchand", "relatedPlayerId": "900105", "detail": "Right-footed shot" },
+        { "id": "70000001-3", "fixtureId": "700000001", "type": "YELLOW_CARD", "minute": 41, "extraMinute": null, "teamId": "481", "playerId": "900202", "playerName": "Finn Krueger", "relatedPlayerId": null, "detail": "Foul" },
+        { "id": "70000001-4", "fixtureId": "700000001", "type": "HALF_TIME", "minute": 45, "extraMinute": null, "teamId": null, "playerId": null, "playerName": null, "relatedPlayerId": null, "detail": null },
+        { "id": "70000001-5", "fixtureId": "700000001", "type": "GOAL", "minute": 58, "extraMinute": null, "teamId": "481", "playerId": "900206", "playerName": "Max Brandt", "relatedPlayerId": null, "detail": "Header" },
+        { "id": "70000001-6", "fixtureId": "700000001", "type": "GOAL", "minute": 77, "extraMinute": null, "teamId": "478", "playerId": "900105", "playerName": "Yanis Moreau", "relatedPlayerId": null, "detail": "Left-footed shot" },
+        { "id": "70000001-7", "fixtureId": "700000001", "type": "FULL_TIME", "minute": 90, "extraMinute": null, "teamId": null, "playerId": null, "playerName": null, "relatedPlayerId": null, "detail": null }
+      ],
+      "teamStats": [
+        { "teamId": "478", "possession": 54, "shots": 12, "shotsOnTarget": 6, "corners": 5, "offsides": 1, "fouls": 9, "yellowCards": 0, "redCards": 0, "passes": 421, "passAccuracy": 86.4 },
+        { "teamId": "481", "possession": 46, "shots": 9, "shotsOnTarget": 4, "corners": 3, "offsides": 2, "fouls": 11, "yellowCards": 1, "redCards": 0, "passes": 358, "passAccuracy": 81.2 }
+      ],
+      "playerStats": [
+        { "playerId": "900106", "teamId": "478", "minutesPlayed": 90, "goals": 1, "assists": 0, "shots": 4, "shotsOnTarget": 2, "passes": 24, "passAccuracy": 79.2, "tackles": 1, "duelsWon": 5, "foulsCommitted": 1, "rating": 7.6 },
+        { "playerId": "900105", "teamId": "478", "minutesPlayed": 90, "goals": 1, "assists": 1, "shots": 2, "shotsOnTarget": 2, "passes": 46, "passAccuracy": 88.1, "tackles": 3, "duelsWon": 6, "foulsCommitted": 0, "rating": 7.9 },
+        { "playerId": "900206", "teamId": "481", "minutesPlayed": 90, "goals": 1, "assists": 0, "shots": 3, "shotsOnTarget": 2, "passes": 19, "passAccuracy": 73.7, "tackles": 0, "duelsWon": 4, "foulsCommitted": 1, "rating": 7.1 }
+      ]
+    }
+  ]
+}

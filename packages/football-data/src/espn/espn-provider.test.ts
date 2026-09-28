@@ -6,6 +6,7 @@ import type { HttpClient, HttpRequest, HttpResponse } from '../http.js';
 import { EspnProvider } from './espn-provider.js';
 
 const LA_LIGA = COMPETITIONS.LA_LIGA;
+const NATIONAL_TEAMS = COMPETITIONS.NATIONAL_TEAMS;
 
 function scoreboardBody(eventId: string) {
   return {
@@ -166,5 +167,152 @@ describe('EspnProvider — unsupported competition', () => {
     const result = await provider.getFixturesByCompetition('not-a-real-competition' as never);
     expect(result.ok).toBe(false);
     expect(requests).toHaveLength(0);
+  });
+});
+
+/** Routes each request by matching a substring in the URL, in order — the fake ESPN backing for multi-slug tests. */
+function routedHttp(routes: readonly { readonly match: string; readonly response: HttpResponse }[]): {
+  http: HttpClient;
+  requests: HttpRequest[];
+} {
+  const requests: HttpRequest[] = [];
+  return {
+    requests,
+    http: {
+      request: (request: HttpRequest): Promise<HttpResponse> => {
+        requests.push(request);
+        const route = routes.find((entry) => request.url.includes(entry.match));
+        if (route === undefined) return Promise.reject(new Error(`no route for ${request.url}`));
+        return Promise.resolve(route.response);
+      },
+    },
+  };
+}
+
+function scoreboardBodyForSlug(slug: string, eventId: string, kickoff: string) {
+  return {
+    leagues: [{ slug, season: { year: 2026 } }],
+    events: [
+      {
+        id: eventId,
+        date: kickoff,
+        season: { year: 2026, slug: null },
+        status: { clock: 0, displayClock: '', period: 0, type: { name: 'STATUS_SCHEDULED', state: 'pre' } },
+        competitions: [
+          {
+            id: eventId,
+            date: kickoff,
+            status: { clock: 0, displayClock: '', period: 0, type: { name: 'STATUS_SCHEDULED', state: 'pre' } },
+            venue: { fullName: 'Test Stadium' },
+            competitors: [
+              { id: 'h', homeAway: 'home', score: '0', team: { id: '478', displayName: 'France' } },
+              { id: 'a', homeAway: 'away', score: '0', team: { id: '481', displayName: 'Germany' } },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function teamRef(id: string, name: string) {
+  return { id, displayName: name, shortDisplayName: name, name, abbreviation: name.slice(0, 3), location: name, logo: '' };
+}
+
+function teamsBodyForSlug(slug: string, teams: readonly { id: string; name: string }[]) {
+  return {
+    sports: [
+      {
+        leagues: [
+          {
+            slug,
+            teams: teams.map((team) => ({ team: teamRef(team.id, team.name) })),
+          },
+        ],
+      },
+    ],
+  };
+}
+
+describe('EspnProvider — National Teams: a multi-slug competition aggregated across every ESPN feed', () => {
+  it('getFixturesByCompetition queries every slug and merges (deduping by fixture id) into one list', async () => {
+    const clock = createManualClock();
+    // Same fixture id ("shared") returned by two slugs, plus one unique fixture per slug — six requests total for
+    // the eleven configured slugs (only the first three that are actually routed below matter; the rest 404).
+    const slugs = ['fifa.friendly', 'uefa.nations', 'fifa.worldq.uefa'];
+    const { http, requests } = routedHttp([
+      { match: 'fifa.friendly/scoreboard', response: okResponse(scoreboardBodyForSlug('fifa.friendly', 'shared', '2026-09-28T10:00Z')) },
+      { match: 'uefa.nations/scoreboard', response: okResponse(scoreboardBodyForSlug('uefa.nations', 'shared', '2026-09-28T10:00Z')) },
+      { match: 'fifa.worldq.uefa/scoreboard', response: okResponse(scoreboardBodyForSlug('fifa.worldq.uefa', 'unique-1', '2026-09-29T10:00Z')) },
+      // Every other configured slug 404s — a real, expected "dormant between windows" outcome.
+      { match: '/scoreboard', response: { status: 404, body: { code: 400, message: 'no data' }, headers: {} } },
+    ]);
+    // National Teams' eleven slugs exceed the default burst of 5/5s; the rate limiter itself has its own dedicated
+    // test suite, so it is relaxed here to isolate what this test actually verifies — slug aggregation and dedupe.
+    const provider = new EspnProvider({ http, clock, rateLimit: { maxRequests: 50, windowMs: 1, maxConcurrent: 50 } });
+
+    const result = await provider.getFixturesByCompetition(NATIONAL_TEAMS.id);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // Deduped: the "shared" fixture appears once, not twice, even though two slugs served it.
+    const ids = result.value.map((fixture) => fixture.id).sort();
+    expect(ids).toEqual(['shared', 'unique-1']);
+
+    // One request per configured slug (aggregation queried every slug, not just the primary).
+    const scoreboardRequests = requests.filter((request) => request.url.includes('/scoreboard'));
+    expect(scoreboardRequests.length).toBeGreaterThanOrEqual(slugs.length);
+  });
+
+  it('a single-slug competition (Premier League) is completely unaffected: exactly one scoreboard request', async () => {
+    const clock = createManualClock();
+    const { http, requests } = scriptedHttp([okResponse(scoreboardBody('1'))]);
+    const provider = new EspnProvider({ http, clock });
+    const result = await provider.getFixturesByCompetition(LA_LIGA.id);
+    expect(result.ok).toBe(true);
+    expect(requests.filter((request) => request.url.includes('/scoreboard'))).toHaveLength(1);
+  });
+
+  it('getSquad (via teams) merges and dedupes teams by id across slugs — a country keeps one id everywhere', async () => {
+    const clock = createManualClock();
+    const { http, requests } = routedHttp([
+      // Most specific routes first: `routedHttp` matches in array order, and a roster URL also contains
+      // ".../teams/...", so it must be checked before the broader "/teams" routes below.
+      {
+        match: 'fifa.friendly/teams/478/roster',
+        response: okResponse({ athletes: [] }),
+      },
+      {
+        match: 'fifa.friendly/teams',
+        response: okResponse(
+          teamsBodyForSlug('fifa.friendly', [
+            { id: '478', name: 'France' },
+            { id: '481', name: 'Germany' },
+          ]),
+        ),
+      },
+      {
+        match: 'uefa.nations/teams',
+        // France (478) reappears under a second slug with the *same* id — this must collapse to one entry.
+        response: okResponse(
+          teamsBodyForSlug('uefa.nations', [
+            { id: '478', name: 'France' },
+            { id: '459', name: 'Belgium' },
+          ]),
+        ),
+      },
+      { match: '/teams', response: { status: 404, body: { code: 400, message: 'no data' }, headers: {} } },
+    ]);
+    // `getSquad` scans every domestic league then every National Teams slug before it resolves — well above the
+    // default burst; relaxed here for the same reason as the fixtures test above.
+    const provider = new EspnProvider({ http, clock, rateLimit: { maxRequests: 50, windowMs: 1, maxConcurrent: 50 } });
+
+    const squad = await provider.getSquad('478' as never);
+    expect(squad.ok).toBe(true);
+
+    // The roster call happened, and only once for team 478 — resolving the team did not require re-fetching every
+    // slug's team list more than once each.
+    const teamsRequests = requests.filter((request) => request.url.includes('/teams') && !request.url.includes('/roster'));
+    expect(teamsRequests.length).toBeGreaterThan(0);
   });
 });

@@ -30,6 +30,7 @@ import { systemDataClock } from '../clock.js';
 import type { CompetitionConfig } from '../competitions.js';
 import {
   allCompetitions,
+  allEspnSlugs,
   COMPETITION_CONFIGS,
   competitionConfigByCode,
   competitionConfigByEspnSlug,
@@ -372,11 +373,45 @@ export class EspnProvider implements FootballDataProvider {
 
   // ---- endpoint helpers ---------------------------------------------------
 
+  /**
+   * Fixtures for a competition on one day (or the current window), aggregated across every ESPN slug the
+   * competition maps to (`allEspnSlugs`). For every competition but National Teams this is exactly one slug, so
+   * behaviour is unchanged; for National Teams it queries each slug in turn — sequentially, through the same
+   * shared rate limiter/cache/backoff every other request uses, so a cold multi-slug fetch is simply several
+   * polite, queued requests rather than a burst.
+   */
   private async scoreboard(config: CompetitionConfig, day: string | null): Promise<DataResult<readonly Fixture[]>> {
+    const slugs = allEspnSlugs(config);
+    const fixtures: Fixture[] = [];
+    const notes: string[] = [];
+    let fromCache = true;
+    let lastFailure: DataResult<readonly Fixture[]> | null = null;
+    let failures = 0;
+    for (const slug of slugs) {
+      const result = await this.scoreboardForSlug(config, slug, day);
+      if (!result.ok) {
+        failures += 1;
+        lastFailure = result;
+        notes.push(`Could not load ${config.name} (${slug}) fixtures for ${day ?? 'the current window'}: ${result.error.message}`);
+        continue;
+      }
+      fixtures.push(...result.value);
+      notes.push(...result.notes);
+      if (!result.fromCache) fromCache = false;
+    }
+    if (fixtures.length === 0 && lastFailure !== null && failures === slugs.length) return lastFailure;
+    return ok(dedupeFixtures(fixtures), dedupeNotes(notes), fromCache);
+  }
+
+  private async scoreboardForSlug(
+    config: CompetitionConfig,
+    slug: string,
+    day: string | null,
+  ): Promise<DataResult<readonly Fixture[]>> {
     const suffix = day === null ? '' : `?dates=${day}`;
-    const url = `${this.baseUrl}/${config.espnSlug}/scoreboard${suffix}`;
+    const url = `${this.baseUrl}/${slug}/scoreboard${suffix}`;
     const result = await this.client.getJson(
-      `scoreboard:${config.espnSlug}:${day ?? 'current'}`,
+      `scoreboard:${slug}:${day ?? 'current'}`,
       url,
       this.ttl.fixtures,
       espnScoreboardSchema,
@@ -384,8 +419,8 @@ export class EspnProvider implements FootballDataProvider {
     if (!result.ok) return result;
     const normalized = normalizeEspnScoreboard(result.value, config);
     for (const fixture of normalized.value) {
-      this.teamSlugs.set(fixture.homeTeam.id, config.espnSlug);
-      this.teamSlugs.set(fixture.awayTeam.id, config.espnSlug);
+      this.teamSlugs.set(fixture.homeTeam.id, slug);
+      this.teamSlugs.set(fixture.awayTeam.id, slug);
     }
     return ok(normalized.value, [...result.notes, ...normalized.notes], result.fromCache);
   }
@@ -397,35 +432,63 @@ export class EspnProvider implements FootballDataProvider {
     const result = await this.client.getJson(`summary:${fixtureId}`, url, summaryTtl(this.ttl), espnSummarySchema);
     if (!result.ok) return result;
     const slug = result.value.header.league?.slug ?? null;
-    const config = slug === null ? null : competitionConfigByEspnSlug(slug);
+    if (slug === null) {
+      return ok(null, [`Fixture ${fixtureId} belongs to an unsupported competition (unknown).`]);
+    }
+    const config = competitionConfigByEspnSlug(slug);
     if (config === null) {
-      return ok(null, [`Fixture ${fixtureId} belongs to an unsupported competition (${slug ?? 'unknown'}).`]);
+      return ok(null, [`Fixture ${fixtureId} belongs to an unsupported competition (${slug}).`]);
     }
     for (const competitor of result.value.header.competitions[0]?.competitors ?? []) {
-      this.teamSlugs.set(competitor.team.id, config.espnSlug);
+      this.teamSlugs.set(competitor.team.id, slug);
     }
     return ok({ payload: result.value, config }, result.notes, result.fromCache);
   }
 
+  /**
+   * Teams for a competition, aggregated across every ESPN slug it maps to and deduped by team id — a team's ESPN
+   * id is stable across the slugs it appears under (verified live: France/Germany/Belgium share one id across
+   * `fifa.friendly`, `uefa.nations` and `fifa.worldq.uefa`), so the second and later sightings of the same id are
+   * simply dropped rather than merged.
+   */
   private async teams(config: CompetitionConfig): Promise<DataResult<readonly { id: string }[]>> {
-    const url = `${this.baseUrl}/${config.espnSlug}/teams`;
-    const result = await this.client.getJson(`teams:${config.espnSlug}`, url, this.ttl.squad, espnTeamsSchema);
-    if (!result.ok) return result;
-    const teams = normalizeEspnTeams(result.value, config);
-    for (const team of teams.value) {
-      if (!this.teamSlugs.has(team.id)) this.teamSlugs.set(team.id, config.espnSlug);
+    const slugs = allEspnSlugs(config);
+    const byId = new Map<string, { id: string }>();
+    const notes: string[] = [];
+    let fromCache = true;
+    let lastFailure: DataResult<readonly { id: string }[]> | null = null;
+    let failures = 0;
+    for (const slug of slugs) {
+      const url = `${this.baseUrl}/${slug}/teams`;
+      const result = await this.client.getJson(`teams:${slug}`, url, this.ttl.squad, espnTeamsSchema);
+      if (!result.ok) {
+        failures += 1;
+        lastFailure = result;
+        notes.push(`Could not load ${config.name} (${slug}) teams: ${result.error.message}`);
+        continue;
+      }
+      const teams = normalizeEspnTeams(result.value, config);
+      for (const team of teams.value) {
+        if (!byId.has(team.id)) byId.set(team.id, team);
+        if (!this.teamSlugs.has(team.id)) this.teamSlugs.set(team.id, slug);
+      }
+      notes.push(...result.notes, ...teams.notes);
+      if (!result.fromCache) fromCache = false;
     }
-    return ok(teams.value, [...result.notes, ...teams.notes], result.fromCache);
+    if (byId.size === 0 && lastFailure !== null && failures === slugs.length) return lastFailure;
+    return ok([...byId.values()], dedupeNotes(notes), fromCache);
   }
 
+  /**
+   * A team's roster. National teams' rosters are per call-up window, not per tournament: verified live, France's
+   * roster under `fifa.friendly` and under `uefa.nations` was the identical 22 names during the same window. So
+   * there is nothing to merge — the roster is fetched from whichever slug the team was actually discovered under
+   * (`teamSlugs`, populated by `scoreboard`/`teams`/`summary`), falling back to the competition's primary slug.
+   */
   private async roster(config: CompetitionConfig, teamId: string): Promise<DataResult<EspnRoster>> {
-    const url = `${this.baseUrl}/${config.espnSlug}/teams/${encodeURIComponent(teamId)}/roster`;
-    const result = await this.client.getJson(
-      `roster:${config.espnSlug}:${teamId}`,
-      url,
-      this.ttl.squad,
-      espnRosterSchema,
-    );
+    const slug = this.teamSlugs.get(teamId) ?? config.espnSlug;
+    const url = `${this.baseUrl}/${slug}/teams/${encodeURIComponent(teamId)}/roster`;
+    const result = await this.client.getJson(`roster:${slug}:${teamId}`, url, this.ttl.squad, espnRosterSchema);
     if (result.ok) {
       for (const player of normalizeEspnRosterPlayers(result.value, teamId).value) {
         this.playerIndex.set(player.id, player);

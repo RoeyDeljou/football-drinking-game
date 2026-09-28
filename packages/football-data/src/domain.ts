@@ -20,14 +20,15 @@ export const asTeamId = (value: string): TeamId => value as TeamId;
 export const asFixtureId = (value: string): FixtureId => value as FixtureId;
 export const asFootballPlayerId = (value: string): FootballPlayerId => value as FootballPlayerId;
 
-/** The six competitions the app supports. */
+/** The seven competitions the app supports: the top 5 European leagues, the Champions League, and National Teams. */
 export type CompetitionCode =
   | 'PREMIER_LEAGUE'
   | 'LA_LIGA'
   | 'SERIE_A'
   | 'BUNDESLIGA'
   | 'LIGUE_1'
-  | 'CHAMPIONS_LEAGUE';
+  | 'CHAMPIONS_LEAGUE'
+  | 'NATIONAL_TEAMS';
 
 export interface Competition {
   readonly id: CompetitionId;

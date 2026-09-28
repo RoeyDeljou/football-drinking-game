@@ -31,6 +31,7 @@ const COMPETITION_CODE_VALUES = [
   'BUNDESLIGA',
   'LIGUE_1',
   'CHAMPIONS_LEAGUE',
+  'NATIONAL_TEAMS',
 ] as const satisfies readonly CompetitionCode[];
 
 const competitionCode = z.enum(COMPETITION_CODE_VALUES);

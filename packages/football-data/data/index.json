@@ -30,6 +30,10 @@
     {
       "code": "CHAMPIONS_LEAGUE",
       "file": "competitions/champions-league.json"
+    },
+    {
+      "code": "NATIONAL_TEAMS",
+      "file": "competitions/national-teams.json"
     }
   ],
   "careersFile": "careers.json",

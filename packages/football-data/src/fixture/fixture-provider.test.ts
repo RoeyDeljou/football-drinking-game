@@ -20,12 +20,20 @@ function provider(options: ConstructorParameters<typeof FixtureProvider>[0] = { 
 }
 
 describe('FixtureProvider — basic queries against the real recorded snapshot', () => {
-  it('lists all six supported competitions', async () => {
+  it('lists all seven supported competitions', async () => {
     const result = await provider().listCompetitions();
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.map((c) => c.code).sort()).toEqual(
-      ['BUNDESLIGA', 'CHAMPIONS_LEAGUE', 'LA_LIGA', 'LIGUE_1', 'PREMIER_LEAGUE', 'SERIE_A'].sort(),
+      [
+        'BUNDESLIGA',
+        'CHAMPIONS_LEAGUE',
+        'LA_LIGA',
+        'LIGUE_1',
+        'NATIONAL_TEAMS',
+        'PREMIER_LEAGUE',
+        'SERIE_A',
+      ].sort(),
     );
   });
 

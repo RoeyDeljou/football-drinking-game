@@ -92,6 +92,7 @@ const COMPETITION_CODES = exhaustive<CompetitionCode>()([
   'BUNDESLIGA',
   'LIGUE_1',
   'CHAMPIONS_LEAGUE',
+  'NATIONAL_TEAMS',
 ]);
 const PLAYER_POSITIONS = exhaustive<PlayerPosition>()(['GK', 'DF', 'MF', 'FW', 'UNKNOWN']);
 const LEADERBOARD_METRICS = exhaustive<SeasonLeaderboardMetric>()([

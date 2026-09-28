@@ -10,14 +10,14 @@ function buildProvider(): FixtureProvider {
 }
 
 describe('buildGeneralDataset — against the real recorded snapshot', () => {
-  it('builds a dataset covering all six competitions with players, stats, leaderboards and guessable facts', async () => {
+  it('builds a dataset covering all seven competitions with players, stats, leaderboards and guessable facts', async () => {
     const clock = createManualClock(1_700_000_000_000);
     const result = await buildGeneralDataset(buildProvider(), { clock, profileCount: 30 });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
     const dataset = result.value;
-    expect(dataset.competitions).toHaveLength(6);
+    expect(dataset.competitions).toHaveLength(7);
     expect(dataset.players.length).toBeGreaterThan(100);
     expect(dataset.seasonStats.length).toBeGreaterThan(100);
     expect(dataset.builtAt).toBe(new Date(1_700_000_000_000).toISOString());
