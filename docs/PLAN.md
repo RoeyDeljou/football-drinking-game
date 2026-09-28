@@ -98,8 +98,7 @@ reproduction of the dispatch race condition fix.
 
 Owner: `game-ux-engineer`
 
-- [x] Landing page: Host / Join with PIN / Sign in
-- [x] Auth screens with 18+ gate and responsible-drinking notice; friends screen
+- [x] Landing page: Host / Join with PIN (guest-only — no web sign-in/registration UI; see note below)
 - [x] Host flow: choose **Matchday** or **General** → matchday fixture picker (browse all configured competitions,
   each showing its live/upcoming fixtures via `GET /competitions` + `GET /competitions/:id/fixtures`, with
   loading/error/empty states and retry) → game picker → settings
@@ -109,6 +108,9 @@ Owner: `game-ux-engineer`
 - [x] Reveal screen with correct answer, per-player result, and drink instructions via `drinkCopy`
 - [x] Round leaderboard and final results with a drink tally
 - [x] Reconnecting state, socket error handling, 360px-viewport verified, reduced-motion respected
+- [x] One-time 18+/responsible-drinking guest age gate (`AgeGateGuard`), shown before hosting or joining a
+  first room in this browser and remembered afterward — replaces the 18+ confirmation that used to live only
+  on the registration screen, now that there is no registration screen in the web UI (2026-09-28)
 - [~] Playwright end-to-end: host + two guests play a full game to the results screen — not built; deferred in
   favor of getting a playable app in front of the user faster (explicit user priority, 2026-09-17). The same
   ground was instead covered by qa-verifier driving two real browser sessions through every game by hand across
@@ -116,6 +118,16 @@ Owner: `game-ux-engineer`
 
 Follow-ups opened: a real fixture-browse REST endpoint in `apps/api` (owner: `realtime-backend-engineer`) and a
 Playwright suite (owner: `game-ux-engineer`), both tracked for Phase 7.
+
+**2026-09-28 update:** the web client's own sign-in/registration screen (`/auth`) and friends screen
+(`/friends`) were removed — every player in `apps/web` is now a guest (pick a nickname, host or join by
+PIN/link/QR). This app is meant to be mounted inside a larger hub, which will supply an already-authenticated
+session and a populated friends list through the `IdentityProvider`/friends seams; a local account UI here was
+scaffolding for a standalone launch, not the intended long-term flow. Phase 3's backend `IdentityProvider`,
+auth REST, and friends REST are unaffected and still fully implemented/tested in `apps/api` — only the web
+entry points into them were removed. The 18+/responsible-drinking gate that used to live solely on the
+registration screen is now `AgeGateGuard`, a guest-facing one-time confirmation gating both the host and join
+flows (see the Phase 4 checklist above).
 
 QA history: round 1 played all five games end to end in real two-browser sessions and confirmed the core loop,
 no-answer-leak, and reconnect all genuinely work, but found 5 blocking defects — most importantly a dead

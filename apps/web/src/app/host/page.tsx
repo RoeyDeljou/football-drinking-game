@@ -2,11 +2,11 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { AgeGateGuard } from '@/components/AgeGateGuard';
 import { BackButton } from '@/components/BackButton';
 import { Banner, BigButton, Card } from '@/components/ui';
 import type { ApiResult, Competition, FixtureSummary } from '@/lib/api';
 import { createRoom, listCompetitionFixtures, listCompetitions } from '@/lib/api';
-import { getValidAuthSession } from '@/lib/authSession';
 import { fixtureLoadElapsedPhase } from '@/lib/fixtureLoadElapsed';
 import {
   competitionsView,
@@ -21,14 +21,20 @@ import {
 } from '@/lib/matchdayPicker';
 import { useNow } from '@/lib/useNow';
 import { useRoom } from '@/lib/room-context';
-import type { StoredAuth } from '@/lib/storage';
 
 type Category = 'matchday' | 'general';
 
 export default function HostPage(): React.JSX.Element {
+  return (
+    <AgeGateGuard>
+      <HostPageContent />
+    </AgeGateGuard>
+  );
+}
+
+function HostPageContent(): React.JSX.Element {
   const router = useRouter();
   const { adopt } = useRoom();
-  const [auth, setAuth] = useState<StoredAuth | null>(null);
   const [category, setCategory] = useState<Category>('general');
 
   const [competitionsResult, setCompetitionsResult] = useState<ApiResult<{ competitions: readonly Competition[] }> | null>(
@@ -47,10 +53,6 @@ export default function HostPage(): React.JSX.Element {
 
   const now = useNow(30_000);
   const fastNow = useNow(1_000);
-
-  useEffect(() => {
-    void getValidAuthSession().then(setAuth);
-  }, []);
 
   // Request guards: a slow response from a request that's no longer "the current one" (the user
   // switched category/league again before it resolved) must never overwrite state for whatever is
@@ -124,11 +126,7 @@ export default function HostPage(): React.JSX.Element {
 
   const onCreate = async (): Promise<void> => {
     setError(null);
-    // Re-validate (and transparently refresh) right before the network call — the cached `auth`
-    // state above may have gone stale if the user sat on this screen past the access token's TTL.
-    const session = await getValidAuthSession();
-    setAuth(session);
-    if (session === null && hostNickname.trim().length === 0) {
+    if (hostNickname.trim().length === 0) {
       setError('Enter a nickname.');
       return;
     }
@@ -148,9 +146,8 @@ export default function HostPage(): React.JSX.Element {
       ...(category === 'matchday' && gamedaySelected && selectedCompetitionId !== null
         ? { gameday: true, competitionId: selectedCompetitionId }
         : {}),
-      ...(session === null ? { hostNickname: hostNickname.trim() } : {}),
+      hostNickname: hostNickname.trim(),
       settings: { roundsPerSession: rounds, minPlayersToStart: 1 },
-      ...(session !== null ? { accessToken: session.accessToken } : {}),
     });
     setBusy(false);
     if (!result.ok) {
@@ -369,19 +366,15 @@ export default function HostPage(): React.JSX.Element {
             className="tap-target rounded-xl border border-white/15 bg-white/5 px-4 text-lg text-white"
           />
         </label>
-        {auth === null ? (
-          <label className="mt-3 flex flex-col gap-1 text-sm font-semibold text-white/70">
-            Your nickname (host)
-            <input
-              value={hostNickname}
-              onChange={(event) => setHostNickname(event.target.value)}
-              maxLength={24}
-              className="tap-target rounded-xl border border-white/15 bg-white/5 px-4 text-lg text-white"
-            />
-          </label>
-        ) : (
-          <p className="mt-3 text-sm text-white/50">Hosting as {auth.displayName}.</p>
-        )}
+        <label className="mt-3 flex flex-col gap-1 text-sm font-semibold text-white/70">
+          Your nickname (host)
+          <input
+            value={hostNickname}
+            onChange={(event) => setHostNickname(event.target.value)}
+            maxLength={24}
+            className="tap-target rounded-xl border border-white/15 bg-white/5 px-4 text-lg text-white"
+          />
+        </label>
       </Card>
 
       {error !== null ? <Banner tone="error">{error}</Banner> : null}

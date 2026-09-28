@@ -43,7 +43,7 @@ interface RoomContextValue {
   readonly room: ClientRoom | null;
   readonly self: StoredRoom | null;
   readonly lastError: RoomErrorPayload | null;
-  readonly joinByPin: (pin: string, nickname: string, accessToken?: string) => void;
+  readonly joinByPin: (pin: string, nickname: string) => void;
   readonly resume: (stored: StoredRoom) => void;
   readonly adopt: (payload: { roomId: string; pin: string; playerId: string; roomToken: string; isHost: boolean }) => void;
   readonly send: (action: Record<string, unknown>) => void;
@@ -140,12 +140,8 @@ export const RoomProvider = ({ children }: { children: ReactNode }): React.JSX.E
   );
 
   const joinByPin = useCallback(
-    (pin: string, nickname: string, accessToken?: string) => {
-      const auth =
-        accessToken === undefined
-          ? { mode: 'guest', pin, nickname }
-          : { mode: 'user', pin, accessToken, nickname };
-      connect(auth, null);
+    (pin: string, nickname: string) => {
+      connect({ mode: 'guest', pin, nickname }, null);
     },
     [connect],
   );

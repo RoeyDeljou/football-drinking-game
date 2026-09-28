@@ -2,7 +2,7 @@
 
 /**
  * The one back/leave-navigation affordance shared across every setup/navigation screen (`/host`,
- * `/join`, `/auth`, `/friends`) and reused for the matchday picker's "Change league" step-back.
+ * `/join`) and reused for the matchday picker's "Change league" step-back.
  * Pop the browser's own history when there is a real, still-in-app history entry behind the
  * current one; otherwise push an explicit fallback route (arriving via a direct link/QR code/new
  * tab, or having already popped all the way back to where this tab's session started, both leave

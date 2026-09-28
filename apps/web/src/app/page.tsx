@@ -4,16 +4,13 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BigButton, Card } from '@/components/ui';
-import { getValidAuthSession } from '@/lib/authSession';
-import { loadRoom, type StoredAuth, type StoredRoom } from '@/lib/storage';
+import { loadRoom, type StoredRoom } from '@/lib/storage';
 
 export default function LandingPage(): React.JSX.Element {
   const router = useRouter();
-  const [auth, setAuth] = useState<StoredAuth | null>(null);
   const [resumable, setResumable] = useState<StoredRoom | null>(null);
 
   useEffect(() => {
-    void getValidAuthSession().then(setAuth);
     const stored = loadRoom();
     setResumable(stored);
     if (stored !== null) router.prefetch(`/room/${stored.roomId}`);
@@ -43,14 +40,6 @@ export default function LandingPage(): React.JSX.Element {
         <Link href="/join">
           <BigButton variant="secondary">Join with PIN</BigButton>
         </Link>
-        <Link href="/auth">
-          <BigButton variant="ghost">{auth === null ? 'Sign in' : `Signed in as ${auth.displayName}`}</BigButton>
-        </Link>
-        {auth !== null ? (
-          <Link href="/friends">
-            <BigButton variant="ghost">Friends</BigButton>
-          </Link>
-        ) : null}
       </div>
 
       <p className="text-center text-xs text-white/40">18+ only. Drink responsibly.</p>
