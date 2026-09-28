@@ -25,8 +25,8 @@ import {
   nonSubmitters,
   pitchPlayers,
   positionSchema,
+  rolledSelfPenalties,
   scoreChoiceRound,
-  selfPenalties,
   teamIdSchema,
 } from './helpers.js';
 
@@ -38,6 +38,7 @@ const configSchema = z
     /** Distance at which partial credit reaches zero. */
     toleranceRange: z.number().int().min(1).max(99),
     maxDistanceSips: z.number().int().min(0).max(10),
+    /** On/off switch: `0` disables the penalty, any positive value enables a drink roll. */
     noAnswerSips: z.number().int().min(0).max(10),
     includeSubstitutes: z.boolean(),
   })
@@ -176,11 +177,14 @@ export const m3ShirtNumber = defineGameModule<M3Shape>({
             .filter((submission) => distanceOf(submission.payload.guess) === bestDistance)
             .map((submission) => submission.playerId);
 
+    // Not answering is drink-rolled per player (see `rollDrinkSips`); `noAnswerSips` is an on/off
+    // switch. A wrong guess is *not* rolled: it already drinks its distance (capped), which varies.
     const penalties: PenaltyEvent[] = [
-      ...selfPenalties(
+      ...rolledSelfPenalties(
+        ctx.rng,
         nonSubmitters<M3Shape>(ctx.players, ctx.submissions),
-        ctx.config.noAnswerSips,
         'NO_ANSWER',
+        ctx.config.noAnswerSips > 0,
       ),
     ];
     for (const submission of ctx.submissions) {

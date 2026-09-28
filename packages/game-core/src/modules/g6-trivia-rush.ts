@@ -26,8 +26,8 @@ import {
   footballPlayerIdSchema,
   lastCorrectPlayer,
   nonSubmitters,
+  rolledSelfPenalties,
   scoreChoiceRound,
-  selfPenalties,
 } from './helpers.js';
 
 export const G6_ID = asGameModuleId('G6');
@@ -49,7 +49,9 @@ const configSchema = z
     answerWindowMs: z.number().int().min(3_000).max(60_000),
     optionCount: z.number().int().min(2).max(6),
     questionKinds: z.array(questionKindSchema).min(1),
+    /** On/off switch: `0` disables the penalty, any positive value enables a drink roll. */
     wrongAnswerSips: z.number().int().min(0).max(10),
+    /** On/off switch: `0` disables the penalty, any positive value enables a drink roll. */
     noAnswerSips: z.number().int().min(0).max(10),
     lastCorrectSips: z.number().int().min(0).max(10),
   })
@@ -284,18 +286,21 @@ export const g6TriviaRush = defineGameModule<G6Shape>({
     });
 
     const correct = ctx.submissions.filter(isCorrect);
+    // Misses are drink-rolled per player (see `rollDrinkSips`); the config fields are on/off switches.
     const penalties: PenaltyEvent[] = [
-      ...selfPenalties(
+      ...rolledSelfPenalties(
+        ctx.rng,
         ctx.submissions
           .filter((submission) => !isCorrect(submission))
           .map((submission) => submission.playerId),
-        ctx.config.wrongAnswerSips,
         'WRONG_ANSWER',
+        ctx.config.wrongAnswerSips > 0,
       ),
-      ...selfPenalties(
+      ...rolledSelfPenalties(
+        ctx.rng,
         nonSubmitters<G6Shape>(ctx.players, ctx.submissions),
-        ctx.config.noAnswerSips,
         'NO_ANSWER',
+        ctx.config.noAnswerSips > 0,
       ),
     ];
 

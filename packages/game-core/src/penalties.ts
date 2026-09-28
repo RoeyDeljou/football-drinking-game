@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import type { PlayerId, RoundId, SessionId } from './ids.js';
 import { asPlayerId } from './ids.js';
+import type { Rng } from './ports.js';
 
 /** Who ends up drinking. */
 export type PenaltyTarget = 'self' | 'others' | 'everyone';
@@ -57,8 +58,15 @@ export interface PenaltyCaps {
   readonly perSession: number;
 }
 
+/**
+ * `perPenalty` is 10 so the drink roll's top tier (`9`, "2 shots") reaches the recipient uncapped —
+ * at the old value of 6 it was silently truncated into the "a shot" band, erasing the rarest and
+ * most memorable outcome. `perRound` stays 10 (one maximal penalty per round, which is still the
+ * runaway-round guard it was designed to be) and `perSession` stays 60 (six maximal rounds).
+ * `drink-roll.test.ts` pins `perPenalty >= max(DRINK_ROLL_TABLE sips)` so the two cannot drift.
+ */
 export const DEFAULT_PENALTY_CAPS: PenaltyCaps = {
-  perPenalty: 6,
+  perPenalty: 10,
   perRound: 10,
   perSession: 60,
 };
@@ -201,6 +209,77 @@ export const penalty = (
   reason: PenaltyReason,
   meta: PenaltyMeta | null = null,
 ): PenaltyEvent => ({ playerId, target, sips, reason, meta });
+
+/* -------------------------------------------------------------------------- */
+/* The drink roll                                                              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The drink roll: the magnitude of a "you got it wrong" / "you didn't answer" penalty is drawn at
+ * random instead of being a fixed configured number, so a miss is sometimes a let-off, usually a
+ * sip or two, and occasionally a shot.
+ *
+ * **Which penalties roll.** Only `WRONG_ANSWER` and `NO_ANSWER`, the everyday per-player misses, and
+ * each recipient gets an independent draw. Every other reason keeps its fixed, configured magnitude,
+ * because those are deliberate "this specific event costs exactly N" mechanics (`LAST_CORRECT`,
+ * `ROUND_WON`, `WORST_SLIP`, `PERFECT_SLIP`, M1's per-market `LOST_MARKET`) or already vary by
+ * formula (M3's `DISTANCE_FROM_TARGET`).
+ *
+ * **Config fields.** The modules' existing `wrongAnswerSips` / `noAnswerSips` config fields are kept
+ * (the schemas are strict: removing them would reject every stored or client-sent config that still
+ * carries them) but their meaning changed — they are now an **on/off switch**. `0` disables that
+ * penalty entirely (no event, no RNG draw); any positive value enables it, and the magnitude always
+ * comes from `rollDrinkSips`, never from the field's numeric value.
+ *
+ * **Determinism.** A roll draws exactly one `rng.next()` from the injected, seeded `Rng` that the
+ * reducer threads into `scoreRound` (`ScoreRoundContext.rng`); the advanced RNG state is committed
+ * back into `RoomState.rngState`. Same state in, same rolls and same state out.
+ *
+ * **Tiers.** Each value sits inside exactly one band of the client's `drinkActionLabel`
+ * (`0` no drinking, `1` 1 sip, `2` 2 sips, `3–4` a chug, `5–7` a shot, `8+` 2 shots), so the rolled
+ * number always renders as the intended action. A roll of `0` is still emitted as an event so the
+ * client can announce the let-off. Weights (sum 100):
+ *
+ * | sips | label       | weight | why                                                          |
+ * |------|-------------|--------|--------------------------------------------------------------|
+ * | 0    | no drinking | 12     | a real, noticeable let-off: about one miss in eight           |
+ * | 1    | 1 sip       | 30     | the bread and butter: most misses are cheap                   |
+ * | 2    | 2 sips      | 28     | the old fixed value, still very common                        |
+ * | 3    | a chug      | 15     | a step up that happens a few times a night                    |
+ * | 6    | a shot      | 10     | rarer, a genuine "oh no" moment                               |
+ * | 9    | 2 shots     | 5      | the rarest by far: one in twenty, memorable, never routine    |
+ *
+ * Expected value is 2.36 sips per roll, close to the old fixed 2, so an evening's total drinking
+ * stays about where it was: the change is variety, not escalation. Caps still apply on top (see
+ * `DEFAULT_PENALTY_CAPS`, whose `perPenalty` admits the top tier).
+ */
+export interface DrinkRollTier {
+  readonly sips: number;
+  readonly weight: number;
+}
+
+export const DRINK_ROLL_TABLE: readonly DrinkRollTier[] = [
+  { sips: 0, weight: 12 },
+  { sips: 1, weight: 30 },
+  { sips: 2, weight: 28 },
+  { sips: 3, weight: 15 },
+  { sips: 6, weight: 10 },
+  { sips: 9, weight: 5 },
+];
+
+const DRINK_ROLL_TOTAL_WEIGHT = DRINK_ROLL_TABLE.reduce((sum, tier) => sum + tier.weight, 0);
+
+/** Consumes exactly one `rng.next()` and returns one of `DRINK_ROLL_TABLE`'s sip values. */
+export const rollDrinkSips = (rng: Rng): number => {
+  const draw = rng.next() * DRINK_ROLL_TOTAL_WEIGHT;
+  let cumulative = 0;
+  for (const tier of DRINK_ROLL_TABLE) {
+    cumulative += tier.weight;
+    if (draw < cumulative) return tier.sips;
+  }
+  // Only reachable if a non-conforming Rng returns >= 1: treat it as the top tier.
+  return DRINK_ROLL_TABLE[DRINK_ROLL_TABLE.length - 1]?.sips ?? 0;
+};
 
 /** Total sips owed per player across a list of recorded penalties. */
 export const tallySips = (

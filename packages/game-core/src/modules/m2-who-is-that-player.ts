@@ -27,8 +27,8 @@ import {
   nonSubmitters,
   pitchPlayerSchema,
   pitchPlayers,
+  rolledSelfPenalties,
   scoreChoiceRound,
-  selfPenalties,
   uniqueValues,
   buildOptions,
 } from './helpers.js';
@@ -53,7 +53,9 @@ const configSchema = z
     optionCount: z.number().int().min(2).max(22),
     answerWindowMs: z.number().int().min(3_000).max(120_000),
     factKinds: z.array(factKindSchema).min(1),
+    /** On/off switch: `0` disables the penalty, any positive value enables a drink roll. */
     wrongAnswerSips: z.number().int().min(0).max(10),
+    /** On/off switch: `0` disables the penalty, any positive value enables a drink roll. */
     noAnswerSips: z.number().int().min(0).max(10),
     lastCorrectSips: z.number().int().min(0).max(10),
   })
@@ -271,16 +273,19 @@ export const m2WhoIsThatPlayer = defineGameModule<M2Shape>({
     });
 
     const correctSubmissions = ctx.submissions.filter(isCorrect);
+    // Misses are drink-rolled per player (see `rollDrinkSips`); the config fields are on/off switches.
     const penalties: PenaltyEvent[] = [
-      ...selfPenalties(
+      ...rolledSelfPenalties(
+        ctx.rng,
         ctx.submissions.filter((submission) => !isCorrect(submission)).map((s) => s.playerId),
-        ctx.config.wrongAnswerSips,
         'WRONG_ANSWER',
+        ctx.config.wrongAnswerSips > 0,
       ),
-      ...selfPenalties(
+      ...rolledSelfPenalties(
+        ctx.rng,
         nonSubmitters<M2Shape>(ctx.players, ctx.submissions),
-        ctx.config.noAnswerSips,
         'NO_ANSWER',
+        ctx.config.noAnswerSips > 0,
       ),
     ];
 

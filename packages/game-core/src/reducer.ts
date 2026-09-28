@@ -431,8 +431,13 @@ const mergeSips = (
 /**
  * Locks the round if it is still open, scores it through the module, applies capped penalties and
  * moves the room to `roundReveal`.
+ *
+ * `rng` is the dispatch's generator from `reduceRoom` — the same one `buildRound` hands to
+ * `generateRound` — so draws made while scoring (the drink roll) advance the state `reduceRoom`
+ * commits into `RoomState.rngState`. Every rejection below happens *before* scoring, so a rejected
+ * reveal consumes no randomness.
  */
-const revealRound = (state: RoomState, deps: EngineDeps): Reduction => {
+const revealRound = (state: RoomState, deps: EngineDeps, rng: ResumableRng): Reduction => {
   const slice = readActiveSlice(state, deps);
   if (slice === null) return reject(state, 'NO_ACTIVE_SESSION');
   if (slice.round.status === 'resolved') return reject(state, 'ROUND_CLOSED', 'already resolved');
@@ -451,6 +456,7 @@ const revealRound = (state: RoomState, deps: EngineDeps): Reduction => {
     players: toPlayerViews(state),
     scoring: state.settings.scoring,
     now,
+    rng,
   });
 
   const penaltyResult = applyPenalties({
@@ -544,7 +550,7 @@ const finishSession = (state: RoomState, sessionIndex: number, now: number): rea
  * After a presence change (leave, disconnect, kick): if a turn-based round is waiting on a player who
  * can no longer act, pass the turn to the next player who can, or end the round if nobody can.
  */
-const repairTurn = (previous: Reduction, deps: EngineDeps): Reduction => {
+const repairTurn = (previous: Reduction, deps: EngineDeps, rng: ResumableRng): Reduction => {
   const state = previous.state;
   if (previous.rejection !== null || state.phase !== 'playing') return previous;
   const slice = readActiveSlice(state, deps);
@@ -555,7 +561,7 @@ const repairTurn = (previous: Reduction, deps: EngineDeps): Reduction => {
   if (active !== undefined && canTakeTurn(state, turn, active)) return previous;
 
   const nextIndex = nextTurnIndex(state, turn, turn.activeIndex);
-  if (nextIndex === null) return then(previous, revealRound(state, deps));
+  if (nextIndex === null) return then(previous, revealRound(state, deps, rng));
 
   const now = deps.clock.now();
   const round: RoundRecord = { ...slice.round, turn: { ...turn, activeIndex: nextIndex } };
@@ -722,7 +728,7 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
         }
       }
 
-      return repairTurn(accept(commit(state, { players, hostPlayerId }, now), events), deps);
+      return repairTurn(accept(commit(state, { players, hostPlayerId }, now), events), deps, rng);
     }
 
     case 'PLAYER_DISCONNECTED':
@@ -748,7 +754,7 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
         ),
         [{ type: 'PLAYER_CONNECTION_CHANGED', playerId: action.playerId, connected }],
       );
-      return connected ? changed : repairTurn(changed, deps);
+      return connected ? changed : repairTurn(changed, deps, rng);
     }
 
     case 'TRANSFER_HOST': {
@@ -787,6 +793,7 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
           [{ type: 'PLAYER_KICKED', playerId: action.targetPlayerId }],
         ),
         deps,
+        rng,
       );
     }
 
@@ -1056,7 +1063,7 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
         events,
       );
       if (!autoLock) return withSubmission;
-      return then(withSubmission, revealRound(withSubmission.state, deps));
+      return then(withSubmission, revealRound(withSubmission.state, deps, rng));
     }
 
     case 'LOCK_ROUND':
@@ -1066,7 +1073,7 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
     case 'REVEAL_ROUND':
     case 'SYSTEM_REVEAL_ROUND': {
       if (state.phase !== 'playing') return reject(state, 'WRONG_PHASE', state.phase);
-      return revealRound(state, deps);
+      return revealRound(state, deps, rng);
     }
 
     case 'MATCH_EVENTS': {
@@ -1150,7 +1157,7 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
       );
 
       if (!observation.resolved) return progressed;
-      return then(progressed, revealRound(progressed.state, deps));
+      return then(progressed, revealRound(progressed.state, deps, rng));
     }
 
     case 'TICK': {
@@ -1161,7 +1168,7 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
       const deadlinePassed = slice.round.deadlineAt !== null && now >= slice.round.deadlineAt;
       // For a long-running bet or a private card the deadline closes *submissions* only: the round
       // itself runs until the module says it is resolved (full time, bingo full house, …).
-      if (deadlinePassed && DEADLINE_ENDS_ROUND.includes(slice.round.kind)) return revealRound(state, deps);
+      if (deadlinePassed && DEADLINE_ENDS_ROUND.includes(slice.round.kind)) return revealRound(state, deps, rng);
 
       // Time-unlocked content (G1's next clue): nothing in the stored state changes when it unlocks,
       // so the transport — which rebroadcasts only on a state change — would never push it. Commit a

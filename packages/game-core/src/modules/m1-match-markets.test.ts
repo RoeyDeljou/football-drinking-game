@@ -16,11 +16,15 @@ import {
   P2,
   P3,
   playerViews,
+  rollsForSeed,
   sampleData,
+  SCORE_SEED,
+  scoreRng,
   sub,
   T0,
 } from '../harness.test-utils.js';
 import { projectFor } from '../projection.js';
+import { ROLLED_PENALTY_META } from './helpers.js';
 import type { EngineDeps } from '../reducer.js';
 import { reduceAll, reduceRoom } from '../reducer.js';
 import { DEFAULT_SCORING } from '../scoring.js';
@@ -603,6 +607,7 @@ describe('M1 settlement scoring', () => {
       players: playerViews([HOST, P2, P3]),
       scoring: DEFAULT_SCORING,
       now: T0,
+      rng: scoreRng(),
     });
   };
 
@@ -643,9 +648,22 @@ describe('M1 settlement scoring', () => {
   it('charges the players who never filed a slip, and gives them no points', () => {
     const outcome = settleRound([sub(HOST, slip())], fullTime);
     const quiet = outcome.penalties.filter((event) => event.reason === 'NO_ANSWER');
-    expect(quiet.map((event) => event.playerId).sort()).toEqual([P2, P3].sort());
-    expect(quiet[0]?.sips).toBe(M1_DEFAULT_CONFIG.noAnswerSips);
+    expect(quiet.map((event) => event.playerId)).toEqual([P2, P3]);
+    // A missing slip is drink-rolled per player; nothing else in this round draws randomness.
+    expect(quiet.map((event) => event.sips)).toEqual(rollsForSeed(SCORE_SEED, 2));
+    expect(quiet.every((event) => event.meta === ROLLED_PENALTY_META)).toBe(true);
     expect(outcome.scores.find((entry) => entry.playerId === P2)?.points).toBe(0);
+  });
+
+  it('keeps the worst-slip and perfect-slip penalties fixed, not rolled', () => {
+    const outcome = settleRound(
+      [sub(HOST, slip({ BTTS: optionFor('BTTS', 'YES') })), sub(P2, slip({ BTTS: optionFor('BTTS', 'NO') }))],
+      fullTime,
+    );
+    const worst = outcome.penalties.filter((event) => event.reason === 'WORST_SLIP');
+    expect(worst.every((event) => event.sips === M1_DEFAULT_CONFIG.worstSlipSips && event.meta !== ROLLED_PENALTY_META)).toBe(
+      true,
+    );
   });
 
   it('scores nobody while no market has closed yet', () => {
@@ -668,6 +686,7 @@ describe('M1 settlement scoring', () => {
       players: playerViews([HOST]).map((player) => ({ ...player, streak: 5 })),
       scoring: DEFAULT_SCORING,
       now: T0,
+      rng: scoreRng(),
     });
     const host = outcome.scores.find((entry) => entry.playerId === HOST);
     expect(host?.points).toBeGreaterThan(0);

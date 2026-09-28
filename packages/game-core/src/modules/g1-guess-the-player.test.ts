@@ -2,17 +2,23 @@ import type { FootballPlayerId, Player, PlayerPosition, PlayerProfile, TeamId } 
 import { describe, expect, it } from 'vitest';
 import { EMPTY_DATA_CONTEXT } from '../data.js';
 import { asSessionId } from '../ids.js';
+import type { Rng } from '../ports.js';
 import { createSeededRng } from '../ports.js';
 import {
   ALL_BUILT,
   asRoundView,
+  drawFor,
   generateWith,
   HOST,
   mustGenerate,
   P2,
   P3,
   playerViews,
+  rollsForSeed,
   sampleData,
+  SCORE_SEED,
+  scoreRng,
+  scriptedRng,
   sub,
   T0,
 } from '../harness.test-utils.js';
@@ -26,7 +32,7 @@ import {
   maxOpeningDecoys,
   visibleClueCount,
 } from './g1-guess-the-player.js';
-import { buildOptions } from './helpers.js';
+import { buildOptions, ROLLED_PENALTY_META } from './helpers.js';
 interface G1Public {
   readonly clues: readonly { readonly kind: string }[];
   readonly options: readonly { readonly playerId: string }[];
@@ -43,7 +49,11 @@ const answer = (generated.solution as G1Solution).playerId;
 const payload = generated.publicPayload as G1Public;
 const wrong = payload.options.find((option) => option.playerId !== answer)?.playerId;
 
-const score = (submissions: readonly ReturnType<typeof sub>[], config: unknown = G1_DEFAULT_CONFIG) =>
+const score = (
+  submissions: readonly ReturnType<typeof sub>[],
+  config: unknown = G1_DEFAULT_CONFIG,
+  rng: Rng = scoreRng(),
+) =>
   module.scoreRound({
     config,
     round,
@@ -51,6 +61,7 @@ const score = (submissions: readonly ReturnType<typeof sub>[], config: unknown =
     players: playerViews([HOST, P2, P3]),
     scoring: DEFAULT_SCORING,
     now: T0,
+    rng,
   });
 
 describe('visibleClueCount', () => {
@@ -164,14 +175,47 @@ describe('G1 scoring', () => {
     expect(outcome.penalties.some((event) => event.reason === 'ROUND_WON')).toBe(false);
   });
 
-  it('charges wrong answers and silence differently', () => {
+  it('charges wrong answers and silence under their own reasons, each with its own drink roll', () => {
     const outcome = score([sub(HOST, { playerId: wrong }, 1_000)]);
-    const host = outcome.penalties.find((event) => event.playerId === HOST);
-    const quiet = outcome.penalties.find((event) => event.playerId === P2);
-    expect(host?.reason).toBe('WRONG_ANSWER');
-    expect(host?.sips).toBe(G1_DEFAULT_CONFIG.wrongAnswerSips);
-    expect(quiet?.reason).toBe('NO_ANSWER');
-    expect(quiet?.sips).toBe(G1_DEFAULT_CONFIG.noAnswerSips);
+    // Draw order: wrong answers (submission order), then non-submitters (player order).
+    const [hostRoll, p2Roll, p3Roll] = rollsForSeed(SCORE_SEED, 3);
+    expect(outcome.penalties).toEqual([
+      { playerId: HOST, target: 'self', sips: hostRoll, reason: 'WRONG_ANSWER', meta: ROLLED_PENALTY_META },
+      { playerId: P2, target: 'self', sips: p2Roll, reason: 'NO_ANSWER', meta: ROLLED_PENALTY_META },
+      { playerId: P3, target: 'self', sips: p3Roll, reason: 'NO_ANSWER', meta: ROLLED_PENALTY_META },
+    ]);
+  });
+
+  it('rolls a miss onto any tier, including the let-off and the top tier', () => {
+    const letOff = score([sub(HOST, { playerId: wrong }, 1_000)], G1_DEFAULT_CONFIG, scriptedRng([drawFor(0)]));
+    expect(letOff.penalties.find((event) => event.playerId === HOST)).toMatchObject({
+      reason: 'WRONG_ANSWER',
+      sips: 0,
+    });
+    const top = score([sub(HOST, { playerId: wrong }, 1_000)], G1_DEFAULT_CONFIG, scriptedRng([drawFor(9)]));
+    expect(top.penalties.find((event) => event.playerId === HOST)?.sips).toBe(9);
+  });
+
+  it('replays identically from the same RNG state and advances it', () => {
+    const a = scoreRng(77);
+    const b = scoreRng(77);
+    const first = score([sub(HOST, { playerId: wrong }, 1_000)], G1_DEFAULT_CONFIG, a);
+    const second = score([sub(HOST, { playerId: wrong }, 1_000)], G1_DEFAULT_CONFIG, b);
+    expect(second).toEqual(first);
+    expect(a.state()).toBe(b.state());
+    expect(a.state()).not.toBe(scoreRng(77).state());
+  });
+
+  it('treats a zero wrongAnswerSips / noAnswerSips as "off": no event and no draw', () => {
+    const rng = scoreRng();
+    const before = rng.state();
+    const outcome = score(
+      [sub(HOST, { playerId: wrong }, 1_000)],
+      { ...G1_DEFAULT_CONFIG, wrongAnswerSips: 0, noAnswerSips: 0 },
+      rng,
+    );
+    expect(outcome.penalties).toEqual([]);
+    expect(rng.state()).toBe(before);
   });
 });
 

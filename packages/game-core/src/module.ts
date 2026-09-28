@@ -188,6 +188,13 @@ export interface ScoreRoundContext<S extends ModuleShape> {
   readonly players: readonly RoundPlayerView[];
   readonly scoring: ScoringConfig;
   readonly now: number;
+  /**
+   * The same per-dispatch seeded generator `generateRound` receives (rebuilt from
+   * `RoomState.rngState`; whatever a module draws here advances the committed state). Used for the
+   * drink roll (`rollDrinkSips`). Consume it in a deterministic order — iterate submissions and
+   * players in the order given — so a replay reproduces every draw.
+   */
+  readonly rng: Rng;
 }
 
 export interface RoundOutcome {
@@ -447,6 +454,7 @@ export const defineGameModule = <S extends ModuleShape>(
         players: ctx.players,
         scoring: ctx.scoring,
         now: ctx.now,
+        rng: ctx.rng,
       }),
 
     projectRound: (ctx) =>

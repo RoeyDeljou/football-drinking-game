@@ -39,6 +39,7 @@ import {
   P2,
   P3,
   playerViews,
+  scoreRng,
   sub,
   T0,
 } from './harness.test-utils.js';
@@ -541,6 +542,7 @@ describe('N7: scoring quirks', () => {
       players,
       scoring: DEFAULT_SCORING,
       now: T0,
+      rng: scoreRng(),
     });
     const nearMiss = outcome.scores.find((entry) => entry.playerId === HOST);
     const exact = outcome.scores.find((entry) => entry.playerId === P2);
@@ -582,6 +584,7 @@ describe('N7: scoring quirks', () => {
         players: playerViews([HOST, P2]),
         scoring: DEFAULT_SCORING,
         now: T0,
+        rng: scoreRng(),
       });
       expect(outcome.penalties).toContainEqual(penalty(HOST, 'self', 1, 'LAST_CORRECT', null));
     });

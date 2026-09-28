@@ -38,8 +38,8 @@ import {
   footballPlayerIdSchema,
   nonSubmitters,
   positionSchema,
+  rolledSelfPenalties,
   scoreChoiceRound,
-  selfPenalties,
 } from './helpers.js';
 
 export const G1_ID = asGameModuleId('G1');
@@ -64,7 +64,9 @@ const configSchema = z
     /** Fraction of the base lost per extra clue revealed. */
     cluePenalty: z.number().min(0).max(0.5),
     minCredit: z.number().min(0).max(1),
+    /** On/off switch: `0` disables the penalty, any positive value enables a drink roll. */
     wrongAnswerSips: z.number().int().min(0).max(10),
+    /** On/off switch: `0` disables the penalty, any positive value enables a drink roll. */
     noAnswerSips: z.number().int().min(0).max(10),
     /** Sips everyone else owes when somebody solves it on the first clue. */
     firstClueBonusSips: z.number().int().min(0).max(10),
@@ -450,18 +452,21 @@ export const g1GuessThePlayer = defineGameModule<G1Shape>({
     });
 
     const correct = ctx.submissions.filter((submission) => submission.payload.playerId === answerId);
+    // Misses are drink-rolled per player (see `rollDrinkSips`); the config fields are on/off switches.
     const penalties: PenaltyEvent[] = [
-      ...selfPenalties(
+      ...rolledSelfPenalties(
+        ctx.rng,
         ctx.submissions
           .filter((submission) => submission.payload.playerId !== answerId)
           .map((submission) => submission.playerId),
-        ctx.config.wrongAnswerSips,
         'WRONG_ANSWER',
+        ctx.config.wrongAnswerSips > 0,
       ),
-      ...selfPenalties(
+      ...rolledSelfPenalties(
+        ctx.rng,
         nonSubmitters<G1Shape>(ctx.players, ctx.submissions),
-        ctx.config.noAnswerSips,
         'NO_ANSWER',
+        ctx.config.noAnswerSips > 0,
       ),
     ];
 

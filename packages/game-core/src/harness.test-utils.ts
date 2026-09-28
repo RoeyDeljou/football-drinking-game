@@ -35,7 +35,8 @@ import type {
 import type { EngineDeps } from './reducer.js';
 import type { GameModuleRegistry } from './modules/registry.js';
 import { createDefaultRegistry } from './modules/registry.js';
-import type { ControllableClock } from './ports.js';
+import { DRINK_ROLL_TABLE, rollDrinkSips } from './penalties.js';
+import type { ControllableClock, ResumableRng, Rng } from './ports.js';
 import { createControllableClock, createSeededRng, MULBERRY32 } from './ports.js';
 import type { RoomState } from './state.js';
 import { createRoom } from './state.js';
@@ -335,6 +336,54 @@ export const asRoundView = (generated: GeneratedRound<ModuleShape>, now = T0): R
   solution: generated.solution,
   turn: generated.turnOrder === null ? null : { order: generated.turnOrder, activeIndex: 0, eliminated: [] },
 });
+
+/** The seed direct `scoreRound` tests use unless they pass their own RNG. */
+export const SCORE_SEED = 5;
+
+/** A fresh generator for a direct `scoreRound` call. */
+export const scoreRng = (seed = SCORE_SEED): ResumableRng => createSeededRng(seed);
+
+/**
+ * The first `count` drink rolls a fresh generator seeded with `seed` produces — i.e. exactly what a
+ * `scoreRound` that draws only drink rolls will emit, in draw order. Lets a test assert exact sips
+ * without hardcoding magic numbers.
+ */
+export const rollsForSeed = (seed: number, count: number): readonly number[] => {
+  const rng = createSeededRng(seed);
+  return Array.from({ length: count }, () => rollDrinkSips(rng));
+};
+
+/**
+ * An `Rng` whose `next()` replays `draws` in order (cycling), for forcing a specific drink-roll tier:
+ * `0` always lands on the first tier, `0.999` on the last. The other methods derive from `next()`.
+ */
+export const scriptedRng = (draws: readonly number[]): Rng => {
+  let index = 0;
+  const next = (): number => {
+    const value = draws[index % draws.length] ?? 0;
+    index += 1;
+    return value;
+  };
+  const int = (min: number, max: number): number => (max <= min ? min : min + Math.floor(next() * (max - min + 1)));
+  return {
+    next,
+    int,
+    pick: <T>(items: readonly T[]): T | undefined => (items.length === 0 ? undefined : items[int(0, items.length - 1)]),
+    sample: <T>(items: readonly T[], count: number): readonly T[] => items.slice(0, Math.max(0, count)),
+    shuffle: <T>(items: readonly T[]): readonly T[] => items.slice(),
+  };
+};
+
+/** The `next()` value that lands a drink roll on the tier with this many sips. */
+export const drawFor = (sips: number): number => {
+  let cumulative = 0;
+  const total = DRINK_ROLL_TABLE.reduce((sum, tier) => sum + tier.weight, 0);
+  for (const tier of DRINK_ROLL_TABLE) {
+    if (tier.sips === sips) return (cumulative + tier.weight / 2) / total;
+    cumulative += tier.weight;
+  }
+  throw new Error(`no drink-roll tier with ${sips} sips`);
+};
 
 export const sub = (playerId: PlayerId, payload: unknown, elapsedMs = 0): TypedSubmission<ModuleShape> => ({
   playerId,

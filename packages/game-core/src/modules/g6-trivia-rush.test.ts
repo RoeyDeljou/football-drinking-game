@@ -3,18 +3,25 @@ import { EMPTY_DATA_CONTEXT } from '../data.js';
 import {
   ALL_BUILT,
   asRoundView,
+  drawFor,
   generateWith,
   HOST,
   mustGenerate,
   P2,
   P3,
   playerViews,
+  rollsForSeed,
   sampleData,
+  SCORE_SEED,
+  scoreRng,
+  scriptedRng,
   sub,
   T0,
 } from '../harness.test-utils.js';
+import type { Rng } from '../ports.js';
 import { DEFAULT_SCORING } from '../scoring.js';
 import { G6_DEFAULT_CONFIG, g6TriviaRush as module } from './g6-trivia-rush.js';
+import { ROLLED_PENALTY_META } from './helpers.js';
 
 interface G6Public {
   readonly question: {
@@ -33,6 +40,7 @@ const score = (
   round: ReturnType<typeof asRoundView>,
   submissions: readonly ReturnType<typeof sub>[],
   config: unknown = G6_DEFAULT_CONFIG,
+  rng: Rng = scoreRng(),
 ) =>
   module.scoreRound({
     config,
@@ -41,6 +49,7 @@ const score = (
     players: playerViews([HOST, P2, P3]),
     scoring: DEFAULT_SCORING,
     now: T0,
+    rng,
   });
 
 describe('G6 generation', () => {
@@ -178,7 +187,35 @@ describe('G6 validation and scoring', () => {
       sub(P3, { optionId: wrong }, 100),
     ]);
     expect(outcome.penalties).toHaveLength(1);
-    expect(outcome.penalties[0]).toMatchObject({ playerId: P3, reason: 'WRONG_ANSWER', sips: 2 });
+    expect(outcome.penalties[0]).toEqual({
+      playerId: P3,
+      target: 'self',
+      sips: rollsForSeed(SCORE_SEED, 1)[0],
+      reason: 'WRONG_ANSWER',
+      meta: ROLLED_PENALTY_META,
+    });
+  });
+
+  it('rolls each miss independently, wrong answers first, then silence in player order', () => {
+    const outcome = score(
+      round,
+      [sub(HOST, { optionId: wrong }, 100), sub(P2, { optionId: wrong }, 200)],
+      G6_DEFAULT_CONFIG,
+      scriptedRng([drawFor(9), drawFor(0), drawFor(3)]),
+    );
+    expect(outcome.penalties.map((event) => [event.playerId, event.reason, event.sips])).toEqual([
+      [HOST, 'WRONG_ANSWER', 9],
+      [P2, 'WRONG_ANSWER', 0],
+      [P3, 'NO_ANSWER', 3],
+    ]);
+  });
+
+  it('replays identically from the same RNG state', () => {
+    const a = scoreRng(11);
+    const b = scoreRng(11);
+    const subs = [sub(HOST, { optionId: wrong }, 100)];
+    expect(score(round, subs, G6_DEFAULT_CONFIG, a)).toEqual(score(round, subs, G6_DEFAULT_CONFIG, b));
+    expect(a.state()).toBe(b.state());
   });
 
   it('can punish the last correct answer when configured', () => {

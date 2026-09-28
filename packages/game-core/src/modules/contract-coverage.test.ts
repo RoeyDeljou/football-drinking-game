@@ -33,6 +33,7 @@ import {
   P3,
   playerViews,
   sampleData,
+  scoreRng,
   T0,
 } from '../harness.test-utils.js';
 
@@ -565,6 +566,7 @@ describe('module erasure', () => {
         players: playerViews([HOST]),
         scoring: DEFAULT_SCORING,
         now: T0,
+        rng: scoreRng(),
       }),
     ).toThrow(EngineInvariantError);
   });

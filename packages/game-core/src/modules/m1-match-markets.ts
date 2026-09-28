@@ -39,7 +39,7 @@ import {
   footballPlayerIdSchema,
   nonSubmitters,
   pitchPlayers,
-  selfPenalties,
+  rolledSelfPenalties,
   teamIdSchema,
 } from './helpers.js';
 
@@ -143,6 +143,7 @@ const configSchema = z
     sipsPerLostMarket: z.number().int().min(0).max(5),
     worstSlipSips: z.number().int().min(0).max(10),
     perfectSlipSips: z.number().int().min(0).max(10),
+    /** On/off switch: `0` disables the penalty, any positive value enables a drink roll. */
     noAnswerSips: z.number().int().min(0).max(10),
   })
   .strict();
@@ -731,11 +732,15 @@ export const m1MatchMarkets = defineGameModule<M1Shape>({
       });
     });
 
+    // No slip filed is drink-rolled per player (see `rollDrinkSips`); `noAnswerSips` is an on/off
+    // switch. Lost markets, the worst slip and the perfect slip stay fixed: they are deliberate,
+    // per-event mechanics (a lost market can fire a dozen times a match; a roll each would be brutal).
     const penalties: PenaltyEvent[] = [
-      ...selfPenalties(
+      ...rolledSelfPenalties(
+        ctx.rng,
         nonSubmitters<M1Shape>(ctx.players, ctx.submissions),
-        ctx.config.noAnswerSips,
         'NO_ANSWER',
+        ctx.config.noAnswerSips > 0,
       ),
     ];
 

@@ -10,7 +10,8 @@ import { z } from 'zod';
 import type { PlayerId } from '../ids.js';
 import type { RoundPlayerView, TypedSubmission, ModuleShape } from '../module.js';
 import type { PenaltyEvent, PenaltyReason } from '../penalties.js';
-import { penalty } from '../penalties.js';
+import { penalty, rollDrinkSips } from '../penalties.js';
+import type { Rng } from '../ports.js';
 import type { RoundScore, ScoringConfig } from '../scoring.js';
 import { scoreAnswer, scoreNoAnswer } from '../scoring.js';
 
@@ -80,7 +81,10 @@ export const nonSubmitters = <S extends ModuleShape>(
     .filter((player) => !submissions.some((submission) => submission.playerId === player.id))
     .map((player) => player.id);
 
-/** One `self` penalty per player in `playerIds`. */
+/**
+ * One `self` penalty per player in `playerIds`, all with the same fixed magnitude. For deliberate
+ * "everyone in this bucket drinks exactly N" mechanics; misses use `rolledSelfPenalties` instead.
+ */
 export const selfPenalties = (
   playerIds: readonly PlayerId[],
   sips: number,
@@ -88,6 +92,28 @@ export const selfPenalties = (
   meta: Readonly<Record<string, string | number | boolean>> | null = null,
 ): readonly PenaltyEvent[] =>
   sips <= 0 ? [] : playerIds.map((playerId) => penalty(playerId, 'self', sips, reason, meta));
+
+/** Marks a penalty whose magnitude came from the drink roll, so the client can present it as one. */
+export const ROLLED_PENALTY_META = { rolled: true } as const;
+
+/**
+ * One `self` penalty per player in `playerIds`, each with its **own** independent drink roll (see
+ * `rollDrinkSips`). Draws happen in `playerIds` order, one `rng.next()` per player, so the result is
+ * fully determined by the RNG state and the order of the list.
+ *
+ * `enabled` is the module's on/off config switch (`wrongAnswerSips > 0` etc.): when `false`, nothing
+ * is emitted and no randomness is consumed. A roll of `0` is still emitted — it is the "no drinking"
+ * outcome, and the client announces it.
+ */
+export const rolledSelfPenalties = (
+  rng: Rng,
+  playerIds: readonly PlayerId[],
+  reason: PenaltyReason,
+  enabled: boolean,
+): readonly PenaltyEvent[] =>
+  enabled
+    ? playerIds.map((playerId) => penalty(playerId, 'self', rollDrinkSips(rng), reason, ROLLED_PENALTY_META))
+    : [];
 
 /**
  * The player who answered correctly last, for "last to answer correctly drinks" mechanics.

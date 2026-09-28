@@ -10,11 +10,16 @@ import {
   P2,
   P3,
   playerViews,
+  rollsForSeed,
   sampleData,
+  SCORE_SEED,
+  scoreRng,
   sub,
   T0,
 } from '../harness.test-utils.js';
+import type { Rng } from '../ports.js';
 import { DEFAULT_SCORING } from '../scoring.js';
+import { ROLLED_PENALTY_META } from './helpers.js';
 import { M3_DEFAULT_CONFIG, m3ShirtNumber as module } from './m3-shirt-number.js';
 
 interface M3Public {
@@ -29,7 +34,11 @@ const generated = mustGenerate(module);
 const round = asRoundView(generated);
 const answer = (generated.solution as M3Solution).shirtNumber;
 
-const score = (submissions: readonly ReturnType<typeof sub>[], config: unknown = M3_DEFAULT_CONFIG) =>
+const score = (
+  submissions: readonly ReturnType<typeof sub>[],
+  config: unknown = M3_DEFAULT_CONFIG,
+  rng: Rng = scoreRng(),
+) =>
   module.scoreRound({
     config,
     round,
@@ -37,6 +46,7 @@ const score = (submissions: readonly ReturnType<typeof sub>[], config: unknown =
     players: playerViews([HOST, P2, P3]),
     scoring: DEFAULT_SCORING,
     now: T0,
+    rng,
   });
 
 describe('M3 metadata and generation', () => {
@@ -165,12 +175,31 @@ describe('M3 scoring', () => {
     expect(outcome.penalties.some((event) => event.playerId === P2)).toBe(false);
   });
 
-  it('charges non-answers the full penalty and reports no winner', () => {
+  it('drink-rolls each non-answer independently and reports no winner', () => {
     const outcome = score([]);
     expect(outcome.penalties).toHaveLength(3);
     expect(outcome.penalties.every((event) => event.reason === 'NO_ANSWER')).toBe(true);
+    expect(outcome.penalties.map((event) => event.sips)).toEqual(rollsForSeed(SCORE_SEED, 3));
+    expect(outcome.penalties.every((event) => event.meta === ROLLED_PENALTY_META)).toBe(true);
     expect(outcome.winnerIds).toEqual([]);
     expect(outcome.summary).toMatchObject({ bestDistance: -1 });
+  });
+
+  it('does not roll a wrong guess: it drinks its distance and draws no randomness', () => {
+    const far = answer > 50 ? 1 : 99;
+    const rng = scoreRng();
+    const before = rng.state();
+    const outcome = score(
+      [sub(HOST, { guess: far }, 0), sub(P2, { guess: answer }, 0), sub(P3, { guess: far }, 0)],
+      M3_DEFAULT_CONFIG,
+      rng,
+    );
+    expect(rng.state()).toBe(before);
+    expect(outcome.penalties.every((event) => event.reason === 'DISTANCE_FROM_TARGET')).toBe(true);
+  });
+
+  it('turns the no-answer penalty off with noAnswerSips 0', () => {
+    expect(score([], { ...M3_DEFAULT_CONFIG, noAnswerSips: 0 }).penalties).toEqual([]);
   });
 
   it('respects a custom tolerance and sip cap', () => {

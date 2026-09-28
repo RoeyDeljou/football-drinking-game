@@ -4,16 +4,23 @@ import { EMPTY_DATA_CONTEXT } from '../data.js';
 import {
   ALL_BUILT,
   asRoundView,
+  drawFor,
   generateWith,
   HOST,
   mustGenerate,
   P2,
   P3,
   playerViews,
+  rollsForSeed,
   sampleData,
+  SCORE_SEED,
+  scoreRng,
+  scriptedRng,
   sub,
   T0,
 } from '../harness.test-utils.js';
+import type { Rng } from '../ports.js';
+import { ROLLED_PENALTY_META } from './helpers.js';
 import {
   FACT_KIND_LEAK_FIELD,
   M2_DEFAULT_CONFIG,
@@ -37,6 +44,7 @@ const score = (
   round: ReturnType<typeof asRoundView>,
   submissions: readonly ReturnType<typeof sub>[],
   config: unknown = M2_DEFAULT_CONFIG,
+  rng: Rng = scoreRng(),
 ) =>
   module.scoreRound({
     config,
@@ -45,6 +53,7 @@ const score = (
     players: playerViews([HOST, P2, P3]),
     scoring: DEFAULT_SCORING,
     now: T0,
+    rng,
   });
 
 describe('M2 metadata', () => {
@@ -199,9 +208,25 @@ describe('M2 scoring and penalties', () => {
     expect(outcome.winnerIds).toEqual([HOST]);
 
     const reasons = outcome.penalties.map((event) => `${event.playerId}:${event.reason}:${event.sips}`);
-    expect(reasons).toContain(`${P3}:WRONG_ANSWER:2`);
+    // The wrong answer is drink-rolled (the only draw this round); last-correct stays a fixed 1.
+    expect(reasons).toContain(`${P3}:WRONG_ANSWER:${rollsForSeed(SCORE_SEED, 1)[0]}`);
     // P2 was the last of the two correct answers.
     expect(reasons).toContain(`${P2}:LAST_CORRECT:1`);
+  });
+
+  it('rolls each non-answerer independently and replays identically', () => {
+    const a = scoreRng(123);
+    const b = scoreRng(123);
+    const first = score(round, [], M2_DEFAULT_CONFIG, a);
+    expect(score(round, [], M2_DEFAULT_CONFIG, b)).toEqual(first);
+    expect(a.state()).toBe(b.state());
+    expect(first.penalties.map((event) => event.sips)).toEqual(rollsForSeed(123, 3));
+    expect(first.penalties.every((event) => event.meta === ROLLED_PENALTY_META)).toBe(true);
+  });
+
+  it('can land a non-answerer on the top tier while the next rolls a let-off', () => {
+    const outcome = score(round, [], M2_DEFAULT_CONFIG, scriptedRng([drawFor(9), drawFor(0), drawFor(6)]));
+    expect(outcome.penalties.map((event) => event.sips)).toEqual([9, 0, 6]);
   });
 
   it('does not punish a lone correct answer as "last correct"', () => {
