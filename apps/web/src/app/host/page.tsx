@@ -7,6 +7,7 @@ import { Banner, BigButton, Card } from '@/components/ui';
 import type { ApiResult, Competition, FixtureSummary } from '@/lib/api';
 import { createRoom, listCompetitionFixtures, listCompetitions } from '@/lib/api';
 import { getValidAuthSession } from '@/lib/authSession';
+import { fixtureLoadElapsedPhase } from '@/lib/fixtureLoadElapsed';
 import {
   competitionsView,
   fixturesView,
@@ -35,6 +36,7 @@ export default function HostPage(): React.JSX.Element {
   );
   const [selectedCompetitionId, setSelectedCompetitionId] = useState<string | null>(null);
   const [fixturesResult, setFixturesResult] = useState<ApiResult<{ fixtures: readonly FixtureSummary[] }> | null>(null);
+  const [fixturesLoadStartedAt, setFixturesLoadStartedAt] = useState<number | null>(null);
   const [selectedFixture, setSelectedFixture] = useState<FixtureSummary | null>(null);
   const [gamedaySelected, setGamedaySelected] = useState(false);
 
@@ -44,6 +46,7 @@ export default function HostPage(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
 
   const now = useNow(30_000);
+  const fastNow = useNow(1_000);
 
   useEffect(() => {
     void getValidAuthSession().then(setAuth);
@@ -72,6 +75,7 @@ export default function HostPage(): React.JSX.Element {
 
   const fetchFixturesFor = (competitionId: string): void => {
     setFixturesResult(null);
+    setFixturesLoadStartedAt(Date.now());
     const requestId = ++fixturesRequestId.current;
     void listCompetitionFixtures(competitionId).then((result) => {
       if (requestId !== fixturesRequestId.current) return;
@@ -262,8 +266,14 @@ export default function HostPage(): React.JSX.Element {
               ) : null}
 
               {fixView.status === 'loading' ? (
-                <div role="status" aria-live="polite" className="py-4 text-center text-sm text-white/60">
-                  Loading fixtures…
+                <div role="status" aria-live="polite" className="flex flex-col items-center gap-1 py-4 text-center text-sm text-white/60">
+                  <span>Loading fixtures…</span>
+                  {fixtureLoadElapsedPhase({ loading: true, startedAt: fixturesLoadStartedAt ?? fastNow, now: fastNow }) ===
+                  'slow' ? (
+                    <span className="text-xs text-white/40">
+                      A league&apos;s first check can take a few extra seconds — still working…
+                    </span>
+                  ) : null}
                 </div>
               ) : null}
               {fixView.status === 'error' ? (

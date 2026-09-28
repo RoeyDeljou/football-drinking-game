@@ -26,11 +26,36 @@ export const GAME_CATALOG: readonly {
   readonly category: 'matchday' | 'general';
   readonly blurb: string;
 }[] = [
-  { id: 'M1', name: 'Match Markets', category: 'matchday', blurb: 'Betting-style slip on the whole match.' },
-  { id: 'M2', name: "Who's That Player?", category: 'matchday', blurb: 'Guess who the fact describes.' },
-  { id: 'M3', name: 'Shirt Number', category: 'matchday', blurb: "Guess a starter's squad number." },
-  { id: 'G1', name: 'Guess the Player', category: 'general', blurb: 'Clues unlock one at a time.' },
-  { id: 'G6', name: 'Trivia Rush', category: 'general', blurb: 'Rapid-fire multiple choice.' },
+  {
+    id: 'M1',
+    name: 'Match Markets',
+    category: 'matchday',
+    blurb: 'Pick the result, goals, and scorers before kickoff — you drink as your picks lose.',
+  },
+  {
+    id: 'M2',
+    name: "Who's That Player?",
+    category: 'matchday',
+    blurb: 'One clue about a player on the pitch right now — be first to name who it is.',
+  },
+  {
+    id: 'M3',
+    name: 'Shirt Number',
+    category: 'matchday',
+    blurb: "See a real starter, guess their shirt number — closest guess wins.",
+  },
+  {
+    id: 'G1',
+    name: 'Guess the Player',
+    category: 'general',
+    blurb: 'Clues about a real footballer reveal one at a time — name them before your friends.',
+  },
+  {
+    id: 'G6',
+    name: 'Trivia Rush',
+    category: 'general',
+    blurb: 'Fast multiple-choice football questions — the quickest right answer scores most.',
+  },
 ];
 
 /** The display name for a `GameModuleId`, falling back to the raw id for a not-yet-cataloged game

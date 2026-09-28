@@ -9,6 +9,26 @@ import type { PenaltyReason, PenaltyTarget, RecordedPenalty } from '@fdg/game-co
 
 export const sipsLabel = (sips: number): string => (sips === 1 ? '1 sip' : `${sips} sips`);
 
+/**
+ * Turns a raw applied-sip count into a varied, colloquial drinking instruction instead of always
+ * reading "N sips" — a capped/reduced penalty genuinely says "no drinking" rather than "0 sips",
+ * and a big enough penalty escalates to a chug or a shot instead of just a bigger number. Thresholds
+ * key off the same `appliedSips`/`sips` value the engine already emits (`RecordedPenalty`,
+ * `PenaltyEvent`), so retuning or adding a tier here never needs an engine change — this stays the
+ * one file that owns drinking wording, per CLAUDE.md's drink-copy invariant.
+ */
+const DRINK_ACTION_TIERS: readonly { readonly maxSips: number; readonly label: string }[] = [
+  { maxSips: 0, label: 'no drinking' },
+  { maxSips: 1, label: '1 sip' },
+  { maxSips: 2, label: '2 sips' },
+  { maxSips: 4, label: 'a chug' },
+  { maxSips: 7, label: 'a shot' },
+  { maxSips: Infinity, label: '2 shots' },
+];
+
+export const drinkActionLabel = (sips: number): string =>
+  DRINK_ACTION_TIERS.find((tier) => sips <= tier.maxSips)?.label ?? '2 shots';
+
 const REASON_COPY: Record<PenaltyReason, string> = {
   WRONG_ANSWER: 'wrong answer',
   NO_ANSWER: "didn't answer in time",
@@ -48,16 +68,20 @@ const targetVerb = (target: PenaltyTarget): string => {
 
 /** One line of alcohol-explicit copy for a single recorded penalty, from the recipient's name. */
 export const drinkLine = (penalty: RecordedPenalty, recipientNickname: string): string => {
-  const sips = sipsLabel(penalty.appliedSips);
   if (penalty.appliedSips <= 0) return `${recipientNickname} gets away with it this time.`;
-  return `${recipientNickname} ${penalty.target === 'self' ? 'downs' : 'drinks'} ${sips} — ${penaltyReasonCopy(penalty.reason)}.`;
+  const action = drinkActionLabel(penalty.appliedSips);
+  return `${recipientNickname} ${penalty.target === 'self' ? 'downs' : 'drinks'} ${action} — ${penaltyReasonCopy(penalty.reason)}.`;
 };
 
 /** The "who made this happen" framing, for a compact reveal feed grouped by source penalty. */
-export const drinkAnnouncement = (penalty: RecordedPenalty, subjectNickname: string): string =>
-  `${subjectNickname} ${targetVerb(penalty.target)} ${sipsLabel(penalty.appliedSips)} — ${penaltyReasonCopy(
+export const drinkAnnouncement = (penalty: RecordedPenalty, subjectNickname: string): string => {
+  if (penalty.appliedSips <= 0) {
+    return `${subjectNickname} gets away with it this time — ${penaltyReasonCopy(penalty.reason)}.`;
+  }
+  return `${subjectNickname} ${targetVerb(penalty.target)} ${drinkActionLabel(penalty.appliedSips)} — ${penaltyReasonCopy(
     penalty.reason,
   )}.`;
+};
 
 export const drinkTallyHeadline = (totalSips: number): string =>
   totalSips === 0 ? 'Nobody owes a single sip. Suspicious.' : `${sipsLabel(totalSips)} owed on the table.`;
