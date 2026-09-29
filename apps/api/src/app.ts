@@ -21,7 +21,7 @@ import { LocalIdentityProvider } from './identity/local-identity-provider.js';
 import { activeSession } from '@fdg/game-core';
 import { dispatchAction } from './engine/dispatch.js';
 import { registry } from './engine/deps.js';
-import { getCachedGameday, getPinnedRoundFixture } from './engine/gameday-cache.js';
+import { getPinnedRoundFixture } from './engine/gameday-cache.js';
 import { planWatch } from './live/watch-plan.js';
 import { createLiveIngestion } from './live/ingestion.js';
 import type { LiveScheduler } from './live/ingestion.js';
@@ -55,7 +55,7 @@ export interface BuildAppOptions {
   /** Test seam: override how often a gameday room's live-fixture pool is re-polled (default 90s, see
    * engine/data-context.ts's `GAMEDAY_LIVE_POLL_MS`). */
   readonly gamedayLivePollMs?: number;
-  /** Test seam: live-ingestion timing overrides (default: `env.LIVE_POLL_INTERVAL_MS` for live fixtures). */
+  /** Test seam: live-ingestion timing overrides (default: `env.FOOTBALL_LIVE_POLL_MS` for live fixtures). */
   readonly liveIngestion?: LiveIngestionConfigInput;
   /** Test seam: injected timers for the live-ingestion loop. */
   readonly liveScheduler?: LiveScheduler;
@@ -89,6 +89,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
         provider: footballData,
         dispatchMatchEvents: (roomId, events) => dispatchAction(ctx, roomId, { type: 'MATCH_EVENTS', events }),
         onRoomChanged: (record) => broadcastRecord(record),
+        loadRoom: (roomId) => ctx.roomStore.load(roomId),
         plan: (record) =>
           planWatch(record.state, record.meta, {
           moduleFor: (state) => {
@@ -97,9 +98,8 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
           },
           gamedayPinnedFixture: (roomId, sessionIndex, roundIndex) =>
             getPinnedRoundFixture(roomId, { sessionIndex, roundIndex }),
-          gamedayPool: (roomId) => getCachedGameday(roomId)?.fixtureOrder ?? [],
           }),
-        config: { liveIntervalMs: env.LIVE_POLL_INTERVAL_MS, ...options.liveIngestion },
+        config: { liveIntervalMs: env.FOOTBALL_LIVE_POLL_MS, ...options.liveIngestion },
         ...(options.liveScheduler === undefined ? {} : { scheduler: options.liveScheduler }),
       });
 

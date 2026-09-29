@@ -8,8 +8,8 @@
  *
  * - single-fixture matchday room: `meta.fixtureId`;
  * - gameday room: the fixture the current round was pinned to (a round is generated from exactly one
- *   fixture, so events of the other live fixtures are irrelevant to it). Before a pin exists
- *   (never for an open round in practice) it falls back to the rotation pool.
+ *   fixture, so events of the other live fixtures are irrelevant to it). With no pin
+ *   there is nothing to watch (never the whole rotation pool).
  * - general rooms: none.
  */
 
@@ -27,7 +27,6 @@ export interface WatchNeed {
 export interface WatchPlanLookups {
   readonly moduleFor: (roomState: RoomState) => EngineGameModule | null;
   readonly gamedayPinnedFixture: (roomId: RoomId, sessionIndex: number, roundIndex: number) => FixtureId | null;
-  readonly gamedayPool: (roomId: RoomId) => readonly FixtureId[];
 }
 
 export const planWatch = (
@@ -51,8 +50,8 @@ export const planWatch = (
       sessionIndex === null
         ? null
         : lookups.gamedayPinnedFixture(state.id, sessionIndex, session.rounds.length - 1);
-    const fixtures = pinned !== null ? [pinned] : lookups.gamedayPool(state.id);
-    return fixtures.map((fixtureId) => ({ fixtureId, roundKey }));
+    // No pin -> nothing: never feed other fixtures' events into a round.
+    return pinned === null ? [] : [{ fixtureId: pinned, roundKey }];
   }
   if (meta.fixtureId === null) return [];
   return [{ fixtureId: meta.fixtureId, roundKey }];

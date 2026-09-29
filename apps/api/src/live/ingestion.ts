@@ -55,6 +55,10 @@ export interface LiveIngestionDeps {
   readonly plan: (record: RoomRecord) => readonly WatchNeed[];
   readonly scheduler?: LiveScheduler;
   readonly random?: () => number;
+  /** Wall clock for kickoff-proximity decisions (default `Date.now`). */
+  readonly now?: () => number;
+  /** Room existence lookup used to reap stopped watchers whose rooms vanished without a dispatch. */
+  readonly loadRoom?: (roomId: RoomId) => Promise<RoomRecord | null>;
   readonly log?: LiveLogger;
   readonly config?: LiveIngestionConfigInput;
 }
@@ -77,6 +81,7 @@ interface Watcher {
   readonly fixtureId: FixtureId;
   readonly rooms: Map<RoomId, string>;
   timer: TimerHandle | null;
+  reapTimer: TimerHandle | null;
   inFlight: Promise<void> | null;
   failures: number;
   sawNotFinished: boolean;
@@ -89,11 +94,14 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
   const config: LiveIngestionConfig = liveIngestionConfigSchema.parse(deps.config ?? {});
   const scheduler = deps.scheduler ?? systemScheduler;
   const random = deps.random ?? Math.random;
+  const now = deps.now ?? Date.now;
   const log: LiveLogger = deps.log ?? { warn: (m, d) => console.warn(`[live] ${m}`, d ?? '') };
 
   const watchers = new Map<FixtureId, Watcher>();
   const roomFixtures = new Map<RoomId, Set<FixtureId>>();
   const pending = new Set<Promise<unknown>>();
+  /** Tail of the poll chain per fixture. Survives watcher recreation so two polls of one fixture can never overlap. */
+  const inFlightByFixture = new Map<FixtureId, Promise<void>>();
   let closed = false;
 
   const track = (promise: Promise<unknown>): void => {
@@ -115,9 +123,50 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     }, delayMs);
   };
 
+  /**
+   * A stopped watcher has no poll timer, so a room removed from the store without any dispatch would never
+   * be detached from it. Periodically re-check its rooms against the store (armed only while stopped).
+   */
+  const armReap = (watcher: Watcher): void => {
+    if (closed || deps.loadRoom === undefined || watchers.get(watcher.fixtureId) !== watcher) return;
+    if (watcher.reapTimer !== null) scheduler.clearTimeout(watcher.reapTimer);
+    watcher.reapTimer = scheduler.setTimeout(() => {
+      watcher.reapTimer = null;
+      track(reap(watcher));
+    }, config.reapIntervalMs);
+  };
+
+  const reap = async (watcher: Watcher): Promise<void> => {
+    const loadRoom = deps.loadRoom;
+    if (loadRoom === undefined) return;
+    for (const roomId of [...watcher.rooms.keys()]) {
+      try {
+        const record = await loadRoom(roomId);
+        if (closed) return;
+        if (record === null) detach(roomId, watcher.fixtureId);
+        else api.roomChanged(record);
+      } catch (error) {
+        log.warn(`reap failed for room ${roomId}`, error);
+      }
+    }
+    if (!closed && watchers.get(watcher.fixtureId) === watcher) armReap(watcher);
+  };
+
+  /** Delay before the next poll of a fixture that has not finished. Tightens to the live cadence near kickoff. */
+  const cadenceFor = (status: string, kickoff: string): number => {
+    if (status !== 'SCHEDULED') return config.liveIntervalMs;
+    const untilKickoff = Date.parse(kickoff) - now();
+    if (!Number.isFinite(untilKickoff)) return config.preKickoffIntervalMs;
+    const untilWindow = untilKickoff - config.kickoffLeadMs;
+    if (untilWindow <= 0) return config.liveIntervalMs;
+    return Math.max(config.liveIntervalMs, Math.min(config.preKickoffIntervalMs, untilWindow));
+  };
+
   const dropWatcher = (watcher: Watcher): void => {
     if (watcher.timer !== null) scheduler.clearTimeout(watcher.timer);
     watcher.timer = null;
+    if (watcher.reapTimer !== null) scheduler.clearTimeout(watcher.reapTimer);
+    watcher.reapTimer = null;
     watchers.delete(watcher.fixtureId);
   };
 
@@ -209,21 +258,28 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
       else armTimer(watcher, jittered(config.liveIntervalMs));
     } else {
       watcher.sawNotFinished = true;
-      armTimer(watcher, jittered(current === 'SCHEDULED' ? config.preKickoffIntervalMs : config.liveIntervalMs));
+      armTimer(watcher, jittered(cadenceFor(current, state.fixture.kickoff)));
     }
-    if (watcher.done && watcher.timer !== null) {
-      scheduler.clearTimeout(watcher.timer);
+    if (watcher.done) {
+      if (watcher.timer !== null) scheduler.clearTimeout(watcher.timer);
       watcher.timer = null;
+      armReap(watcher);
     }
   };
 
   const startPoll = (watcher: Watcher): void => {
     if (closed || watcher.inFlight !== null || watchers.get(watcher.fixtureId) !== watcher || watcher.done) return;
-    const run = runPoll(watcher)
+    // Chain behind any poll still running for this fixture (e.g. a previous watcher's, after the last room
+    // detached and a new one attached mid-poll): never two in flight per fixture.
+    const prior = inFlightByFixture.get(watcher.fixtureId) ?? Promise.resolve();
+    const run: Promise<void> = prior
+      .then(() => (closed || watchers.get(watcher.fixtureId) !== watcher ? undefined : runPoll(watcher)))
       .catch((error: unknown) => log.warn(`unexpected poll error for fixture ${watcher.fixtureId}`, error))
       .finally(() => {
         watcher.inFlight = null;
+        if (inFlightByFixture.get(watcher.fixtureId) === run) inFlightByFixture.delete(watcher.fixtureId);
       });
+    inFlightByFixture.set(watcher.fixtureId, run);
     watcher.inFlight = run;
     track(run);
   };
@@ -236,6 +292,7 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
         fixtureId: need.fixtureId,
         rooms: new Map(),
         timer: null,
+        reapTimer: null,
         inFlight: null,
         failures: 0,
         sawNotFinished: false,
@@ -262,7 +319,7 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     }
   };
 
-  return {
+  const api: LiveIngestion = {
     roomChanged: (record) => {
       if (closed) return;
       try {
@@ -294,10 +351,13 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
       for (const watcher of watchers.values()) {
         if (watcher.timer !== null) scheduler.clearTimeout(watcher.timer);
         watcher.timer = null;
+        if (watcher.reapTimer !== null) scheduler.clearTimeout(watcher.reapTimer);
+        watcher.reapTimer = null;
       }
       watchers.clear();
       roomFixtures.clear();
       await Promise.allSettled([...pending]);
     },
   };
+  return api;
 };

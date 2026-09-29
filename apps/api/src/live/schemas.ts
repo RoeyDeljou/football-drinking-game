@@ -60,6 +60,10 @@ export const liveIngestionConfigSchema = z
     liveIntervalMs: z.number().int().min(1).default(15_000),
     /** Poll cadence while a watched fixture has not kicked off yet. */
     preKickoffIntervalMs: z.number().int().min(1).default(60_000),
+    /** From this long before scheduled kickoff, poll at the live cadence (catches kickoff promptly). */
+    kickoffLeadMs: z.number().int().min(0).default(120_000),
+    /** How often a stopped (finished/postponed) watcher re-checks that its rooms still exist. */
+    reapIntervalMs: z.number().int().min(1).default(60_000),
     /** Ceiling for the exponential error backoff. */
     maxBackoffMs: z.number().int().min(1).default(120_000),
     /** Multiplier applied per consecutive failure. */

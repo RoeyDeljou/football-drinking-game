@@ -69,6 +69,7 @@ describe('live ingestion loop with the replay provider (M1)', () => {
   let server: TestServer;
   let provider: FixtureProvider;
   const fake = createFakeScheduler();
+  let liveCalls = 0;
 
   beforeAll(async () => {
     provider = new FixtureProvider({
@@ -76,6 +77,11 @@ describe('live ingestion loop with the replay provider (M1)', () => {
       replay: { fixtureId: FIXTURE_ID, autoStart: false, startMinute: 0 },
     });
     await provider.ready();
+    const original = provider.getLiveMatchState.bind(provider);
+    provider.getLiveMatchState = async (id) => {
+      liveCalls += 1;
+      return original(id);
+    };
     server = await startTestServer({
       footballData: provider,
       liveScheduler: fake.scheduler,
@@ -208,9 +214,11 @@ describe('live ingestion loop with the replay provider (M1)', () => {
     await idle();
     expect(ingestion!.watchedFixtureIds()).toEqual([]);
     expect(fake.pending()).toBe(0);
-    const polls = replay.status().eventsEmitted;
+    // ...and stays stopped: no further provider polls however much time passes.
+    const callsAtStop = liveCalls;
+    expect(callsAtStop).toBeGreaterThan(checkpoints.length);
     await fake.advance(120_000, idle);
-    expect(replay.status().eventsEmitted).toBe(polls);
+    expect(liveCalls).toBe(callsAtStop);
 
     host.socket.close();
   }, 120_000);

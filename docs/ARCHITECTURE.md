@@ -105,13 +105,13 @@ Provider live events reach the engine through one loop, `createLiveIngestion` (`
   declares `supportsLiveEvents`, and the current round is `open`. Single-fixture rooms watch `meta.fixtureId`; gameday
   rooms watch the fixture the current round is pinned to.
 - **One poll per fixture.** Rooms attach to a per-fixture watcher. Its `getLiveMatchState` poll chain is
-  setTimeout-after-completion (never two in flight), default every `LIVE_POLL_INTERVAL_MS` (15s, the provider's live
-  TTL), 60s pre-kickoff, exponential backoff (x2, capped 120s, +/-10% jitter) on any failure. Each poll delivers the
+  setTimeout-after-completion (never two in flight), default every `FOOTBALL_LIVE_POLL_MS` (15s; the one cadence knob, shared with football-data's env reader), 60s while
+  pre-kickoff but back to the live cadence from 2 min before scheduled kickoff, exponential backoff (x2, capped 120s, +/-10% jitter) on any failure. Each poll delivers the
   full id-stable event list as `MATCH_EVENTS` to every attached room via `dispatchAction`; the reducer dedupes by id, so
   duplicate polls, reconnects and restarts are no-ops (no save, no broadcast). Changed rooms are broadcast through
   `gateway.broadcast`.
 - **Stop conditions.** FINISHED (seen live) gets one confirming poll, then stops; POSTPONED/CANCELLED stop at once. A
-  stopped watcher keeps its cached events until no room references it (late rooms are served from the cache). Last
+  stopped watcher keeps its cached events until no room references it (late rooms are served from the cache); a 60s reap re-checks its rooms against the store so a room removed without a dispatch cannot pin it. A poll still in flight when the last room detaches is chained ahead of any re-attached watcher, so two polls of one fixture never overlap. Last
   room detaches -> timer cleared. `close()` (called from `buildApp().close()`) clears every timer and awaits in-flight
   polls. Timers are injectable (`LiveScheduler`) for deterministic tests.
 - Events are re-validated with Zod (`live/schemas.ts`); malformed or foreign-fixture events are dropped and logged.

@@ -19,7 +19,6 @@ const live = { supportsLiveEvents: true } as EngineGameModule;
 const lookups = (module: EngineGameModule | null) => ({
   moduleFor: () => module,
   gamedayPinnedFixture: (_r: RoomId, s: number, r: number) => (s === 0 && r === 1 ? asFixtureId('pinned') : null),
-  gamedayPool: () => [asFixtureId('p1'), asFixtureId('p2')],
 });
 const single: RoomMeta = { fixtureId: asFixtureId('fx') };
 const gameday: RoomMeta = { fixtureId: null, gamedayCompetitionId: 'pl' as unknown as CompetitionId };
@@ -37,6 +36,10 @@ describe('planWatch', () => {
   });
   it('gameday rooms watch the current round pinned fixture', () => {
     expect(planWatch(state(), gameday, lookups(live)).map((n) => n.fixtureId)).toEqual(['pinned']);
+  });
+  it('gameday rooms with no pin watch nothing (never the rotation pool)', () => {
+    const unpinned = { ...lookups(live), gamedayPinnedFixture: () => null };
+    expect(planWatch(state(), gameday, unpinned)).toEqual([]);
   });
   it('round key changes with the round', () => {
     const a = planWatch(state(), single, lookups(live))[0]?.roundKey;

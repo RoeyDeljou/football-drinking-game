@@ -59,13 +59,14 @@ type Status = 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'POSTPONED';
 
 const rec = (roomId: string): RoomRecord => ({ state: { id: roomId }, meta: {} }) as unknown as RoomRecord;
 
-const setup = (initialNeeds: Record<string, readonly string[]> = {}) => {
+const setup = (initialNeeds: Record<string, readonly string[]> = {}, opts: { reap?: boolean; nowMs?: number } = {}) => {
   const clock = createFakeScheduler();
-  const feed = { status: 'LIVE' as Status, events: [] as MatchEvent[], fail: 0, polls: 0, throwNext: false, nullNext: false };
+  const feed = { kickoff: 'not-a-date', status: 'LIVE' as Status, events: [] as MatchEvent[], fail: 0, polls: 0, throwNext: false, nullNext: false };
   const needs: Record<string, readonly string[]> = { ...initialNeeds };
   const delivered: Array<{ roomId: string; events: readonly MatchEvent[] }> = [];
   const changed: string[] = [];
   const goneRooms = new Set<string>();
+  const missingRooms = new Set<string>();
   const rejectWith: { code: string | null } = { code: null };
 
   const service = createLiveIngestion({
@@ -83,7 +84,7 @@ const setup = (initialNeeds: Record<string, readonly string[]> = {}) => {
           notes: [],
           fromCache: false,
           value: {
-            fixture: { id, status: feed.status },
+            fixture: { id, status: feed.status, kickoff: feed.kickoff },
             events: feed.events.map((e) => ({ ...e, fixtureId: id })),
             teamStats: [],
             playerStats: [],
@@ -106,14 +107,16 @@ const setup = (initialNeeds: Record<string, readonly string[]> = {}) => {
       (needs[record.state.id] ?? []).map((fixtureId) => ({ fixtureId: asFixtureId(fixtureId), roundKey: 'r1' })),
     scheduler: clock.scheduler,
     random: () => 0.5,
+    now: () => opts.nowMs ?? 0,
+    ...(opts.reap === true ? { loadRoom: async (id: RoomId) => (missingRooms.has(id) ? null : rec(id)) } : {}),
     log: { warn: () => undefined },
-    config: { liveIntervalMs: 1000, preKickoffIntervalMs: 5000, maxBackoffMs: 8000, backoffFactor: 2, jitterRatio: 0.1 },
+    config: { reapIntervalMs: 30_000, kickoffLeadMs: 2000, liveIntervalMs: 1000, preKickoffIntervalMs: 5000, maxBackoffMs: 8000, backoffFactor: 2, jitterRatio: 0.1 },
   });
   const sync = (roomId: string, fixtures: readonly string[]): void => {
     needs[roomId] = fixtures;
     service.roomChanged(rec(roomId));
   };
-  return { clock, feed, delivered, changed, service, rejectWith, goneRooms, sync };
+  return { clock, feed, delivered, changed, service, rejectWith, goneRooms, missingRooms, sync };
 };
 
 const ROOM_A = 'a' as RoomId;
@@ -358,5 +361,110 @@ describe('live ingestion scheduler', () => {
     expect(t.clock.pending()).toBe(0);
     await t.clock.advance(60_000);
     expect(t.feed.polls).toBe(1);
+  });
+
+  it('tightens to the live cadence within the lead window before scheduled kickoff', async () => {
+    // kickoff at t=20000, lead 2000 -> pre-kickoff interval (5000) until 18000, then live interval (1000).
+    const t = setup({}, { nowMs: 0 });
+    t.feed.status = 'SCHEDULED';
+    t.feed.kickoff = new Date(20_000).toISOString();
+    t.sync('a', ['fx1']);
+    await t.clock.advance(0); // poll 1 at t=0: 18000ms until the window -> capped at 5000
+    await t.clock.advance(4999);
+    expect(t.feed.polls).toBe(1);
+    await t.clock.advance(1);
+    expect(t.feed.polls).toBe(2);
+    await t.service.close();
+
+    const near = setup({}, { nowMs: 19_000 }); // inside the window -> live cadence
+    near.feed.status = 'SCHEDULED';
+    near.feed.kickoff = new Date(20_000).toISOString();
+    near.sync('a', ['fx1']);
+    await near.clock.advance(0);
+    await near.clock.advance(1000);
+    expect(near.feed.polls).toBe(2);
+    await near.service.close();
+
+    const late = setup({}, { nowMs: 25_000 }); // scheduled kickoff passed, status still SCHEDULED -> live cadence
+    late.feed.status = 'SCHEDULED';
+    late.feed.kickoff = new Date(20_000).toISOString();
+    late.sync('a', ['fx1']);
+    await late.clock.advance(0);
+    await late.clock.advance(1000);
+    expect(late.feed.polls).toBe(2);
+    await late.service.close();
+  });
+
+  it('never runs two polls of one fixture at once when the last room detaches and a new one attaches mid-poll', async () => {
+    const clock = createFakeScheduler();
+    let inFlight = 0;
+    let maxInFlight = 0;
+    let polls = 0;
+    const releases: Array<() => void> = [];
+    const service = createLiveIngestion({
+      provider: {
+        getLiveMatchState: async (id) => {
+          polls += 1;
+          inFlight += 1;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+          await new Promise<void>((resolve) => releases.push(resolve));
+          inFlight -= 1;
+          return { ok: true, notes: [], fromCache: false, value: { fixture: { id, status: 'LIVE', kickoff: 'x' }, events: [] } } as never;
+        },
+      },
+      dispatchMatchEvents: async () => null,
+      onRoomChanged: () => undefined,
+      plan: (record) => (record.state.id === ('none' as RoomId) ? [] : [{ fixtureId: FIXTURE, roundKey: 'r' }]),
+      scheduler: clock.scheduler,
+      random: () => 0.5,
+      log: { warn: () => undefined },
+      config: { liveIntervalMs: 1000, jitterRatio: 0 },
+    });
+    service.roomChanged(rec('a'));
+    await clock.advance(0);
+    expect(polls).toBe(1); // poll 1 is now in flight
+    service.roomChanged(rec('a'));
+    service.roomRemoved('a' as RoomId); // last room detaches mid-poll
+    expect(service.watchedFixtureIds()).toHaveLength(0);
+    service.roomChanged(rec('b')); // a new watcher for the same fixture
+    await clock.advance(0);
+    await clock.advance(5000);
+    expect(polls).toBe(1); // the new watcher's first poll waits for the in-flight one
+    releases.shift()?.();
+    await clock.advance(0);
+    expect(polls).toBe(2);
+    expect(maxInFlight).toBe(1);
+    releases.shift()?.();
+    await clock.advance(0);
+    await service.close();
+  });
+
+  it('reaps a stopped watcher whose room was removed without a dispatch, and clears its timers', async () => {
+    const t = setup({}, { reap: true });
+    t.feed.status = 'FINISHED';
+    t.feed.events = [event('ft', 'FULL_TIME')];
+    t.sync('a', ['fx1']);
+    await t.clock.advance(0);
+    expect(t.service.watchedFixtureIds()).toHaveLength(1);
+    expect(t.clock.pending()).toBe(1); // only the reap timer
+    await t.clock.advance(30_000); // room still exists: stays, reap re-armed
+    expect(t.service.watchedFixtureIds()).toHaveLength(1);
+    expect(t.clock.pending()).toBe(1);
+    t.missingRooms.add('a'); // removed from the store with no dispatch
+    await t.clock.advance(30_000);
+    expect(t.service.watchedFixtureIds()).toHaveLength(0);
+    expect(t.clock.pending()).toBe(0);
+    expect(t.feed.polls).toBe(1);
+  });
+
+  it('close() clears a pending reap timer', async () => {
+    const t = setup({}, { reap: true });
+    t.feed.status = 'FINISHED';
+    t.feed.events = [event('ft', 'FULL_TIME')];
+    t.sync('a', ['fx1']);
+    await t.clock.advance(0);
+    expect(t.clock.pending()).toBe(1);
+    await t.service.close();
+    expect(t.clock.pending()).toBe(0);
   });
 });
