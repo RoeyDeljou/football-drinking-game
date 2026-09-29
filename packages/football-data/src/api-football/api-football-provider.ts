@@ -12,6 +12,7 @@
 import type { CacheTtlConfig } from '../cache.js';
 import { cacheKey, DEFAULT_CACHE_TTL, ResourceCache } from '../cache.js';
 import type { DataClock } from '../clock.js';
+import { withGuaranteedFullTime } from '../full-time.js';
 import { systemDataClock } from '../clock.js';
 import type { CompetitionConfig } from '../competitions.js';
 import {
@@ -381,10 +382,12 @@ export class ApiFootballProvider implements FootballDataProvider {
       notes.push(`Player match statistics unavailable for fixture ${fixtureId}: ${playersResult.error.message}`);
     }
 
+    // A finished fixture always carries exactly one FULL_TIME event (see full-time.ts).
+    const guaranteedEvents = fixture.status === 'FINISHED' ? withGuaranteedFullTime(fixtureId, events) : events;
     return ok(
       {
         fixture,
-        events,
+        events: guaranteedEvents,
         teamStats,
         playerStats,
         updatedAt: new Date(this.clock.now()).toISOString(),

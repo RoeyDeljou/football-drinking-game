@@ -114,32 +114,58 @@ export function parseEspnClock(
   return null;
 }
 
-/** ESPN play-type slug (`corner-awarded`, `penalty---scored`, …) → domain event type, or null to skip. */
+/**
+ * ESPN play-type slug (`corner-awarded`, `penalty---scored`, `goal-kick`, …) → domain event type, or null to skip.
+ *
+ * Matching is on whole slug **tokens** (the slug split on runs of `-`), never on substrings or prefixes, and the
+ * rules run from most to least specific. That ordering is load-bearing: `goal-kick` contains the token `goal`,
+ * `own-goal` starts with `own`, `penalty---scored` contains `goal`-like words, `start-delay` starts with `start`,
+ * and `shot-hit-woodwork` mentions a shot — a naive `startsWith`/`includes` chain mis-files each of them (a goal
+ * kick recorded as a goal would score a goal for every goal kick). Unknown slugs return null and are reported in
+ * the normalizer notes rather than guessed.
+ */
 export function normalizeEspnPlayType(slug: string | null | undefined, text?: string | null): MatchEventType | null {
-  const value = (slug ?? '').toLowerCase();
-  const label = (text ?? '').toLowerCase();
+  const value = (slug ?? '').trim().toLowerCase();
+  const label = (text ?? '').trim().toLowerCase();
   if (value.length === 0) return null;
-  if (value.includes('own-goal') || value.includes('own goal')) return 'OWN_GOAL';
-  if (value.includes('penalty')) {
-    if (value.includes('scored') || value.includes('goal')) return 'PENALTY_SCORED';
-    if (value.includes('miss') || value.includes('saved')) return 'PENALTY_MISSED';
+  const ordered = value.split(/[^a-z0-9]+/).filter((token) => token.length > 0);
+  const tokens = new Set(ordered);
+  const has = (...words: readonly string[]): boolean => words.some((word) => tokens.has(word));
+
+  // Set pieces and restarts that merely contain the word "goal" or "kick".
+  // `goal-kick` only when "goal" is the leading token: `goal---free-kick` is a goal scored from a free kick.
+  if (ordered[0] === 'goal' && ordered[1] === 'kick') return 'GOAL_KICK';
+  if (has('throw')) return 'THROW_IN';
+  if (has('own') && has('goal', 'goals')) return 'OWN_GOAL';
+  if (has('penalty', 'penalties')) {
+    if (has('scored', 'goal')) return 'PENALTY_SCORED';
+    if (has('miss', 'missed', 'saved', 'save', 'off', 'woodwork')) return 'PENALTY_MISSED';
     return 'PENALTY_AWARDED';
   }
-  if (value.startsWith('goal')) return 'GOAL';
-  if (value.includes('yellow-red') || value.includes('second-yellow')) return 'SECOND_YELLOW';
-  if (value.includes('red-card')) return 'RED_CARD';
-  if (value.includes('yellow-card')) return 'YELLOW_CARD';
-  if (value.includes('substitution')) return 'SUBSTITUTION';
-  if (value.includes('corner')) return 'CORNER';
-  if (value.includes('offside')) return 'OFFSIDE';
-  if (value === 'foul' || value.includes('handball') || value.startsWith('foul')) return 'FOUL';
-  if (value.includes('shot-on-target')) return 'SHOT_ON_TARGET';
-  if (value.includes('shot') || value.includes('woodwork') || value.includes('post')) return 'SHOT_OFF_TARGET';
-  if (value.includes('save')) return 'SAVE';
-  if (value.includes('var') || value.includes('video-review')) return 'VAR_CHECK';
-  if (value.includes('throw')) return 'THROW_IN';
-  if (value.includes('goal-kick')) return 'GOAL_KICK';
-  if (value === 'kickoff' || value.startsWith('start-')) return 'KICK_OFF';
+  if (has('var', 'video')) return 'VAR_CHECK';
+  if (has('goal') && has('disallowed', 'cancelled', 'canceled', 'annulled')) return 'VAR_CHECK';
+  if (has('goal')) return 'GOAL';
+  if (has('card')) {
+    if (has('yellow') && has('red')) return 'SECOND_YELLOW';
+    if (has('second') && has('yellow')) return 'SECOND_YELLOW';
+    if (has('red')) return 'RED_CARD';
+    if (has('yellow')) return 'YELLOW_CARD';
+    return null;
+  }
+  if (has('substitution', 'substitute')) return 'SUBSTITUTION';
+  if (has('corner')) return 'CORNER';
+  if (has('offside')) return 'OFFSIDE';
+  if (has('foul', 'handball')) return 'FOUL';
+  if (has('shot')) {
+    if (has('saved', 'save')) return 'SHOT_ON_TARGET';
+    if (has('on') && has('target')) return 'SHOT_ON_TARGET';
+    return 'SHOT_OFF_TARGET'; // off target, blocked, hit woodwork
+  }
+  if (has('woodwork', 'crossbar', 'post')) return 'SHOT_OFF_TARGET';
+  if (has('save', 'saves')) return 'SAVE';
+  if (has('delay')) return null; // start-delay / end-delay are pauses, not restarts
+  if (value === 'kickoff' || value === 'kick-off') return 'KICK_OFF';
+  if (tokens.has('start') && has('half')) return 'KICK_OFF'; // start-2nd-half, start-1st-half-extra-time, …
   if (value === 'halftime' || value === 'half-time' || label === 'halftime') return 'HALF_TIME';
   if (value.startsWith('end-regular') || value.startsWith('end-extra') || value === 'full-time' || value === 'end-game') {
     return 'FULL_TIME';
@@ -622,6 +648,15 @@ export function normalizeEspnEvents(summary: EspnSummary, fixtureId: FixtureId):
 
   events.sort((left, right) => left.period - right.period || left.at - right.at || left.order - right.order);
   return { value: events.map((entry) => entry.event), notes };
+}
+
+/** True when the summary's plays already include the final-whistle play (so a 'post' summary is complete). */
+export function hasFullTimePlay(summary: EspnSummary): boolean {
+  const slugs = [
+    ...(summary.commentary ?? []).map((entry) => entry.play?.type?.type ?? null),
+    ...(summary.keyEvents ?? []).map((event) => event.type?.type ?? null),
+  ];
+  return slugs.some((slug) => normalizeEspnPlayType(slug) === 'FULL_TIME');
 }
 
 /** Boxscore → `TeamMatchStats[]`. ESPN reports pass accuracy as a 0–1 fraction; the domain wants percent. */

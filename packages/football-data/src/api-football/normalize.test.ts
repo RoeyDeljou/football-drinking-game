@@ -229,6 +229,41 @@ describe('/fixtures/events', () => {
   });
 });
 
+describe('event ids are content-derived and stable', () => {
+  type Row = Parameters<typeof normalizeEvents>[1][number];
+  const row = (elapsed: number, type: string, detail: string, playerId: number, extra: number | null = null): Row => ({
+    time: { elapsed, extra },
+    team: { id: 42, name: 'Arsenal', logo: null },
+    player: { id: playerId, name: `P${String(playerId)}` },
+    assist: { id: null, name: null },
+    type,
+    detail,
+    comments: null,
+  });
+
+  it('inserting an earlier event does not change the ids of existing events', () => {
+    const base = [row(20, 'Goal', 'Normal Goal', 1), row(55, 'Card', 'Yellow Card', 2), row(80, 'Goal', 'Normal Goal', 3)];
+    const before = normalizeEvents(FIXTURE_ID, base).value;
+    const withLate = normalizeEvents(FIXTURE_ID, [row(5, 'Goal', 'Normal Goal', 9), ...base]).value;
+    for (const original of before) {
+      expect(withLate.filter((event) => event.id === original.id)).toHaveLength(1);
+    }
+    expect(new Set(withLate.map((event) => event.id)).size).toBe(withLate.length);
+  });
+
+  it('identical twins get distinct ids via an occurrence counter, stable across polls', () => {
+    const twins = [row(30, 'Foul', 'Foul', 4), row(30, 'Foul', 'Foul', 4)];
+    const first = normalizeEvents(FIXTURE_ID, twins).value;
+    expect(new Set(first.map((event) => event.id)).size).toBe(2);
+    expect(normalizeEvents(FIXTURE_ID, twins).value.map((event) => event.id)).toEqual(first.map((event) => event.id));
+  });
+
+  it('a missed penalty is not a scored penalty', () => {
+    expect(normalizeEventType('Goal', 'Missed Penalty')).toBe('PENALTY_MISSED');
+    expect(normalizeEventType('Goal', 'Penalty')).toBe('PENALTY_SCORED');
+  });
+});
+
 describe('/fixtures/statistics and /fixtures/players', () => {
   it('coerces percentage strings and missing statistic types', () => {
     const parsed = teamStatisticsResponseSchema.safeParse(loadRawSample('statistics'));

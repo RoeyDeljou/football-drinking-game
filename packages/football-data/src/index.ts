@@ -105,6 +105,14 @@ export {
 export type { FixtureProviderOptions, FixtureReplayConfig } from './fixture/fixture-provider.js';
 export { FixtureProvider, replayableFixtureIds } from './fixture/fixture-provider.js';
 
+export {
+  guaranteeFullTime,
+  isSyntheticEvent,
+  SYNTHETIC_FULL_TIME_PREFIX,
+  syntheticFullTimeId,
+  withGuaranteedFullTime,
+} from './full-time.js';
+
 export type { MatchReplayOptions, MatchReplayStatus } from './fixture/replay.js';
 export { buildElapsedAxis, MatchReplay } from './fixture/replay.js';
 
