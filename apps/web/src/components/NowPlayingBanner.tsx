@@ -4,6 +4,9 @@
  * prefetched (`currentFixture === null`, see `lib/currentFixture.ts`). Shared by every screen a
  * matchday round can be on (`RoundShell`, used by every game screen; `IntermissionScreen`) so it's
  * added once rather than per-game-screen.
+ *
+ * Team names only: club crests are trademarks the app has no rights to display (see
+ * lib/competitionMonogram.ts).
  */
 
 import type { CurrentFixtureSummary } from '@/lib/currentFixture';
@@ -19,18 +22,12 @@ export const NowPlayingBanner = ({
 
   return (
     <div className="flex items-center justify-center gap-2 rounded-md bg-card px-3 py-2 shadow-[var(--edge-hairline)] text-center">
-      {currentFixture.homeTeam.crestUrl !== null ? (
-        <img src={currentFixture.homeTeam.crestUrl} alt="" className="h-5 w-5 object-contain" />
-      ) : null}
       <div className="flex flex-col leading-tight">
         <span className="t-eyebrow">
           Now playing: <span className="text-fg">{label.primary}</span>
         </span>
         {label.secondary !== null ? <span className="text-[11px] text-fg-subtle">{label.secondary}</span> : null}
       </div>
-      {currentFixture.awayTeam.crestUrl !== null ? (
-        <img src={currentFixture.awayTeam.crestUrl} alt="" className="h-5 w-5 object-contain" />
-      ) : null}
     </div>
   );
 };

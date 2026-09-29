@@ -17,7 +17,8 @@ import {
   type ModeChoice,
 } from '@/lib/gameMode';
 import { isMatchdayVisible, matchdayAvailability, type CompetitionLiveCheck } from '@/lib/matchdayAvailability';
-import { savePendingSelection } from '@/lib/storage';
+import { savePendingSelection, saveRoomSetup } from '@/lib/storage';
+import { setupScopeLabel } from '@/lib/setupScopeLabel';
 import {
   competitionsView,
   fixturesView,
@@ -29,6 +30,7 @@ import {
   liveFixtureCount,
   shouldOfferGameday,
 } from '@/lib/matchdayPicker';
+import { competitionMonogram } from '@/lib/competitionMonogram';
 import { useNow } from '@/lib/useNow';
 import { useRoom } from '@/lib/room-context';
 
@@ -258,6 +260,20 @@ function HostPageContent(): React.JSX.Element {
     }
     // Carry the chosen game to the room: its page dispatches SELECT_GAME once connected.
     savePendingSelection(result.value.roomId, moduleId);
+    saveRoomSetup({
+      roomId: result.value.roomId,
+      category,
+      scopeLabel: setupScopeLabel({
+        category,
+        generalCompetitionName:
+          compView.status === 'ready' && generalCompetitionId !== null
+            ? (compView.competitions.find((competition) => competition.id === generalCompetitionId)?.name ?? null)
+            : null,
+        matchdayCompetitionName: selectedCompetitionName,
+        gameday: gamedaySelected,
+        fixture: gamedaySelected ? null : selectedFixture,
+      }),
+    });
     adopt({
       roomId: result.value.roomId,
       pin: result.value.pin,
@@ -268,14 +284,15 @@ function HostPageContent(): React.JSX.Element {
     router.push(`/room/${result.value.roomId}`);
   };
 
-  const crest = (competition: Competition): React.JSX.Element =>
-    competition.logoUrl !== null ? (
-      // A remote, provider-hosted crest URL — not a build-time asset, so next/image's static
-      // optimization doesn't apply here. Sits on a chalk disc so dark crests stay readable.
-      <img src={competition.logoUrl} alt="" className="h-10 w-10 rounded-full bg-fg/90 object-contain p-1" />
-    ) : (
-      <div className="h-10 w-10 rounded-full bg-bg-sunken" aria-hidden />
-    );
+  // A text mark, never the provider's logo image — see lib/competitionMonogram.ts for why.
+  const crest = (competition: Competition): React.JSX.Element => (
+    <div
+      className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-bg-sunken text-sm font-bold tracking-wide text-fg-muted"
+      aria-hidden
+    >
+      {competitionMonogram(competition.name)}
+    </div>
+  );
 
   const loadingRow = (message: string): React.JSX.Element => (
     <div role="status" aria-live="polite" className="t-body py-4 text-center text-fg-muted">

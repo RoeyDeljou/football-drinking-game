@@ -16,10 +16,13 @@ import { errorMessage } from '@/lib/errorCopy';
 import { shouldShowGamedayExhaustedBanner } from '@/lib/gamedayEnd';
 import { intermissionContinueAction } from '@/lib/intermissionActions';
 import { useRoom } from '@/lib/room-context';
-import { clearPendingSelection, loadPendingSelection, loadRoom } from '@/lib/storage';
+import { clearPendingSelection, loadPendingSelection, loadRoom, loadRoomSetup } from '@/lib/storage';
 
 const MATCHDAY_STEP_KEYS = ['fixture', 'lineups', 'squads', 'stats'];
 const GENERAL_STEP_KEYS = ['dataset'];
+
+/** How long to wait before re-asking for the room summary after a failed request. */
+const ROOM_SUMMARY_RETRY_MS = 3_000;
 
 export default function RoomPage(): React.JSX.Element {
   const params = useParams<{ roomId: string }>();
@@ -33,8 +36,17 @@ export default function RoomPage(): React.JSX.Element {
   // The game the host picked on /host, waiting to be dispatched as SELECT_GAME once connected.
   const [initialModuleId, setInitialModuleId] = useState<string | null>(null);
 
+  // The host's own setup from /host: the category before the server round trip below confirms it
+  // (so the lobby picker never flashes the wrong category's games), and the lobby summary's scope.
+  const [setupScope, setSetupScope] = useState<string | null>(null);
+
   useEffect(() => {
     setInitialModuleId(loadPendingSelection(roomId));
+    const setup = loadRoomSetup(roomId);
+    if (setup !== null) {
+      setCategory((current) => current ?? setup.category);
+      setSetupScope(setup.scopeLabel);
+    }
   }, [roomId]);
 
   const settleInitialSelection = (): void => {
@@ -61,13 +73,25 @@ export default function RoomPage(): React.JSX.Element {
   }, [roomId, router]);
 
   useEffect(() => {
-    void (async (): Promise<void> => {
+    // Retried until it lands: the lobby picker waits on this category rather than guessing, so a
+    // single failed request must not leave it on "Loading games…" for good.
+    let cancelled = false;
+    let retryTimer: number | undefined;
+    const load = async (): Promise<void> => {
       const summary = await fetchRoomById(roomId);
+      if (cancelled) return;
       if (summary.ok) {
         setCategory(summary.value.fixtureId !== null || summary.value.gamedayCompetitionId !== null ? 'matchday' : 'general');
         setIsGameday(summary.value.gamedayCompetitionId !== null);
+        return;
       }
-    })();
+      retryTimer = window.setTimeout(() => void load(), ROOM_SUMMARY_RETRY_MS);
+    };
+    void load();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(retryTimer);
+    };
   }, [roomId]);
 
   const actorId = self?.playerId;
@@ -221,7 +245,7 @@ export default function RoomPage(): React.JSX.Element {
         <div role="alert">
           <Banner tone="error">
             <span className="flex items-center justify-between gap-3">
-              <span>{errorMessage(lastError)}</span>
+              <span>{errorMessage(lastError, category)}</span>
               <button type="button" onClick={clearError} className="tap-target shrink-0 px-2 underline">
                 dismiss
               </button>
@@ -238,6 +262,7 @@ export default function RoomPage(): React.JSX.Element {
           onSelectGame={selectGame}
           onStartLoading={startLoading}
           autoSelectModuleId={isHost ? initialModuleId : null}
+          setupScope={isHost ? setupScope : null}
           onAutoSelectSettled={settleInitialSelection}
         />
       ) : null}

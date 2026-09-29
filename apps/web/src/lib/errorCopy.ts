@@ -71,19 +71,24 @@ const SUBMISSION_COPY: Record<string, string> = {
  * "not enough match data" message reads exactly like one when a host tries to pick a game for a
  * fixture that kicks off next week. Give the specific, actionable reason when it's the lineups gap.
  */
-const dataUnavailableMessage = (detail: string | null): string => {
+const dataUnavailableMessage = (detail: string | null, category: RoomCategory | null): string => {
   const missing = new Set((detail ?? '').split(',').map((flag) => flag.trim()));
-  if (missing.has('hasLineups')) {
+  // Only a matchday room has a real match whose lineups can be "not out yet". In a general room the
+  // same flag just means that game can't run there, and a kick-off hint would mislead.
+  if (missing.has('hasLineups') && category === 'matchday') {
     return 'Lineups for this match aren’t out yet — they’re usually published about an hour before kickoff. Check back closer to kick-off, or pick a General game instead.';
   }
   return REJECTION_COPY.DATA_UNAVAILABLE ?? 'Not enough match data to play that game right now.';
 };
 
-export const errorMessage = (error: RoomErrorLike): string => {
+type RoomCategory = 'matchday' | 'general';
+
+/** `category` is the room's, when known; it only changes copy whose meaning depends on it. */
+export const errorMessage = (error: RoomErrorLike, category: RoomCategory | null = null): string => {
   if (error.submissionCode !== undefined && error.submissionCode !== null) {
     const submissionCopy = SUBMISSION_COPY[error.submissionCode];
     if (submissionCopy !== undefined) return submissionCopy;
   }
-  if (error.code === 'DATA_UNAVAILABLE') return dataUnavailableMessage(error.detail);
+  if (error.code === 'DATA_UNAVAILABLE') return dataUnavailableMessage(error.detail, category);
   return REJECTION_COPY[error.code] ?? 'Something went wrong. Try again.';
 };

@@ -17,6 +17,7 @@ export interface StoredRoom {
 const ROOM_KEY = 'fdg:room';
 const PENDING_SELECTION_KEY = 'fdg:pending-selection';
 const AGE_GATE_KEY = 'fdg:age-gate-confirmed';
+const ROOM_SETUP_KEY = 'fdg:room-setup';
 
 const readJson = <T>(key: string): T | null => {
   if (typeof window === 'undefined') return null;
@@ -80,4 +81,31 @@ export const clearPendingSelection = (): void => {
   } catch {
     // Blocked storage: nothing was persisted, so nothing to clear.
   }
+};
+
+/**
+ * What the host set up on /host, kept (keyed by roomId) for the lobby summary: the room's category,
+ * known before the server round trip that otherwise supplies it, and a short label for the chosen
+ * scope ("Premier League", "Arsenal vs Chelsea", "Live gameday · La Liga"). Display only — the
+ * server stays the source of truth for what the room actually is.
+ */
+export interface StoredRoomSetup {
+  readonly roomId: string;
+  readonly category: 'matchday' | 'general';
+  readonly scopeLabel: string;
+}
+
+export const saveRoomSetup = (setup: StoredRoomSetup): void => writeJson(ROOM_SETUP_KEY, setup);
+
+export const loadRoomSetup = (roomId: string): StoredRoomSetup | null => {
+  const stored = readJson<Partial<StoredRoomSetup>>(ROOM_SETUP_KEY);
+  if (
+    stored === null ||
+    stored.roomId !== roomId ||
+    (stored.category !== 'matchday' && stored.category !== 'general') ||
+    typeof stored.scopeLabel !== 'string'
+  ) {
+    return null;
+  }
+  return { roomId, category: stored.category, scopeLabel: stored.scopeLabel };
 };

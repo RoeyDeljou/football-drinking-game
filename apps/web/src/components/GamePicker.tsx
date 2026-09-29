@@ -39,6 +39,7 @@ export const GamePicker = ({
   startLabel,
   startDisabled = false,
   autoSelectModuleId = null,
+  setupScope = null,
   onAutoSelectSettled,
   collapsible = false,
 }: {
@@ -51,6 +52,8 @@ export const GamePicker = ({
   readonly startDisabled?: boolean;
   /** The host's choice from the /host screen, dispatched once when connected (lobby only). */
   readonly autoSelectModuleId?: string | null;
+  /** Shown in the setup summary between the category and the round count. */
+  readonly setupScope?: string | null;
   /** Called once the server confirmed or rejected the auto-selected game (clears the stored choice). */
   readonly onAutoSelectSettled?: () => void;
   readonly collapsible?: boolean;
@@ -67,11 +70,13 @@ export const GamePicker = ({
   const autoDispatched = useRef(false);
 
   const connected = status === 'connected';
-  // The picker is only ever shown for a real category; fall back to general while it loads.
-  const effectiveCategory: GameCategory =
+  // The room's category, or what the chosen game implies while the room summary is still loading.
+  // `null` means genuinely unknown yet: the picker shows a loading row rather than guessing a
+  // category and flashing the wrong list of games.
+  const effectiveCategory: GameCategory | null =
     category ??
     GAME_CATALOG.find((game) => game.id === (room.selection?.moduleId ?? autoSelectModuleId))?.category ??
-    'general';
+    null;
 
   // Server truth stays authoritative: pending only ever clears because the server confirmed
   // (`room.selection` + a newer version), a room:error arrived, or the socket dropped.
@@ -143,6 +148,7 @@ export const GamePicker = ({
   const onChoice = (next: ModeChoice): void => {
     setChoice(next);
     setRejectedAutoSelect(null);
+    if (effectiveCategory === null) return;
     const moduleId = resolveModuleId(effectiveCategory, next);
     if (moduleId !== null) send(moduleId);
   };
@@ -153,7 +159,7 @@ export const GamePicker = ({
 
   const selectedId = room.selection?.moduleId ?? null;
   // Start only when what the control shows is what the server holds, and nothing is in flight.
-  const choiceModuleId = resolveModuleId(effectiveCategory, choice);
+  const choiceModuleId = effectiveCategory === null ? null : resolveModuleId(effectiveCategory, choice);
   const inSync = selectedId !== null && choiceModuleId === selectedId;
   const showSummary = collapsible && selectedId !== null && pending === null && !editing;
 
@@ -176,7 +182,15 @@ export const GamePicker = ({
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <Eyebrow>
-                {category === null ? 'Your setup' : `${CATEGORY_LABEL[category]} · ${room.settings.roundsPerSession} ${room.settings.roundsPerSession === 1 ? 'round' : 'rounds'}`}
+                {category === null
+                  ? 'Your setup'
+                  : [
+                      CATEGORY_LABEL[category],
+                      setupScope,
+                      `${room.settings.roundsPerSession} ${room.settings.roundsPerSession === 1 ? 'round' : 'rounds'}`,
+                    ]
+                      .filter((part): part is string => part !== null && part.length > 0)
+                      .join(' · ')}
               </Eyebrow>
               <p className="t-d1 mt-1 truncate">{choiceLabel(selectedId)}</p>
             </div>
@@ -213,13 +227,19 @@ export const GamePicker = ({
             <Banner tone="warn">{connectionHint}</Banner>
           </div>
         ) : null}
-        <GameModePicker
-          category={effectiveCategory}
-          value={choice}
-          onChange={onChoice}
-          pendingModuleId={pending?.moduleId ?? null}
-          disabled={!connected}
-        />
+        {effectiveCategory === null ? (
+          <div role="status" aria-live="polite" className="t-body py-4 text-center text-fg-muted">
+            Loading games…
+          </div>
+        ) : (
+          <GameModePicker
+            category={effectiveCategory}
+            value={choice}
+            onChange={onChoice}
+            pendingModuleId={pending?.moduleId ?? null}
+            disabled={!connected}
+          />
+        )}
         {waitMessage !== null ? (
           <div className="mt-3" role="status" aria-live="polite">
             <Banner tone={phase === 'stalled' ? 'warn' : 'info'}>{waitMessage}</Banner>

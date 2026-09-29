@@ -23,9 +23,17 @@ describe('errorMessage', () => {
   });
 
   it('gives the specific lineups-not-out-yet reason when DATA_UNAVAILABLE is missing hasLineups', () => {
-    const message = errorMessage({ code: 'DATA_UNAVAILABLE', detail: 'hasLineups,hasShirtNumbers' });
+    const message = errorMessage({ code: 'DATA_UNAVAILABLE', detail: 'hasLineups,hasShirtNumbers' }, 'matchday');
     expect(message).toMatch(/lineups/i);
     expect(message).toMatch(/kick.?off/i);
+  });
+
+  it('never blames lineups outside a matchday room, where there is no real match to wait for', () => {
+    for (const category of ['general', null] as const) {
+      const message = errorMessage({ code: 'DATA_UNAVAILABLE', detail: 'hasLineups,hasShirtNumbers' }, category);
+      expect(message).not.toMatch(/lineups/i);
+      expect(message).toMatch(/not enough match data/i);
+    }
   });
 
   it('falls back to the generic DATA_UNAVAILABLE message when hasLineups is not among the missing flags', () => {

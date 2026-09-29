@@ -15,6 +15,7 @@ export const Lobby = ({
   onSelectGame,
   onStartLoading,
   autoSelectModuleId = null,
+  setupScope = null,
   onAutoSelectSettled,
 }: {
   readonly room: ProjectedRoom;
@@ -24,6 +25,8 @@ export const Lobby = ({
   readonly onStartLoading: () => void;
   /** The game the host chose on /host, dispatched once when connected (host only). */
   readonly autoSelectModuleId?: string | null;
+  /** The host's chosen scope for the setup summary, e.g. 'Premier League' or 'Arsenal vs Chelsea'. */
+  readonly setupScope?: string | null;
   readonly onAutoSelectSettled?: () => void;
 }): React.JSX.Element => {
   const [joinUrl, setJoinUrl] = useState('');
@@ -81,6 +84,7 @@ export const Lobby = ({
           startLabel={room.selection === null ? 'Start' : `Start ${choiceLabel(room.selection.moduleId)}`}
           startDisabled={!canStart}
           autoSelectModuleId={autoSelectModuleId}
+          setupScope={setupScope}
           onAutoSelectSettled={onAutoSelectSettled}
           collapsible
         />
