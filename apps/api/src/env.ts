@@ -54,6 +54,9 @@ const rawEnvSchema = z
     HOST: z.string().min(1).default('0.0.0.0'),
     CORS_ORIGIN: z.string().min(1).default('*'),
 
+    /** Live-event poll cadence per watched fixture (see live/ingestion.ts). */
+    LIVE_POLL_INTERVAL_MS: z.coerce.number().int().min(1000).default(15_000),
+
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   })
   .superRefine((value, ctx) => {
@@ -98,6 +101,7 @@ export interface AppEnv {
   readonly PORT: number;
   readonly HOST: string;
   readonly CORS_ORIGIN: string;
+  readonly LIVE_POLL_INTERVAL_MS: number;
   readonly NODE_ENV: 'development' | 'test' | 'production';
 }
 

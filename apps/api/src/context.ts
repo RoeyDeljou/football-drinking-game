@@ -3,6 +3,7 @@ import type { FixtureListCache } from './competitions/fixture-list-cache.js';
 import type { PrismaClient } from './db/client.js';
 import type { AppEnv } from './env.js';
 import type { IdentityProvider } from './identity/types.js';
+import type { LiveIngestion } from './live/ingestion.js';
 import type { RoomStore } from './rooms/store.js';
 
 /**
@@ -26,4 +27,7 @@ export interface AppContext {
   /** How often a gameday room's live-fixture pool is re-polled, see engine/data-context.ts's
    * `refreshGamedayLiveSet` (default `GAMEDAY_LIVE_POLL_MS`, overridable in tests). */
   readonly gamedayLivePollMs: number;
+  /** Live-event ingestion (see live/ingestion.ts). Optional so hand-built contexts keep compiling;
+   * `buildApp` always supplies it. `dispatchAction` notifies it after every dispatch. */
+  readonly liveIngestion?: LiveIngestion;
 }

@@ -18,10 +18,19 @@ import type { AppEnv } from './env.js';
 import { loadEnv } from './env.js';
 import { registerFriendsRoutes } from './friends/routes.js';
 import { LocalIdentityProvider } from './identity/local-identity-provider.js';
+import { activeSession } from '@fdg/game-core';
+import { dispatchAction } from './engine/dispatch.js';
+import { registry } from './engine/deps.js';
+import { getCachedGameday, getPinnedRoundFixture } from './engine/gameday-cache.js';
+import { planWatch } from './live/watch-plan.js';
+import { createLiveIngestion } from './live/ingestion.js';
+import type { LiveScheduler } from './live/ingestion.js';
+import type { LiveIngestionConfigInput } from './live/schemas.js';
 import { createRealtimeGateway } from './realtime/gateway.js';
 import type { RealtimeGateway } from './realtime/gateway.js';
 import { registerRoomRoutes } from './rooms/routes.js';
 import { InMemoryRoomStore } from './rooms/store.js';
+import type { RoomRecord } from './rooms/store.js';
 
 export interface BuiltApp {
   readonly app: FastifyInstance;
@@ -46,6 +55,12 @@ export interface BuildAppOptions {
   /** Test seam: override how often a gameday room's live-fixture pool is re-polled (default 90s, see
    * engine/data-context.ts's `GAMEDAY_LIVE_POLL_MS`). */
   readonly gamedayLivePollMs?: number;
+  /** Test seam: live-ingestion timing overrides (default: `env.LIVE_POLL_INTERVAL_MS` for live fixtures). */
+  readonly liveIngestion?: LiveIngestionConfigInput;
+  /** Test seam: injected timers for the live-ingestion loop. */
+  readonly liveScheduler?: LiveScheduler;
+  /** Disable the live-ingestion loop entirely. */
+  readonly disableLiveIngestion?: boolean;
 }
 
 const FLUSH_WRITES_TIMEOUT_MS = 3000;
@@ -67,6 +82,27 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
     options.generalDatasetCooldownMs === undefined ? {} : { cooldownMs: options.generalDatasetCooldownMs },
   );
 
+  let broadcastRecord: (record: RoomRecord) => void = () => undefined;
+  const liveIngestion = options.disableLiveIngestion === true
+    ? undefined
+    : createLiveIngestion({
+        provider: footballData,
+        dispatchMatchEvents: (roomId, events) => dispatchAction(ctx, roomId, { type: 'MATCH_EVENTS', events }),
+        onRoomChanged: (record) => broadcastRecord(record),
+        plan: (record) =>
+          planWatch(record.state, record.meta, {
+          moduleFor: (state) => {
+            const session = activeSession(state);
+            return session === undefined ? null : (registry.get(session.moduleId) ?? null);
+          },
+          gamedayPinnedFixture: (roomId, sessionIndex, roundIndex) =>
+            getPinnedRoundFixture(roomId, { sessionIndex, roundIndex }),
+          gamedayPool: (roomId) => getCachedGameday(roomId)?.fixtureOrder ?? [],
+          }),
+        config: { liveIntervalMs: env.LIVE_POLL_INTERVAL_MS, ...options.liveIngestion },
+        ...(options.liveScheduler === undefined ? {} : { scheduler: options.liveScheduler }),
+      });
+
   const ctx: AppContext = {
     env,
     prisma,
@@ -85,6 +121,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
       options.fixtureListCacheTtlMs === undefined ? {} : { ttlMs: options.fixtureListCacheTtlMs },
     ),
     gamedayLivePollMs: options.gamedayLivePollMs ?? GAMEDAY_LIVE_POLL_MS,
+    ...(liveIngestion === undefined ? {} : { liveIngestion }),
   };
 
   const app = Fastify({ logger: env.NODE_ENV !== 'test' });
@@ -103,6 +140,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
     cors: { origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(',') },
   });
   const gateway = createRealtimeGateway(io, ctx);
+  broadcastRecord = gateway.broadcast;
 
   return {
     app,
@@ -111,6 +149,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
     gateway,
     generalDatasetAccess,
     close: async () => {
+      await liveIngestion?.close();
       gateway.close();
       io.disconnectSockets(true);
       await new Promise<void>((resolve) => io.close(() => resolve()));

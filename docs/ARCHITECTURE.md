@@ -94,3 +94,24 @@ broadcast. The client never computes a result, and the server never contains a r
 | Presentation | `GAME_SCREENS` + `drinkCopy` | Re-skins screens and rewords copy; engine untouched |
 
 `game-core` and `football-data` are publishable packages with no app dependencies, so the hub consumes them as-is.
+
+## Live-event ingestion (apps/api/src/live)
+
+Provider live events reach the engine through one loop, `createLiveIngestion` (`live/ingestion.ts`), owned by
+`buildApp` and exposed as `ctx.liveIngestion`.
+
+- **Watch set.** `dispatchAction` calls `ctx.liveIngestion.roomChanged(record)` after every dispatch. `planWatch`
+  (`live/watch-plan.ts`) says a room needs a fixture only while it is `playing`, its session is unfinished, the module
+  declares `supportsLiveEvents`, and the current round is `open`. Single-fixture rooms watch `meta.fixtureId`; gameday
+  rooms watch the fixture the current round is pinned to.
+- **One poll per fixture.** Rooms attach to a per-fixture watcher. Its `getLiveMatchState` poll chain is
+  setTimeout-after-completion (never two in flight), default every `LIVE_POLL_INTERVAL_MS` (15s, the provider's live
+  TTL), 60s pre-kickoff, exponential backoff (x2, capped 120s, +/-10% jitter) on any failure. Each poll delivers the
+  full id-stable event list as `MATCH_EVENTS` to every attached room via `dispatchAction`; the reducer dedupes by id, so
+  duplicate polls, reconnects and restarts are no-ops (no save, no broadcast). Changed rooms are broadcast through
+  `gateway.broadcast`.
+- **Stop conditions.** FINISHED (seen live) gets one confirming poll, then stops; POSTPONED/CANCELLED stop at once. A
+  stopped watcher keeps its cached events until no room references it (late rooms are served from the cache). Last
+  room detaches -> timer cleared. `close()` (called from `buildApp().close()`) clears every timer and awaits in-flight
+  polls. Timers are injectable (`LiveScheduler`) for deterministic tests.
+- Events are re-validated with Zod (`live/schemas.ts`); malformed or foreign-fixture events are dropped and logged.
