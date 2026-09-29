@@ -11,6 +11,19 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    /* Everything is sized in rem, so stepping the root up scales the whole UI for a laptop on the
+       pub table or a TV across the room, while still honouring the OS text-size setting. */
+    font-size: 100%;
+  }
+  @media (min-width: 1440px) {
+    html {
+      font-size: 112.5%;
+    }
+  }
+  @media (min-width: 1920px) {
+    html {
+      font-size: 137.5%;
+    }
   }
 
   body {
@@ -28,6 +41,8 @@
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
     overflow-x: hidden;
+    /* A 24-character nickname or "Borussia Mönchengladbach" must wrap, never push the page wider. */
+    overflow-wrap: anywhere;
   }
 
   :focus-visible {
@@ -55,11 +70,113 @@
 
 @layer components {
   .tap-target {
-    min-height: 56px;
+    min-height: 3.5rem;
   }
 
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* --- Page containers -------------------------------------------------------------------------
+     One phone column that opens up on bigger screens. Padding honours the notch / home indicator in
+     every orientation (viewport-fit=cover). Modifiers pick the max width per breakpoint:
+       .page-narrow  forms (landing, join, age gate, loading): a bit wider, always centred
+       .page-wide    host + room: 2-column layouts from 1024 up
+     Do not combine with px-/py- utilities: they would override the safe-area padding. */
+  .page {
+    margin-inline: auto;
+    display: flex;
+    width: 100%;
+    min-height: 100dvh;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 28rem;
+    padding-top: max(1.5rem, var(--safe-t));
+    padding-bottom: max(1.5rem, var(--safe-b));
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+  .page-center {
+    justify-content: center;
+  }
+  @media (min-width: 640px) {
+    .page {
+      padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+    }
+    .page-narrow {
+      max-width: 32rem;
+    }
+    .page-wide {
+      max-width: 44rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .page {
+      padding-left: max(2.5rem, env(safe-area-inset-left, 0px));
+      padding-right: max(2.5rem, env(safe-area-inset-right, 0px));
+      padding-top: max(2rem, var(--safe-t));
+      padding-bottom: max(2rem, var(--safe-b));
+      gap: 1.5rem;
+    }
+    .page-narrow {
+      max-width: 36rem;
+    }
+    .page-wide {
+      max-width: 80rem;
+    }
+  }
+  @media (min-width: 1920px) {
+    .page-wide {
+      max-width: 88rem;
+    }
+  }
+  /* Short landscape phone: tighter vertical rhythm so more of the screen is content. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .page {
+      padding-top: max(0.75rem, var(--safe-t));
+      padding-bottom: max(0.75rem, var(--safe-b));
+      gap: 0.75rem;
+    }
+    .page-narrow {
+      max-width: 32rem;
+    }
+    .page-wide {
+      max-width: 60rem;
+    }
+  }
+
+  /* The PIN: six tiles that always share the row exactly. Container-relative sizing means the same
+     component fits a 320px phone, the lobby's left column and a TV. --pin-max caps the tile. */
+  .pin-row {
+    container-type: inline-size;
+    width: 100%;
+  }
+  .pin-tiles {
+    display: flex;
+    justify-content: center;
+    gap: var(--pin-gap, 0.375rem);
+  }
+  .pin-tile {
+    --tile: min(var(--pin-max, 3.25rem), calc((100cqw - 5 * var(--pin-gap, 0.375rem)) / 6));
+    display: flex;
+    width: var(--tile);
+    aspect-ratio: 3 / 4;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--r-md);
+    background: rgb(var(--bg-sunken-rgb));
+    box-shadow: var(--edge-hairline);
+    font-size: calc(var(--tile) * 0.62);
+    font-weight: 900;
+    line-height: 1;
+    color: rgb(var(--fg-rgb));
+  }
+  .pin-hero {
+    --pin-max: 5rem;
+    --pin-gap: 0.5rem;
+  }
+  @media (min-width: 1024px) {
+    .pin-hero {
+      --pin-max: 7.5rem;
+      --pin-gap: 0.75rem;
+    }
   }
 
   /* Every tappable thing acknowledges the touch within one frame. */
@@ -107,7 +224,7 @@
   .chalknote {
     font-family: var(--font-hand-stack);
     font-weight: 600;
-    font-size: 20px;
+    font-size: 1.25rem;
     line-height: 1.15;
     color: rgb(var(--accent-rgb));
   }
@@ -141,11 +258,17 @@
   /* Type scale. Caveat leans, so its last glyph overhangs: pad the end. */
   .t-score,
   .t-d1,
+  .t-hero,
   .t-hand {
     padding-inline-end: 0.15em;
   }
   .t-score {
     font: var(--t-score);
+    text-shadow: 0 0 10px rgb(233 239 231 / 0.22);
+  }
+  /* Landing headline: fluid so it is loud on a TV and still two tidy lines at 320px. */
+  .t-hero {
+    font: 700 clamp(2.75rem, 1.6rem + 4.6vw, 5.5rem) / 1 var(--font-hand-stack);
     text-shadow: 0 0 10px rgb(233 239 231 / 0.22);
   }
   .t-d1 {
@@ -186,13 +309,14 @@
 
   /* Text inputs: 56px, chalk outline, gold on focus. */
   .field-input {
-    min-height: 56px;
+    min-height: 3.5rem;
     width: 100%;
     border-radius: var(--r-md);
     border: 2px solid var(--border-strong);
     background: rgb(var(--bg-sunken-rgb));
-    padding: 0 16px;
-    font-size: 18px;
+    padding: 0 1rem;
+    /* >=16px so iOS never zooms the page on focus (pinch-zoom itself stays enabled). */
+    font-size: 1.125rem;
     color: rgb(var(--fg-rgb));
   }
   .field-input::placeholder {

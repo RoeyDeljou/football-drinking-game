@@ -25,7 +25,7 @@ export const RevealFooter = ({
         {round.penalties.map((penalty, index) => (
           <li
             key={`${penalty.reason}-${penalty.playerId}-${index}`}
-            className="rounded-md border-2 border-accent/50 bg-selected px-4 py-3 text-base font-semibold text-fg"
+            className="rounded-md border-2 border-accent/50 bg-selected px-4 py-3 text-base font-semibold text-fg lg:text-lg"
           >
             {drinkAnnouncement(penalty, nicknameOf(room, penalty.playerId))}
           </li>

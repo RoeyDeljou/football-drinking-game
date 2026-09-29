@@ -179,8 +179,8 @@ export const GamePicker = ({
     return (
       <div className="flex flex-col gap-4">
         <Card>
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 flex-1 basis-40">
               <Eyebrow>
                 {category === null
                   ? 'Your setup'
@@ -192,7 +192,7 @@ export const GamePicker = ({
                       .filter((part): part is string => part !== null && part.length > 0)
                       .join(' · ')}
               </Eyebrow>
-              <p className="t-d1 mt-1 truncate">{choiceLabel(selectedId)}</p>
+              <p className="t-d1 mt-1">{choiceLabel(selectedId)}</p>
             </div>
             <button
               type="button"

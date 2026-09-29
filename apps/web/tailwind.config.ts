@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import plugin from 'tailwindcss/plugin';
 
 /**
  * Semantic colours only (see src/styles/tokens.css, ported from the Fantasy3.0 chalkboard theme).
@@ -47,7 +48,13 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // A phone held sideways: wide enough for two columns, far too short for one tall stack. A plugin
+    // variant rather than a `screens` entry, because an object in `screens` disables `min-[...]`.
+    plugin(({ addVariant }) => {
+      addVariant('land', '@media (orientation: landscape) and (max-height: 500px)');
+    }),
+  ],
 };
 
 export default config;

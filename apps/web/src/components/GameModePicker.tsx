@@ -65,7 +65,7 @@ export const GameModePicker = ({
         aria-busy={shufflePending}
         disabled={disabled}
         onClick={() => onChange({ mode: 'shuffle', miniGameId: null })}
-        className={`pressable flex min-h-[112px] w-full items-center gap-4 p-5 text-left disabled:opacity-60 ${
+        className={`pressable flex min-h-28 w-full items-center gap-4 p-5 text-left disabled:opacity-60 ${
           shuffleSelected ? 'card-gold' : 'card-dashed'
         }`}
       >
@@ -87,7 +87,7 @@ export const GameModePicker = ({
           shuffleSelected ? 'border-border bg-card' : 'border-accent bg-selected'
         }`}
       >
-        <span className="flex flex-col">
+        <span className="flex min-w-0 flex-col">
           <span className="text-base font-bold">{SELECT_LABEL}</span>
           <span className="t-xs text-fg-muted">Pick one game and stick with it</span>
         </span>
@@ -97,7 +97,7 @@ export const GameModePicker = ({
       </button>
 
       {!shuffleSelected ? (
-        <div className="flex flex-col gap-2" role="group" aria-label="Mini games">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 land:!grid-cols-1" role="group" aria-label="Mini games">
           {games.map((game) => {
             const selected = value.miniGameId === game.id;
             const pending = pendingModuleId === game.id;

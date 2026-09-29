@@ -22,14 +22,20 @@ export const FinalResultsScreen = ({
    * join/resume logic would find this finished room's token still in `localStorage`. */
   readonly onHostNew: () => void;
 }): React.JSX.Element => (
-  <div className="flex flex-col gap-4">
-    <h1 className="t-d1 text-center">{room.phase === 'aborted' ? 'Room closed' : 'Final results'}</h1>
+  <div className="mx-auto my-auto flex w-full max-w-2xl flex-col gap-4 lg:max-w-5xl lg:gap-6">
+    <h1 className="t-d1 text-center lg:text-[clamp(2.75rem,5vw,4.5rem)]">
+      {room.phase === 'aborted' ? 'Room closed' : 'Final results'}
+    </h1>
     {room.phase === 'aborted' && room.abortReason !== null ? (
-      <Banner tone="warn">{ABORT_COPY[room.abortReason] ?? 'The room was closed.'}</Banner>
+      <div className="mx-auto w-full max-w-xl">
+        <Banner tone="warn">{ABORT_COPY[room.abortReason] ?? 'The room was closed.'}</Banner>
+      </div>
     ) : null}
-    <Leaderboard rows={room.leaderboard} viewerId={room.viewerId} />
-    <DrinkTally rows={room.drinkTally} viewerId={room.viewerId} />
-    <div className="flex flex-col gap-3">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start lg:gap-6 land:grid-cols-2">
+      <Leaderboard rows={room.leaderboard} viewerId={room.viewerId} />
+      <DrinkTally rows={room.drinkTally} viewerId={room.viewerId} />
+    </div>
+    <div className="mx-auto flex w-full max-w-md flex-col gap-3">
       <BigButton onClick={onHostNew}>Host a new room</BigButton>
       <BigButton variant="ghost" onClick={onLeave}>
         Back to start

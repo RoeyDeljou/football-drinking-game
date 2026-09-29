@@ -132,7 +132,8 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
   if (round.visibility === 'revealed') {
     const solution = round.solution as Solution;
     return (
-      <RoundShell title="Match Markets" round={round} room={room} now={Date.now()}>
+      <RoundShell title="Match Markets" round={round} room={room} now={Date.now()} split>
+        <div className="flex flex-col gap-4">
         <Card>
           <p className="t-body text-fg-muted">
             {solution.settled ? 'Full time.' : 'Revealed before full time — only what settled counts.'}
@@ -151,12 +152,12 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
               );
               const option = market.options.find((candidate) => candidate.id === pickedOptionId);
               return (
-                <li key={market.id} className="flex items-center justify-between rounded-md bg-hover px-4 py-3 text-sm">
-                  <span>
+                <li key={market.id} className="flex min-h-12 items-center justify-between gap-2 rounded-md bg-hover px-4 py-3 text-sm">
+                  <span className="min-w-0">
                     {marketTitle(market.kind, market.line)}: {option === undefined ? '—' : optionLabel(market, option)}
                   </span>
                   <span
-                    className={`font-bold ${
+                    className={`shrink-0 font-bold ${
                       settlement === undefined ? 'text-fg-subtle' : settlement.outcome === 'WON' ? 'text-up' : 'text-down'
                     }`}
                   >
@@ -167,6 +168,7 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
             })}
           </ul>
         </Card>
+        </div>
         <RevealFooter round={round} room={room} />
       </RoundShell>
     );
@@ -175,13 +177,13 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
   return (
     <RoundShell title="Match Markets" round={round} room={room} now={Date.now()}>
       {!canEdit ? <Card><p className="text-sm font-semibold text-warn">Kick-off happened — the slip is locked.</p></Card> : null}
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
         {payload.markets.map((market) => (
           <Card key={market.id}>
-            <div className="mb-2 flex items-center justify-between">
-              <p className="t-h3">{marketTitle(market.kind, market.line)}</p>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="t-h3 min-w-0">{marketTitle(market.kind, market.line)}</p>
               {picks[market.id] === undefined ? (
-                <span className="rounded-full bg-warn/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn">
+                <span className="shrink-0 rounded-full bg-warn/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn">
                   Pick one
                 </span>
               ) : null}
@@ -193,7 +195,7 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
                   selected={picks[market.id] === option.id}
                   disabled={!canEdit}
                   onClick={() => setPicks((prev) => ({ ...prev, [market.id]: option.id }))}
-                  className="px-3 text-sm"
+                  className="px-3 text-sm lg:text-base"
                 >
                   {optionLabel(market, option)}
                 </OptionButton>
@@ -205,7 +207,7 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
       <p className="tnum text-center text-sm text-fg-muted" aria-live="polite">
         {pickedCount}/{payload.markets.length} markets picked
       </p>
-      <BigButton disabled={!allPicked || !canEdit} onClick={submitSlip}>
+      <BigButton className="mx-auto max-w-md" disabled={!allPicked || !canEdit} onClick={submitSlip}>
         {round.yourSubmission !== null ? 'Update slip' : 'Submit slip'}
       </BigButton>
     </RoundShell>

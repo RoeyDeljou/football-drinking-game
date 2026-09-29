@@ -287,7 +287,7 @@ function HostPageContent(): React.JSX.Element {
   // A text mark, never the provider's logo image — see lib/competitionMonogram.ts for why.
   const crest = (competition: Competition): React.JSX.Element => (
     <div
-      className="flex h-10 w-10 items-center justify-center rounded-full border border-border-strong bg-bg-sunken text-sm font-bold tracking-wide text-fg-muted"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-strong bg-bg-sunken text-sm font-bold tracking-wide text-fg-muted"
       aria-hidden
     >
       {competitionMonogram(competition.name)}
@@ -301,17 +301,21 @@ function HostPageContent(): React.JSX.Element {
   );
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-4 py-6">
+    <main className="page page-wide gap-5">
       <BackButton fallbackHref="/" />
       <div>
         <Eyebrow>{matchdayVisible ? 'Set up your room' : 'General · season trivia'}</Eyebrow>
         <h1 className="t-d1 mt-1">Host a room</h1>
       </div>
 
+      {/* Phones: one column in reading order. 1024+: what to play on the left, how to play (game mode,
+          rounds, nickname, Create) on the right, with the right column pinned so Create stays in reach. */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start lg:gap-8 land:grid-cols-2 land:items-start land:gap-4">
+      <div className="flex min-w-0 flex-col gap-5">
       {matchdayVisible ? (
         <Card>
           <Eyebrow className="mb-3">Category</Eyebrow>
-          <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Category">
+          <div className="grid grid-cols-1 gap-3 min-[340px]:grid-cols-2" role="radiogroup" aria-label="Category">
             <OptionButton
               role="radio"
               aria-checked={category === 'matchday'}
@@ -354,7 +358,7 @@ function HostPageContent(): React.JSX.Element {
                 </div>
               ) : null}
               {compView.status === 'ready' ? (
-                <div className="grid grid-cols-2 gap-3" role="listbox" aria-label="Leagues">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2 2xl:grid-cols-3" role="listbox" aria-label="Leagues">
                   {compView.competitions.map((competition) => (
                     <OptionButton
                       key={competition.id}
@@ -373,7 +377,7 @@ function HostPageContent(): React.JSX.Element {
             </>
           ) : (
             <>
-              <div className="mb-1 flex items-center justify-between gap-2">
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-x-2">
                 <BackButton onBack={backToLeagues} label="Change league" className="px-0 text-accent" />
                 <Eyebrow>Pick a fixture</Eyebrow>
               </div>
@@ -420,7 +424,7 @@ function HostPageContent(): React.JSX.Element {
                       className="flex flex-col gap-1"
                     >
                       <span className="flex items-center justify-between gap-2">
-                        <span>Play the whole live gameday</span>
+                        <span className="min-w-0">Play the whole live gameday</span>
                         <span className="shrink-0 rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">LIVE</span>
                       </span>
                       <span className="t-xs font-normal text-fg-muted">
@@ -428,7 +432,7 @@ function HostPageContent(): React.JSX.Element {
                       </span>
                     </OptionButton>
                   ) : null}
-                  <div className="flex max-h-80 flex-col gap-3 overflow-y-auto pr-1" role="listbox" aria-label="Fixtures">
+                  <div className="flex max-h-[min(20rem,60dvh)] flex-col gap-3 overflow-y-auto pr-1 lg:max-h-[min(32rem,60dvh)]" role="listbox" aria-label="Fixtures">
                     {fixView.fixtures.map((fixture) => {
                       const live = isFixtureLive(fixture);
                       const badge = liveBadgeLabel(fixture);
@@ -443,7 +447,7 @@ function HostPageContent(): React.JSX.Element {
                           className="flex shrink-0 flex-col gap-1"
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span>
+                            <span className="min-w-0">
                               {fixture.homeTeam.name} vs {fixture.awayTeam.name}
                             </span>
                             {live ? (
@@ -482,7 +486,7 @@ function HostPageContent(): React.JSX.Element {
             </div>
           ) : null}
           {compView.status === 'ready' ? (
-            <div className="grid grid-cols-2 gap-3" role="listbox" aria-label="Competitions">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2 2xl:grid-cols-3" role="listbox" aria-label="Competitions">
               <OptionButton
                 role="option"
                 aria-selected={generalCompetitionId === null}
@@ -511,6 +515,9 @@ function HostPageContent(): React.JSX.Element {
         </Card>
       ) : null}
 
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-5 [@media(min-width:1024px)_and_(min-height:860px)]:sticky [@media(min-width:1024px)_and_(min-height:860px)]:top-6">
       <Card>
         <Eyebrow className="mb-3">Game</Eyebrow>
         <GameModePicker category={category} value={modeChoice} onChange={setModeChoice} />
@@ -569,6 +576,8 @@ function HostPageContent(): React.JSX.Element {
       <BigButton onClick={() => void onCreate()} disabled={busy}>
         {busy ? 'Creating room…' : 'Create room'}
       </BigButton>
+      </div>
+      </div>
     </main>
   );
 }

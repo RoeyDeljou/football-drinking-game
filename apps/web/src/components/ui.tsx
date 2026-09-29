@@ -18,7 +18,7 @@ export const BigButton = ({
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { readonly variant?: Variant }): React.JSX.Element => (
   <button
-    className={`tap-target pressable w-full rounded-md px-6 py-4 text-lg font-bold tracking-tight ${VARIANT_CLASSES[variant]} ${className}`}
+    className={`tap-target pressable w-full rounded-md px-4 py-4 text-lg font-bold tracking-tight sm:px-6 ${VARIANT_CLASSES[variant]} ${className}`}
     {...rest}
   >
     {children}
@@ -46,7 +46,7 @@ export const OptionButton = ({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { readonly selected?: boolean }): React.JSX.Element => (
   <button
     type="button"
-    className={`tap-target pressable rounded-md border-2 px-4 py-3 text-left font-bold disabled:opacity-60 ${
+    className={`tap-target pressable min-w-0 rounded-md border-2 px-4 py-3 text-left font-bold disabled:opacity-60 ${
       selected ? 'border-accent bg-selected text-fg' : 'border-border bg-card text-fg'
     } ${className}`}
     {...rest}
@@ -132,18 +132,20 @@ export const ConfirmDialog = ({
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-scrim p-4 sm:items-center"
+      // Scrolls as a whole if a short landscape phone or 200% zoom can't fit the sheet, and keeps clear of
+      // the notch / home indicator.
+      className="fixed inset-0 z-50 flex justify-center overflow-y-auto bg-scrim pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))]"
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-md rounded-lg border-2 border-border-strong bg-bg-raised p-6 shadow-sheet"
+        className="my-auto w-full max-w-md rounded-lg border-2 border-border-strong bg-bg-raised p-5 shadow-sheet sm:p-6 lg:max-w-lg"
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id="confirm-dialog-title" className="t-d2">
           {title}
         </h2>
         <p className="t-body mt-2 text-fg-muted">{message}</p>
-        <div className="mt-5 flex flex-col gap-3">
+        <div className="mt-5 flex flex-col gap-3 land:flex-row-reverse">
           <BigButton variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm}>
             {confirmLabel}
           </BigButton>
@@ -156,16 +158,22 @@ export const ConfirmDialog = ({
   );
 };
 
-export const PinBadge = ({ pin }: { readonly pin: string }): React.JSX.Element => (
-  <div className="flex justify-center gap-1.5 sm:gap-2" aria-label={`Room PIN ${pin.split('').join(' ')}`}>
-    {pin.split('').map((char, index) => (
-      <span
-        key={`${char}-${index}`}
-        className="flex h-14 w-10 items-center justify-center rounded-md bg-bg-sunken text-3xl font-black text-fg shadow-[var(--edge-hairline)] sm:h-16 sm:w-12"
-      >
-        {char}
-      </span>
-    ))}
+/** The room PIN as six tiles. `hero` is the lobby's host-facing size (readable across a table). */
+export const PinBadge = ({
+  pin,
+  size = 'md',
+}: {
+  readonly pin: string;
+  readonly size?: 'md' | 'hero';
+}): React.JSX.Element => (
+  <div className={`pin-row ${size === 'hero' ? 'pin-hero' : ''}`} role="img" aria-label={`Room PIN ${pin.split('').join(' ')}`}>
+    <div className="pin-tiles" aria-hidden>
+      {pin.split('').map((char, index) => (
+        <span key={`${char}-${index}`} className="pin-tile">
+          {char}
+        </span>
+      ))}
+    </div>
   </div>
 );
 

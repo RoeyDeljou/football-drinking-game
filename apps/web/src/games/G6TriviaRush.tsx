@@ -47,10 +47,10 @@ export const G6TriviaRush = ({ room, round, onSubmit }: GameScreenProps): React.
   if (round.visibility === 'revealed') {
     const solution = round.solution as Solution;
     return (
-      <RoundShell title="Trivia Rush" round={round} room={room} now={Date.now()}>
+      <RoundShell title="Trivia Rush" round={round} room={room} now={Date.now()} split>
         <Card>
-          <p className="t-d2 mb-3">{questionText(payload.question.kind, payload.question.subjectName)}</p>
-          <div className="flex flex-col gap-2">
+          <p className="t-d2 mb-3 lg:text-3xl">{questionText(payload.question.kind, payload.question.subjectName)}</p>
+          <div className="flex flex-col gap-2 lg:text-lg">
             {payload.options.map((option) => {
               const isCorrect = option.id === solution.optionId;
               const picks = round.submissions.filter((submission) => (submission.payload as { optionId: string }).optionId === option.id);
@@ -76,9 +76,11 @@ export const G6TriviaRush = ({ room, round, onSubmit }: GameScreenProps): React.
 
   return (
     <RoundShell title="Trivia Rush" round={round} room={room} now={Date.now()}>
-      <Card>
-        <p className="t-d2 mb-4">{questionText(payload.question.kind, payload.question.subjectName)}</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <Card className="lg:p-8">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-8 land:grid-cols-2 land:items-start">
+        <p className="t-d2 lg:text-4xl">{questionText(payload.question.kind, payload.question.subjectName)}</p>
+        <div>
+        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
           {payload.options.map((option) => (
             <OptionButton
               key={option.id}
@@ -88,13 +90,15 @@ export const G6TriviaRush = ({ room, round, onSubmit }: GameScreenProps): React.
                 setPicked(option.id);
                 onSubmit({ optionId: option.id });
               }}
-              className="min-h-[64px] text-base"
+              className="min-h-16 text-base lg:min-h-20 lg:text-lg"
             >
               {option.label}
             </OptionButton>
           ))}
         </div>
         {alreadySubmitted ? <p className="t-sm mt-3 text-center text-fg-muted">Answer locked in.</p> : null}
+        </div>
+        </div>
       </Card>
     </RoundShell>
   );

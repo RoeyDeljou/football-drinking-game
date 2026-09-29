@@ -33,7 +33,7 @@ export const AgeGateGuard = ({ children }: { readonly children: React.ReactNode 
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 px-4 py-10">
+    <main className="page page-narrow page-center gap-6">
       <Card>
         <h1 className="t-d1">Before you play</h1>
         <label className="t-body mt-4 flex min-h-14 items-start gap-3 text-fg">

@@ -17,10 +17,10 @@ export default function LandingPage(): React.JSX.Element {
   }, [router]);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 px-4 py-10">
+    <main className="page page-narrow page-center gap-6 lg:gap-8">
       <div className="text-center">
         <p className="t-eyebrow text-accent">Football Drinking Game</p>
-        <h1 className="t-score mt-3">Kick off in seconds.</h1>
+        <h1 className="t-hero mt-3">Kick off in seconds.</h1>
         <p className="t-body mt-3 text-fg-muted">Host a room, share a PIN, drink responsibly.</p>
       </div>
 
