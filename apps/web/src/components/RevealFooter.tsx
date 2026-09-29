@@ -1,7 +1,7 @@
 import type { ProjectedRoom, ProjectedRoundRevealed } from '@fdg/game-core';
 import { drinkAnnouncement } from '@/lib/drinkCopy';
 import { nicknameOf } from '@/lib/roomHelpers';
-import { Card } from './ui';
+import { Card, Eyebrow } from './ui';
 
 /** Shared reveal footer: who drinks, and why, rendered exclusively through `drinkCopy`. */
 export const RevealFooter = ({
@@ -14,18 +14,18 @@ export const RevealFooter = ({
   if (round.penalties.length === 0) {
     return (
       <Card>
-        <p className="text-center text-sm text-white/60">Nobody drinks this round. Lucky table.</p>
+        <p className="t-body text-center text-fg-muted">Nobody drinks this round. Lucky table.</p>
       </Card>
     );
   }
   return (
     <Card>
-      <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-white/50">Who&apos;s drinking</h2>
+      <Eyebrow className="mb-2">Who&apos;s drinking</Eyebrow>
       <ul className="flex flex-col gap-2">
         {round.penalties.map((penalty, index) => (
           <li
             key={`${penalty.reason}-${penalty.playerId}-${index}`}
-            className="rounded-xl bg-amber-500/10 px-4 py-2 text-sm text-amber-200"
+            className="rounded-md border-2 border-accent/50 bg-selected px-4 py-3 text-base font-semibold text-fg"
           >
             {drinkAnnouncement(penalty, nicknameOf(room, penalty.playerId))}
           </li>

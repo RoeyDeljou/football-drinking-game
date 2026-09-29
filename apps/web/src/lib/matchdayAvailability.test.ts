@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { FixtureSummary } from './api';
-import { FRESH_LIVE_WINDOW_MS, isFreshLiveFixture, matchdayAvailability, type CompetitionLiveCheck } from './matchdayAvailability';
+import {
+  FRESH_LIVE_WINDOW_MS,
+  isFreshLiveFixture,
+  isMatchdayVisible,
+  matchdayAvailability,
+  type CompetitionLiveCheck,
+} from './matchdayAvailability';
 
 const NOW = Date.parse('2026-09-28T18:00:00.000Z');
 
@@ -80,5 +86,18 @@ describe('matchdayAvailability', () => {
   it('treats a mix of pending and settled (with nothing found yet) as still searching', () => {
     const checks: CompetitionLiveCheck[] = [settledOk([]), pending(), settledError()];
     expect(matchdayAvailability(checks, NOW)).toBe('searching');
+  });
+});
+
+describe('isMatchdayVisible', () => {
+  it('is visible only when the sweep found a live game', () => {
+    expect(isMatchdayVisible('available', 'general')).toBe(true);
+    expect(isMatchdayVisible('searching', 'general')).toBe(false);
+    expect(isMatchdayVisible('unavailable', 'general')).toBe(false);
+  });
+
+  it('never hides Matchday from a host already on it', () => {
+    expect(isMatchdayVisible('unavailable', 'matchday')).toBe(true);
+    expect(isMatchdayVisible('searching', 'matchday')).toBe(true);
   });
 });

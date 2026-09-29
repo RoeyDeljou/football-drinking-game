@@ -16,7 +16,7 @@ import { errorMessage } from '@/lib/errorCopy';
 import { shouldShowGamedayExhaustedBanner } from '@/lib/gamedayEnd';
 import { intermissionContinueAction } from '@/lib/intermissionActions';
 import { useRoom } from '@/lib/room-context';
-import { loadRoom } from '@/lib/storage';
+import { clearPendingSelection, loadPendingSelection, loadRoom } from '@/lib/storage';
 
 const MATCHDAY_STEP_KEYS = ['fixture', 'lineups', 'squads', 'stats'];
 const GENERAL_STEP_KEYS = ['dataset'];
@@ -30,6 +30,17 @@ export default function RoomPage(): React.JSX.Element {
   const [isGameday, setIsGameday] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [deletingRoom, setDeletingRoom] = useState(false);
+  // The game the host picked on /host, waiting to be dispatched as SELECT_GAME once connected.
+  const [initialModuleId, setInitialModuleId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setInitialModuleId(loadPendingSelection(roomId));
+  }, [roomId]);
+
+  const settleInitialSelection = (): void => {
+    clearPendingSelection();
+    setInitialModuleId(null);
+  };
 
   useEffect(() => {
     const stored = loadRoom();
@@ -156,7 +167,7 @@ export default function RoomPage(): React.JSX.Element {
 
   if (redirecting) {
     return (
-      <main className="mx-auto flex min-h-dvh max-w-md items-center justify-center px-6">
+      <main className="mx-auto flex min-h-dvh w-full max-w-md items-center justify-center px-4">
         <Spinner label="Looking for that room…" />
       </main>
     );
@@ -164,7 +175,7 @@ export default function RoomPage(): React.JSX.Element {
 
   if (status === 'fatal') {
     return (
-      <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
+      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-4 px-4 text-center">
         <Banner tone="error">This room is no longer reachable.</Banner>
         <BigButton onClick={() => router.push('/')}>Back to start</BigButton>
       </main>
@@ -173,7 +184,7 @@ export default function RoomPage(): React.JSX.Element {
 
   if (room === null || self === null) {
     return (
-      <main className="mx-auto flex min-h-dvh max-w-md items-center justify-center px-6">
+      <main className="mx-auto flex min-h-dvh w-full max-w-md items-center justify-center px-4">
         <Spinner label="Connecting to your room…" />
       </main>
     );
@@ -181,8 +192,16 @@ export default function RoomPage(): React.JSX.Element {
 
   const isHost = room.you?.isHost ?? false;
 
+  const loadingDone =
+    room.phase === 'loading' && room.loading !== null && room.loading.steps.every((step) => step.status === 'done');
+
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-4 py-6 safe-bottom">
+    <main
+      className={`mx-auto flex min-h-dvh w-full max-w-md flex-col gap-4 px-4 py-6 safe-bottom ${
+        // Room for the fixed "Start playing" bar so it never covers the exit link below the content.
+        loadingDone ? 'pb-28' : ''
+      }`}
+    >
       <ConnectionStatusBanner status={status} />
       {lastError !== null &&
       shouldShowGamedayExhaustedBanner(isGameday, lastError.code, lastActionTypeRef.current === 'ADVANCE') ? (
@@ -190,43 +209,45 @@ export default function RoomPage(): React.JSX.Element {
           <Banner tone="warn">
             No more live matches in this competition — there’s nothing left to rotate through.
             {isHost ? (
-              <button type="button" onClick={finishRoom} className="ml-3 underline">
+              <button type="button" onClick={finishRoom} className="tap-target ml-3 px-2 underline">
                 End room
               </button>
             ) : (
-              <span className="ml-3 text-white/60">Waiting for the host to end the room…</span>
+              <span className="ml-3 text-fg-muted">Waiting for the host to end the room…</span>
             )}
           </Banner>
         </div>
       ) : lastError !== null ? (
         <div role="alert">
           <Banner tone="error">
-            {errorMessage(lastError)}
-            <button type="button" onClick={clearError} className="ml-3 underline">
-              dismiss
-            </button>
+            <span className="flex items-center justify-between gap-3">
+              <span>{errorMessage(lastError)}</span>
+              <button type="button" onClick={clearError} className="tap-target shrink-0 px-2 underline">
+                dismiss
+              </button>
+            </span>
           </Banner>
         </div>
       ) : null}
 
-      <RoomExitControls
-        phase={room.phase}
-        isHost={isHost}
-        deletingRoom={deletingRoom}
-        onLeaveRoom={leaveAndGoHome}
-        onDeleteRoom={deleteRoom}
-      />
-
       {room.phase === 'lobby' ? (
-        <Lobby room={room} category={category} isHost={isHost} onSelectGame={selectGame} onStartLoading={startLoading} />
+        <Lobby
+          room={room}
+          category={category}
+          isHost={isHost}
+          onSelectGame={selectGame}
+          onStartLoading={startLoading}
+          autoSelectModuleId={isHost ? initialModuleId : null}
+          onAutoSelectSettled={settleInitialSelection}
+        />
       ) : null}
 
       {room.phase === 'loading' && room.loading !== null ? (
         <LoadingScreen loading={room.loading} isHost={isHost} onRetry={startLoading} />
       ) : null}
 
-      {room.phase === 'loading' && room.loading !== null && room.loading.steps.every((step) => step.status === 'done') ? (
-        <div className="fixed inset-x-0 bottom-4 mx-auto max-w-md px-4">
+      {loadingDone ? (
+        <div className="fixed inset-x-0 bottom-4 mx-auto max-w-md px-4 safe-bottom">
           {isHost ? <BigButton onClick={startSession}>Start playing</BigButton> : null}
         </div>
       ) : null}
@@ -250,6 +271,15 @@ export default function RoomPage(): React.JSX.Element {
       {(room.phase === 'finished' || room.phase === 'aborted') ? (
         <FinalResultsScreen room={room} onLeave={leaveAndGoHome} onHostNew={hostNewRoom} />
       ) : null}
+
+      {/* Last on the page: a way out should be findable, not the first thing anyone taps. */}
+      <RoomExitControls
+        phase={room.phase}
+        isHost={isHost}
+        deletingRoom={deletingRoom}
+        onLeaveRoom={leaveAndGoHome}
+        onDeleteRoom={deleteRoom}
+      />
     </main>
   );
 }

@@ -22,8 +22,8 @@ export const FinalResultsScreen = ({
    * join/resume logic would find this finished room's token still in `localStorage`. */
   readonly onHostNew: () => void;
 }): React.JSX.Element => (
-  <div className="flex flex-col gap-6">
-    <h1 className="text-center text-3xl font-black">{room.phase === 'aborted' ? 'Room closed' : 'Final results'}</h1>
+  <div className="flex flex-col gap-4">
+    <h1 className="t-d1 text-center">{room.phase === 'aborted' ? 'Room closed' : 'Final results'}</h1>
     {room.phase === 'aborted' && room.abortReason !== null ? (
       <Banner tone="warn">{ABORT_COPY[room.abortReason] ?? 'The room was closed.'}</Banner>
     ) : null}

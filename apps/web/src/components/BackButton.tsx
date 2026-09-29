@@ -46,7 +46,7 @@ export const BackButton = ({
       type="button"
       onClick={handleClick}
       aria-label={label}
-      className={`tap-target inline-flex items-center gap-2 self-start rounded-full px-3 text-sm font-bold text-white/80 active:bg-white/10 ${className}`}
+      className={`tap-target inline-flex items-center gap-2 self-start pressable rounded-full px-3 text-sm font-bold text-fg-muted ${className}`}
     >
       <span aria-hidden className="text-lg leading-none">
         ←

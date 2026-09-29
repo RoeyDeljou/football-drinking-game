@@ -1,7 +1,7 @@
 import type { M2FactKind } from '@fdg/game-core';
 import { RevealFooter } from '@/components/RevealFooter';
 import { RoundShell } from '@/components/RoundShell';
-import { Card } from '@/components/ui';
+import { Card, OptionButton } from '@/components/ui';
 import type { GameScreenProps } from './types';
 
 interface PitchOption {
@@ -51,7 +51,7 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
     return (
       <RoundShell title="Who's That Player?" round={round} room={room} now={Date.now()}>
         <Card>
-          <p className="mb-3 text-lg font-semibold">{factText(payload.fact.kind, payload.fact.value)}</p>
+          <p className="t-d2 mb-3">{factText(payload.fact.kind, payload.fact.value)}</p>
           <div className="flex flex-col gap-2">
             {payload.options.map((option) => {
               const isCorrect = option.playerId === solution.playerId;
@@ -61,8 +61,8 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
               return (
                 <div
                   key={option.playerId}
-                  className={`flex items-center justify-between rounded-xl px-4 py-3 font-semibold ${
-                    isCorrect ? 'bg-pitch-600 text-white' : 'bg-white/5 text-white/70'
+                  className={`flex items-center justify-between rounded-md border-2 px-4 py-3 font-semibold ${
+                    isCorrect ? 'border-up bg-up/15 text-fg' : 'border-transparent bg-hover text-fg-muted'
                   }`}
                 >
                   <span>
@@ -70,7 +70,7 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
                     {isCorrect ? ' ✓' : ''}
                   </span>
                   {picks.length > 0 ? (
-                    <span className="text-xs opacity-70">
+                    <span className="tnum text-xs opacity-70">
                       {picks.length} {picks.length === 1 ? 'pick' : 'picks'}
                     </span>
                   ) : null}
@@ -87,27 +87,25 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
   return (
     <RoundShell title="Who's That Player?" round={round} room={room} now={Date.now()}>
       <Card>
-        <p className="mb-4 text-lg font-semibold">{factText(payload.fact.kind, payload.fact.value)}</p>
-        <p className="mb-3 text-xs uppercase tracking-wide text-white/40">
+        <p className="t-d2 mb-4">{factText(payload.fact.kind, payload.fact.value)}</p>
+        <p className="t-eyebrow mb-3">
           One of these {payload.options.length} is the answer
         </p>
         <div className="grid grid-cols-2 gap-3">
           {payload.options.map((option) => (
-            <button
+            <OptionButton
               key={option.playerId}
-              type="button"
+              selected={yourPick === option.playerId}
               disabled={alreadySubmitted}
               onClick={() => onSubmit({ playerId: option.playerId })}
-              className={`tap-target rounded-2xl border-2 px-3 text-left text-sm font-bold disabled:opacity-60 ${
-                yourPick === option.playerId ? 'border-pitch-500 bg-pitch-500/30' : 'border-white/15 bg-white/5'
-              }`}
+              className="min-h-[64px] px-3 text-sm"
             >
               {option.name}
-              {option.shirtNumber !== null ? <span className="ml-1 text-white/40">#{option.shirtNumber}</span> : null}
-            </button>
+              {option.shirtNumber !== null ? <span className="ml-1 text-fg-subtle">#{option.shirtNumber}</span> : null}
+            </OptionButton>
           ))}
         </div>
-        {alreadySubmitted ? <p className="mt-3 text-center text-sm text-white/50">Answer locked in.</p> : null}
+        {alreadySubmitted ? <p className="t-sm mt-3 text-center text-fg-muted">Answer locked in.</p> : null}
       </Card>
     </RoundShell>
   );

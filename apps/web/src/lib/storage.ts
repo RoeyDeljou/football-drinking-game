@@ -15,6 +15,7 @@ export interface StoredRoom {
 }
 
 const ROOM_KEY = 'fdg:room';
+const PENDING_SELECTION_KEY = 'fdg:pending-selection';
 const AGE_GATE_KEY = 'fdg:age-gate-confirmed';
 
 const readJson = <T>(key: string): T | null => {
@@ -53,3 +54,30 @@ export const clearRoom = (): void => clearKey(ROOM_KEY);
 
 export const loadAgeGateConfirmed = (): boolean => readJson<true>(AGE_GATE_KEY) === true;
 export const saveAgeGateConfirmed = (): void => writeJson(AGE_GATE_KEY, true);
+
+/**
+ * The game the host chose on the /host setup screen, carried to the room lobby (keyed by roomId) so
+ * the room page can dispatch `SELECT_GAME` once connected. Cleared as soon as the server confirms or
+ * rejects it, so a reload never loops.
+ */
+export interface PendingInitialSelection {
+  readonly roomId: string;
+  readonly moduleId: string;
+}
+
+export const savePendingSelection = (roomId: string, moduleId: string): void =>
+  writeJson(PENDING_SELECTION_KEY, { roomId, moduleId } satisfies PendingInitialSelection);
+
+export const loadPendingSelection = (roomId: string): string | null => {
+  const stored = readJson<Partial<PendingInitialSelection>>(PENDING_SELECTION_KEY);
+  if (stored === null || stored.roomId !== roomId || typeof stored.moduleId !== 'string') return null;
+  return stored.moduleId;
+};
+
+export const clearPendingSelection = (): void => {
+  try {
+    clearKey(PENDING_SELECTION_KEY);
+  } catch {
+    // Blocked storage: nothing was persisted, so nothing to clear.
+  }
+};

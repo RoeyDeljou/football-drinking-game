@@ -4,11 +4,20 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { AgeGateGuard } from '@/components/AgeGateGuard';
 import { BackButton } from '@/components/BackButton';
-import { Banner, BigButton, Card } from '@/components/ui';
+import { GameModePicker } from '@/components/GameModePicker';
+import { Banner, BigButton, Card, Eyebrow, Field, OptionButton } from '@/components/ui';
 import type { ApiResult, Competition, FixtureSummary } from '@/lib/api';
 import { createRoom, listCompetitionFixtures, listCompetitions } from '@/lib/api';
 import { fixtureLoadElapsedPhase } from '@/lib/fixtureLoadElapsed';
-import { matchdayAvailability, type CompetitionLiveCheck } from '@/lib/matchdayAvailability';
+import {
+  choiceAfterCategoryChange,
+  DEFAULT_CHOICE,
+  NO_MINI_GAME_MESSAGE,
+  resolveModuleId,
+  type ModeChoice,
+} from '@/lib/gameMode';
+import { isMatchdayVisible, matchdayAvailability, type CompetitionLiveCheck } from '@/lib/matchdayAvailability';
+import { savePendingSelection } from '@/lib/storage';
 import {
   competitionsView,
   fixturesView,
@@ -56,6 +65,9 @@ function HostPageContent(): React.JSX.Element {
    * flow and must never be disturbed by picking a General scope. */
   const [generalCompetitionId, setGeneralCompetitionId] = useState<string | null>(null);
 
+  /** Shuffle game (default) vs Select Mini Game + the picked mini game. Reset on a category change. */
+  const [modeChoice, setModeChoice] = useState<ModeChoice>(DEFAULT_CHOICE);
+
   const [rounds, setRounds] = useState(8);
   const [hostNickname, setHostNickname] = useState('');
   const [busy, setBusy] = useState(false);
@@ -88,7 +100,12 @@ function HostPageContent(): React.JSX.Element {
         return;
       }
       const competitions = competitionsResult.value.competitions;
-      setMatchdayChecks(competitions.map(() => ({ status: 'pending' })));
+      // Only the first sweep starts from 'pending'. A re-sweep keeps the last settled results on
+      // screen until the new ones land, so a known live game doesn't vanish (and shift the whole
+      // page) for however long the 90s re-check takes.
+      setMatchdayChecks((previous) =>
+        previous.length === 0 ? competitions.map(() => ({ status: 'pending' as const })) : previous,
+      );
       // Fan out in parallel, one live-fixture request per competition. listCompetitionFixtures
       // never rejects (network failures are caught and returned as an ApiResult), so Promise.all is
       // safe here: a single competition's failure can't derail the others.
@@ -110,7 +127,15 @@ function HostPageContent(): React.JSX.Element {
   }, []);
 
   const matchdayState = matchdayAvailability(matchdayChecks, now);
-  const matchdayLocked = matchdayState === 'unavailable' && category !== 'matchday';
+  // Matchday is not rendered at all unless the sweep found a live game (no greyed-out button, no
+  // flicker while searching). A host already on Matchday is never yanked out by a re-check.
+  const matchdayVisible = isMatchdayVisible(matchdayState, category);
+
+  const switchCategory = (next: Category): void => {
+    if (next === category) return;
+    setCategory(next);
+    setModeChoice(choiceAfterCategoryChange());
+  };
 
   // Request guards: a slow response from a request that's no longer "the current one" (the user
   // switched category/league again before it resolved) must never overwrite state for whatever is
@@ -198,6 +223,12 @@ function HostPageContent(): React.JSX.Element {
       setError('Pick a league first.');
       return;
     }
+    const moduleId = resolveModuleId(category, modeChoice);
+    if (moduleId === null) {
+      // The full hint already sits under the game picker; down here just point back up to it.
+      setError('Pick a mini game above first.');
+      return;
+    }
     const fixtureId = category === 'matchday' && !gamedaySelected ? selectedFixture?.fixtureId : undefined;
     setBusy(true);
     const result = await createRoom({
@@ -225,6 +256,8 @@ function HostPageContent(): React.JSX.Element {
       setError(result.message);
       return;
     }
+    // Carry the chosen game to the room: its page dispatches SELECT_GAME once connected.
+    savePendingSelection(result.value.roomId, moduleId);
     adopt({
       roomId: result.value.roomId,
       pin: result.value.pin,
@@ -235,63 +268,66 @@ function HostPageContent(): React.JSX.Element {
     router.push(`/room/${result.value.roomId}`);
   };
 
-  return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 px-6 py-8">
-      <BackButton fallbackHref="/" />
-      <h1 className="text-3xl font-black">Host a room</h1>
+  const crest = (competition: Competition): React.JSX.Element =>
+    competition.logoUrl !== null ? (
+      // A remote, provider-hosted crest URL — not a build-time asset, so next/image's static
+      // optimization doesn't apply here. Sits on a chalk disc so dark crests stay readable.
+      <img src={competition.logoUrl} alt="" className="h-10 w-10 rounded-full bg-fg/90 object-contain p-1" />
+    ) : (
+      <div className="h-10 w-10 rounded-full bg-bg-sunken" aria-hidden />
+    );
 
-      <Card>
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-white/50">Category</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              // A brief flicker to "available" right before the host taps, followed by a re-check
-              // that flips it back, must never retroactively un-select them once they're already on
-              // this category — the lock only gates a *new* selection.
-              if (matchdayLocked) return;
-              setCategory('matchday');
-            }}
-            disabled={matchdayLocked}
-            aria-disabled={matchdayLocked}
-            className={`tap-target rounded-2xl border-2 px-3 font-bold ${
-              category === 'matchday'
-                ? 'border-pitch-500 bg-pitch-500/20'
-                : matchdayLocked
-                  ? 'cursor-not-allowed border-white/10 bg-white/5 opacity-40'
-                  : 'border-white/15 bg-white/5'
-            }`}
-          >
-            Matchday
-            <div className="mt-1 text-xs font-normal text-white/50">Tied to a real fixture</div>
-            <div role="status" aria-live="polite" className="mt-1 text-[10px] font-semibold uppercase tracking-wide">
-              {matchdayState === 'searching' ? <span className="text-white/40">Searching…</span> : null}
-              {matchdayState === 'unavailable' ? <span className="text-red-300/70">No live games for now</span> : null}
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setCategory('general')}
-            className={`tap-target rounded-2xl border-2 px-3 font-bold ${
-              category === 'general' ? 'border-pitch-500 bg-pitch-500/20' : 'border-white/15 bg-white/5'
-            }`}
-          >
-            General
-            <div className="mt-1 text-xs font-normal text-white/50">Season trivia, any time</div>
-          </button>
-        </div>
-      </Card>
+  const loadingRow = (message: string): React.JSX.Element => (
+    <div role="status" aria-live="polite" className="t-body py-4 text-center text-fg-muted">
+      {message}
+    </div>
+  );
+
+  return (
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-4 py-6">
+      <BackButton fallbackHref="/" />
+      <div>
+        <Eyebrow>{matchdayVisible ? 'Set up your room' : 'General · season trivia'}</Eyebrow>
+        <h1 className="t-d1 mt-1">Host a room</h1>
+      </div>
+
+      {matchdayVisible ? (
+        <Card>
+          <Eyebrow className="mb-3">Category</Eyebrow>
+          <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Category">
+            <OptionButton
+              role="radio"
+              aria-checked={category === 'matchday'}
+              selected={category === 'matchday'}
+              onClick={() => switchCategory('matchday')}
+            >
+              <span className="flex items-center gap-2">
+                Matchday
+                <span className="rounded-full bg-live/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-live">
+                  Live
+                </span>
+              </span>
+              <span className="t-xs block font-normal text-fg-muted">Tied to a real fixture</span>
+            </OptionButton>
+            <OptionButton
+              role="radio"
+              aria-checked={category === 'general'}
+              selected={category === 'general'}
+              onClick={() => switchCategory('general')}
+            >
+              General
+              <span className="t-xs block font-normal text-fg-muted">Season trivia, any time</span>
+            </OptionButton>
+          </div>
+        </Card>
+      ) : null}
 
       {category === 'matchday' ? (
         <Card>
           {selectedCompetitionId === null ? (
             <>
-              <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-white/50">Pick a league</h2>
-              {compView.status === 'loading' ? (
-                <div role="status" aria-live="polite" className="py-4 text-center text-sm text-white/60">
-                  Loading competitions…
-                </div>
-              ) : null}
+              <Eyebrow className="mb-3">Pick a league</Eyebrow>
+              {compView.status === 'loading' ? loadingRow('Loading competitions…') : null}
               {compView.status === 'error' ? (
                 <div className="flex flex-col gap-3">
                   <Banner tone="error">{compView.message}</Banner>
@@ -301,52 +337,41 @@ function HostPageContent(): React.JSX.Element {
                 </div>
               ) : null}
               {compView.status === 'ready' ? (
-                <div
-                  className="flex snap-x gap-3 overflow-x-auto pb-1"
-                  role="listbox"
-                  aria-label="Leagues"
-                >
+                <div className="grid grid-cols-2 gap-3" role="listbox" aria-label="Leagues">
                   {compView.competitions.map((competition) => (
-                    <button
+                    <OptionButton
                       key={competition.id}
-                      type="button"
                       role="option"
                       aria-selected={false}
                       aria-label={competition.name}
                       onClick={() => chooseCompetition(competition.id)}
-                      className="tap-target flex min-w-[9rem] shrink-0 snap-start flex-col items-center gap-2 rounded-2xl border-2 border-white/15 bg-white/5 px-4 py-3 text-center active:border-pitch-500"
+                      className="flex flex-col items-center gap-2 text-center"
                     >
-                      {competition.logoUrl !== null ? (
-                        // A remote, provider-hosted crest URL — not a build-time asset, so next/image's
-                        // static optimization doesn't apply here.
-                        <img src={competition.logoUrl} alt="" className="h-10 w-10 object-contain" />
-                      ) : (
-                        <div className="h-10 w-10 rounded-full bg-white/10" aria-hidden />
-                      )}
-                      <span className="text-sm font-bold leading-tight">{competition.name}</span>
-                    </button>
+                      {crest(competition)}
+                      <span className="text-sm leading-tight">{competition.name}</span>
+                    </OptionButton>
                   ))}
                 </div>
               ) : null}
             </>
           ) : (
             <>
-              <div className="mb-1 flex items-center justify-between">
-                <BackButton onBack={backToLeagues} label="Change league" className="px-0 text-pitch-400" />
-                <h2 className="text-sm font-bold uppercase tracking-wide text-white/50">Pick a fixture</h2>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <BackButton onBack={backToLeagues} label="Change league" className="px-0 text-accent" />
+                <Eyebrow>Pick a fixture</Eyebrow>
               </div>
               {selectedCompetitionName !== null ? (
-                <p className="mb-3 text-sm text-white/60">
-                  League: <span className="font-semibold text-white/80">{selectedCompetitionName}</span>
+                <p className="t-body mb-3 text-fg-muted">
+                  League: <span className="font-semibold text-fg">{selectedCompetitionName}</span>
                 </p>
               ) : null}
 
               {fixView.status === 'loading' ? (
-                <div role="status" aria-live="polite" className="flex flex-col items-center gap-1 py-4 text-center text-sm text-white/60">
+                <div role="status" aria-live="polite" className="t-body flex flex-col items-center gap-1 py-4 text-center text-fg-muted">
                   <span>Loading fixtures…</span>
                   {fixtureLoadElapsedPhase({ loading: true, startedAt: fixturesLoadStartedAt ?? fastNow, now: fastNow }) ===
                   'slow' ? (
-                    <span className="text-xs text-white/40">
+                    <span className="t-xs text-fg-subtle">
                       A league&apos;s first check can take a few extra seconds — still working…
                     </span>
                   ) : null}
@@ -364,66 +389,58 @@ function HostPageContent(): React.JSX.Element {
               {fixView.status === 'ready' ? (
                 <div className="flex flex-col gap-3">
                   {liveFixtureCount(fixView.fixtures) === 0 ? (
-                    <p className="text-xs text-white/40">
+                    <p className="t-xs text-fg-subtle">
                       Lineups are published about an hour before kickoff, so games for an upcoming fixture won&apos;t
                       be selectable until then. Pick a live match for a game you can start now.
                     </p>
                   ) : null}
                   {shouldOfferGameday(liveFixtureCount(fixView.fixtures)) ? (
-                    <button
-                      type="button"
+                    <OptionButton
                       role="option"
                       aria-selected={gamedaySelected}
+                      selected={gamedaySelected}
                       onClick={chooseGameday}
-                      className={`tap-target flex shrink-0 flex-col gap-1 rounded-2xl border-2 px-4 py-3 text-left ${
-                        gamedaySelected ? 'border-pitch-500 bg-pitch-500/20' : 'border-white/15 bg-white/5'
-                      }`}
+                      className="flex flex-col gap-1"
                     >
                       <span className="flex items-center justify-between gap-2">
-                        <span className="font-bold">Play the whole live gameday</span>
-                        <span className="shrink-0 rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-bold text-red-300">
-                          LIVE
-                        </span>
+                        <span>Play the whole live gameday</span>
+                        <span className="shrink-0 rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">LIVE</span>
                       </span>
-                      <span className="text-xs text-white/50">
+                      <span className="t-xs font-normal text-fg-muted">
                         {gamedayOptionLabel(liveFixtureCount(fixView.fixtures))} — rounds rotate across every one
                       </span>
-                    </button>
+                    </OptionButton>
                   ) : null}
-                  <div className="flex max-h-80 snap-y flex-col gap-3 overflow-y-auto pr-1" role="listbox" aria-label="Fixtures">
-                  {fixView.fixtures.map((fixture) => {
-                    const live = isFixtureLive(fixture);
-                    const badge = liveBadgeLabel(fixture);
-                    const selected = !gamedaySelected && selectedFixture?.fixtureId === fixture.fixtureId;
-                    return (
-                      <button
-                        key={fixture.fixtureId}
-                        type="button"
-                        role="option"
-                        aria-selected={selected}
-                        onClick={() => chooseFixture(fixture)}
-                        className={`tap-target flex shrink-0 snap-start flex-col gap-1 rounded-2xl border-2 px-4 py-3 text-left ${
-                          selected ? 'border-pitch-500 bg-pitch-500/20' : 'border-white/15 bg-white/5'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold">
-                            {fixture.homeTeam.name} vs {fixture.awayTeam.name}
-                          </span>
-                          {live ? (
-                            <span className="shrink-0 rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-bold text-red-300">
-                              {badge}
+                  <div className="flex max-h-80 flex-col gap-3 overflow-y-auto pr-1" role="listbox" aria-label="Fixtures">
+                    {fixView.fixtures.map((fixture) => {
+                      const live = isFixtureLive(fixture);
+                      const badge = liveBadgeLabel(fixture);
+                      const selected = !gamedaySelected && selectedFixture?.fixtureId === fixture.fixtureId;
+                      return (
+                        <OptionButton
+                          key={fixture.fixtureId}
+                          role="option"
+                          aria-selected={selected}
+                          selected={selected}
+                          onClick={() => chooseFixture(fixture)}
+                          className="flex shrink-0 flex-col gap-1"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span>
+                              {fixture.homeTeam.name} vs {fixture.awayTeam.name}
+                            </span>
+                            {live ? (
+                              <span className="shrink-0 rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">{badge}</span>
+                            ) : null}
+                          </div>
+                          {!live ? (
+                            <span className="t-xs font-normal text-fg-muted">
+                              {formatKickoffLocal(fixture.kickoff)} · {kickoffCountdown(fixture.kickoff, now)}
                             </span>
                           ) : null}
-                        </div>
-                        {!live ? (
-                          <span className="text-xs text-white/50">
-                            {formatKickoffLocal(fixture.kickoff)} · {kickoffCountdown(fixture.kickoff, now)}
-                          </span>
-                        ) : null}
-                      </button>
-                    );
-                  })}
+                        </OptionButton>
+                      );
+                    })}
                   </div>
                 </div>
               ) : null}
@@ -434,15 +451,11 @@ function HostPageContent(): React.JSX.Element {
 
       {category === 'general' ? (
         <Card>
-          <h2 className="mb-1 text-sm font-bold uppercase tracking-wide text-white/50">Competition</h2>
-          <p className="mb-3 text-xs text-white/40">
+          <Eyebrow className="mb-1">Competition</Eyebrow>
+          <p className="t-xs mb-3 text-fg-subtle">
             Optional — leave on &quot;All competitions&quot; to draw players from every league combined.
           </p>
-          {compView.status === 'loading' ? (
-            <div role="status" aria-live="polite" className="py-4 text-center text-sm text-white/60">
-              Loading competitions…
-            </div>
-          ) : null}
+          {compView.status === 'loading' ? loadingRow('Loading competitions…') : null}
           {compView.status === 'error' ? (
             <div className="flex flex-col gap-3">
               <Banner tone="error">{compView.message}</Banner>
@@ -452,41 +465,29 @@ function HostPageContent(): React.JSX.Element {
             </div>
           ) : null}
           {compView.status === 'ready' ? (
-            <div className="flex snap-x gap-3 overflow-x-auto pb-1" role="listbox" aria-label="Competitions">
-              <button
-                type="button"
+            <div className="grid grid-cols-2 gap-3" role="listbox" aria-label="Competitions">
+              <OptionButton
                 role="option"
                 aria-selected={generalCompetitionId === null}
+                selected={generalCompetitionId === null}
                 onClick={() => setGeneralCompetitionId(null)}
-                className={`tap-target flex min-w-[9rem] shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-center active:border-pitch-500 ${
-                  generalCompetitionId === null ? 'border-pitch-500 bg-pitch-500/20' : 'border-white/15 bg-white/5'
-                }`}
+                className="flex flex-col items-center justify-center gap-2 text-center"
               >
-                <span className="text-sm font-bold leading-tight">All competitions</span>
-              </button>
+                <span className="text-sm leading-tight">All competitions</span>
+              </OptionButton>
               {compView.competitions.map((competition) => (
-                <button
+                <OptionButton
                   key={competition.id}
-                  type="button"
                   role="option"
                   aria-selected={generalCompetitionId === competition.id}
                   aria-label={competition.name}
+                  selected={generalCompetitionId === competition.id}
                   onClick={() => setGeneralCompetitionId(competition.id)}
-                  className={`tap-target flex min-w-[9rem] shrink-0 snap-start flex-col items-center gap-2 rounded-2xl border-2 px-4 py-3 text-center active:border-pitch-500 ${
-                    generalCompetitionId === competition.id
-                      ? 'border-pitch-500 bg-pitch-500/20'
-                      : 'border-white/15 bg-white/5'
-                  }`}
+                  className="flex flex-col items-center gap-2 text-center"
                 >
-                  {competition.logoUrl !== null ? (
-                    // A remote, provider-hosted crest URL — not a build-time asset, so next/image's
-                    // static optimization doesn't apply here.
-                    <img src={competition.logoUrl} alt="" className="h-10 w-10 object-contain" />
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-white/10" aria-hidden />
-                  )}
-                  <span className="text-sm font-bold leading-tight">{competition.name}</span>
-                </button>
+                  {crest(competition)}
+                  <span className="text-sm leading-tight">{competition.name}</span>
+                </OptionButton>
               ))}
             </div>
           ) : null}
@@ -494,30 +495,59 @@ function HostPageContent(): React.JSX.Element {
       ) : null}
 
       <Card>
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-white/50">Settings</h2>
-        <label className="flex flex-col gap-1 text-sm font-semibold text-white/70">
-          Rounds per game
-          <input
-            type="number"
-            min={1}
-            max={50}
-            value={rounds}
-            onChange={(event) => setRounds(Number(event.target.value))}
-            className="tap-target rounded-xl border border-white/15 bg-white/5 px-4 text-lg text-white"
-          />
-        </label>
-        <label className="mt-3 flex flex-col gap-1 text-sm font-semibold text-white/70">
-          Your nickname (host)
-          <input
-            value={hostNickname}
-            onChange={(event) => setHostNickname(event.target.value)}
-            maxLength={24}
-            className="tap-target rounded-xl border border-white/15 bg-white/5 px-4 text-lg text-white"
-          />
-        </label>
+        <Eyebrow className="mb-3">Game</Eyebrow>
+        <GameModePicker category={category} value={modeChoice} onChange={setModeChoice} />
+        {modeChoice.mode === 'select' && resolveModuleId(category, modeChoice) === null ? (
+          <p className="t-sm mt-3 font-semibold text-warn" role="status">
+            {NO_MINI_GAME_MESSAGE}
+          </p>
+        ) : null}
       </Card>
 
-      {error !== null ? <Banner tone="error">{error}</Banner> : null}
+      <Card className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="t-eyebrow" id="rounds-label">
+            Rounds per game
+          </span>
+          <div className="flex items-center gap-3" role="group" aria-labelledby="rounds-label">
+            <button
+              type="button"
+              aria-label="Fewer rounds"
+              disabled={rounds <= 1}
+              onClick={() => setRounds((current) => Math.max(1, current - 1))}
+              className="tap-target pressable w-16 shrink-0 rounded-md border-2 border-border-strong text-2xl font-bold disabled:opacity-40"
+            >
+              −
+            </button>
+            <output aria-live="polite" className="t-score tnum flex-1 text-center">
+              {rounds}
+            </output>
+            <button
+              type="button"
+              aria-label="More rounds"
+              disabled={rounds >= 50}
+              onClick={() => setRounds((current) => Math.min(50, current + 1))}
+              className="tap-target pressable w-16 shrink-0 rounded-md border-2 border-border-strong text-2xl font-bold disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
+        </div>
+        <Field
+          label="Your nickname (host)"
+          value={hostNickname}
+          onChange={(event) => setHostNickname(event.target.value)}
+          maxLength={24}
+          autoComplete="nickname"
+          placeholder="Your name at the table"
+        />
+      </Card>
+
+      {error !== null ? (
+        <div role="alert">
+          <Banner tone="error">{error}</Banner>
+        </div>
+      ) : null}
 
       <BigButton onClick={() => void onCreate()} disabled={busy}>
         {busy ? 'Creating room…' : 'Create room'}

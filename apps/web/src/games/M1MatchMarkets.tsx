@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { RevealFooter } from '@/components/RevealFooter';
 import { RoundShell } from '@/components/RoundShell';
-import { BigButton, Card } from '@/components/ui';
+import { BigButton, Card, Eyebrow, OptionButton } from '@/components/ui';
 import type { GameScreenProps } from './types';
 
 interface MarketOption {
@@ -134,15 +134,15 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
     return (
       <RoundShell title="Match Markets" round={round} room={room} now={Date.now()}>
         <Card>
-          <p className="text-sm text-white/60">
+          <p className="t-body text-fg-muted">
             {solution.settled ? 'Full time.' : 'Revealed before full time — only what settled counts.'}
           </p>
-          <p className="mt-1 text-3xl font-black">
+          <p className="t-score tnum mt-1">
             {payload.counters.homeGoals} – {payload.counters.awayGoals}
           </p>
         </Card>
         <Card>
-          <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-white/50">Your slip</h2>
+          <Eyebrow className="mb-2">Your slip</Eyebrow>
           <ul className="flex flex-col gap-2">
             {payload.markets.map((market) => {
               const pickedOptionId = picks[market.id];
@@ -151,13 +151,13 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
               );
               const option = market.options.find((candidate) => candidate.id === pickedOptionId);
               return (
-                <li key={market.id} className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-2 text-sm">
+                <li key={market.id} className="flex items-center justify-between rounded-md bg-hover px-4 py-3 text-sm">
                   <span>
                     {marketTitle(market.kind, market.line)}: {option === undefined ? '—' : optionLabel(market, option)}
                   </span>
                   <span
                     className={`font-bold ${
-                      settlement === undefined ? 'text-white/40' : settlement.outcome === 'WON' ? 'text-pitch-400' : 'text-red-400'
+                      settlement === undefined ? 'text-fg-subtle' : settlement.outcome === 'WON' ? 'text-up' : 'text-down'
                     }`}
                   >
                     {settlement === undefined ? 'pending' : settlement.outcome}
@@ -174,37 +174,35 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
 
   return (
     <RoundShell title="Match Markets" round={round} room={room} now={Date.now()}>
-      {!canEdit ? <Card><p className="text-sm text-amber-300">Kick-off happened — the slip is locked.</p></Card> : null}
+      {!canEdit ? <Card><p className="text-sm font-semibold text-warn">Kick-off happened — the slip is locked.</p></Card> : null}
       <div className="flex flex-col gap-3">
         {payload.markets.map((market) => (
           <Card key={market.id}>
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-bold">{marketTitle(market.kind, market.line)}</p>
+              <p className="t-h3">{marketTitle(market.kind, market.line)}</p>
               {picks[market.id] === undefined ? (
-                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">
+                <span className="rounded-full bg-warn/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn">
                   Pick one
                 </span>
               ) : null}
             </div>
             <div className="flex flex-wrap gap-2">
               {market.options.map((option) => (
-                <button
+                <OptionButton
                   key={option.id}
-                  type="button"
+                  selected={picks[market.id] === option.id}
                   disabled={!canEdit}
                   onClick={() => setPicks((prev) => ({ ...prev, [market.id]: option.id }))}
-                  className={`tap-target rounded-xl border-2 px-3 text-sm font-bold disabled:opacity-50 ${
-                    picks[market.id] === option.id ? 'border-pitch-500 bg-pitch-500/30' : 'border-white/15 bg-white/5'
-                  }`}
+                  className="px-3 text-sm"
                 >
                   {optionLabel(market, option)}
-                </button>
+                </OptionButton>
               ))}
             </div>
           </Card>
         ))}
       </div>
-      <p className="text-center text-sm text-white/50" aria-live="polite">
+      <p className="tnum text-center text-sm text-fg-muted" aria-live="polite">
         {pickedCount}/{payload.markets.length} markets picked
       </p>
       <BigButton disabled={!allPicked || !canEdit} onClick={submitSlip}>

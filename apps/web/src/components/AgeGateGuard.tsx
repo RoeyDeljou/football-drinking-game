@@ -33,15 +33,15 @@ export const AgeGateGuard = ({ children }: { readonly children: React.ReactNode 
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6 py-10">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 px-4 py-10">
       <Card>
-        <h1 className="text-2xl font-black">Before you play</h1>
-        <label className="mt-4 flex items-start gap-3 text-sm text-white/80">
+        <h1 className="t-d1">Before you play</h1>
+        <label className="t-body mt-4 flex min-h-14 items-start gap-3 text-fg">
           <input
             type="checkbox"
             checked={checked}
             onChange={(event) => setChecked(event.target.checked)}
-            className="mt-1 h-6 w-6 shrink-0"
+            className="mt-0.5 h-7 w-7 shrink-0 accent-accent"
           />
           I confirm I am 18 years of age or older.
         </label>

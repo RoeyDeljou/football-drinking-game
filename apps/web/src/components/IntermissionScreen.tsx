@@ -1,4 +1,4 @@
-import { gameName } from '@/games/registry';
+import { choiceLabel } from '@/lib/gameMode';
 import type { ClientRoom } from '@/lib/currentFixture';
 import { Banner, BigButton } from './ui';
 import { DrinkTally } from './DrinkTally';
@@ -28,8 +28,8 @@ export const IntermissionScreen = ({
   const sessionFinished = room.session?.finished ?? true;
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-center text-3xl font-black">{sessionFinished ? 'Game over' : 'Leaderboard'}</h1>
+    <div className="flex flex-col gap-4">
+      <h1 className="t-d1 text-center">{sessionFinished ? 'Game over' : 'Leaderboard'}</h1>
       <NowPlayingBanner currentFixture={room.currentFixture} />
       <Leaderboard rows={room.leaderboard} viewerId={room.viewerId} />
       <DrinkTally rows={room.drinkTally} viewerId={room.viewerId} />
@@ -43,7 +43,7 @@ export const IntermissionScreen = ({
             category={category}
             onSelectGame={onSelectGame}
             onStart={onPlayAgain}
-            startLabel={room.selection === null ? 'Play again' : `Play ${gameName(room.selection.moduleId)}`}
+            startLabel={room.selection === null ? 'Play again' : `Play ${choiceLabel(room.selection.moduleId)}`}
           />
           <BigButton variant="danger" onClick={onFinishRoom}>
             End room

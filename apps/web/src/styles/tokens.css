@@ -1,0 +1,89 @@
+/* =========================================================================
+   Football Drinking Game — design tokens.
+
+   Ported from the Fantasy3.0 "chalkboard" theme (frontend/src/styles/tokens.css) so this app can be
+   mounted inside the same hub without looking foreign: a green board with a faint ruled chalk grid,
+   chalk-white type, Caveat handwriting for headlines and Chivo for everything read, one warm gold.
+
+   Components use SEMANTIC tokens only (bg, fg, accent, live, up, down ...), exposed through
+   tailwind.config.ts. Never a raw hex, never a palette step. The colours that need Tailwind's
+   `/opacity` modifier also exist as space-separated RGB channels (`--x-rgb`).
+   ========================================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* --- Palette ---------------------------------------------------------- */
+  --board: #17352b;
+  --board-raised: #122a22;
+  --board-raised-2: #1c3d32;
+  --board-deep: #0f241d;
+  --chalk: #e9efe7;
+  --chalk-dim: #9db3a4;
+  --chalk-subtle: #86a092;
+  --chalk-gold: #e7c34a;
+  --chalk-red: #f07b73;
+  --chalk-green: #58b879;
+
+  /* RGB channels for the semantic colours that take an alpha modifier. */
+  --bg-rgb: 23 53 43;
+  --bg-raised-rgb: 18 42 34;
+  --bg-sunken-rgb: 15 36 29;
+  --fg-rgb: 233 239 231;
+  --fg-muted-rgb: 157 179 164;
+  --fg-subtle-rgb: 134 160 146;
+  --accent-rgb: 231 195 74;
+  --accent-fg-rgb: 23 53 43;
+  --live-rgb: 240 123 115;
+  --up-rgb: 88 184 121;
+  --down-rgb: 240 123 115;
+  --warn-rgb: 255 176 32;
+  --info-rgb: 111 168 220;
+
+  /* --- Semantic --------------------------------------------------------- */
+  /* Contrast on --bg: fg 11.4:1, fg-muted 6.0:1, fg-subtle 4.7:1, accent 7.8:1, live 4.9:1. */
+  --bg: rgb(var(--bg-rgb));
+  --border: rgb(233 239 231 / 0.2);
+  --border-strong: rgb(233 239 231 / 0.34);
+  --bg-card: rgb(0 0 0 / 0.2);
+  --bg-hover: rgb(233 239 231 / 0.06);
+  --bg-pressed: rgb(233 239 231 / 0.1);
+  --bg-selected: rgb(231 195 74 / 0.12);
+  --scrim: rgb(5 14 11 / 0.66);
+  --focus: var(--chalk-gold);
+
+  /* --- Radii ------------------------------------------------------------ */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 14px;
+
+  /* --- Motion ----------------------------------------------------------- */
+  --m-fast: 180ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* --- Elevation: a chalk outline, not a cast shadow -------------------- */
+  --shadow-3: 0 6px 18px rgb(0 0 0 / 0.35);
+  --edge-hairline: 0 0 0 1px rgb(233 239 231 / 0.2);
+
+  /* --- Board grid & gradients ------------------------------------------- */
+  --grid-line: rgb(233 239 231 / 0.045);
+  --grid-size: 46px;
+  --grad-skeleton: linear-gradient(100deg, transparent 20%, rgb(233 239 231 / 0.08) 50%, transparent 80%);
+
+  /* --- Type ------------------------------------------------------------- */
+  --font-hand-stack: var(--font-hand), 'Segoe Script', cursive;
+  --t-score: 700 50px/1 var(--font-hand-stack);
+  --t-d1: 700 36px/1.05 var(--font-hand-stack);
+  --t-d2: 700 22px/1.2 var(--font-body), system-ui, sans-serif;
+  --t-h3: 600 17px/1.3 var(--font-body), system-ui, sans-serif;
+  --t-body: 400 15px/1.45 var(--font-body), system-ui, sans-serif;
+  --t-sm: 400 13px/1.4 var(--font-body), system-ui, sans-serif;
+  --t-xs: 400 12px/1.35 var(--font-body), system-ui, sans-serif;
+  --t-micro: 700 11px/1.2 var(--font-body), system-ui, sans-serif;
+  --track-caps: 0.2em;
+
+  /* --- Safe areas ------------------------------------------------------- */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}

@@ -1,13 +1,14 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
 import { useEffect } from 'react';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
+/** Primary = gold fill with board-green text (the one thing to do); secondary = chalk outline. */
 const VARIANT_CLASSES: Record<Variant, string> = {
-  primary: 'bg-pitch-500 text-white active:bg-pitch-700 disabled:bg-pitch-900 disabled:text-white/40',
-  secondary: 'bg-white/10 text-white active:bg-white/20 disabled:opacity-40',
-  ghost: 'bg-transparent text-white border border-white/20 active:bg-white/10 disabled:opacity-40',
-  danger: 'bg-red-600 text-white active:bg-red-800 disabled:opacity-40',
+  primary: 'bg-accent text-accent-fg disabled:bg-bg-sunken disabled:text-fg-subtle disabled:opacity-70',
+  secondary: 'border-2 border-border-strong bg-transparent text-fg disabled:opacity-40',
+  ghost: 'bg-transparent text-fg-muted underline-offset-4 disabled:opacity-40',
+  danger: 'border-2 border-down bg-down/10 text-down disabled:opacity-40',
 };
 
 export const BigButton = ({
@@ -17,7 +18,7 @@ export const BigButton = ({
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { readonly variant?: Variant }): React.JSX.Element => (
   <button
-    className={`tap-target w-full rounded-2xl px-6 py-4 text-lg font-bold tracking-tight transition-colors ${VARIANT_CLASSES[variant]} ${className}`}
+    className={`tap-target pressable w-full rounded-md px-6 py-4 text-lg font-bold tracking-tight ${VARIANT_CLASSES[variant]} ${className}`}
     {...rest}
   >
     {children}
@@ -25,16 +26,54 @@ export const BigButton = ({
 );
 
 export const Card = ({ children, className = '' }: { readonly children: ReactNode; readonly className?: string }): React.JSX.Element => (
-  <div className={`rounded-3xl border border-white/10 bg-white/[0.04] p-5 ${className}`}>{children}</div>
+  <div className={`card p-4 sm:p-5 ${className}`}>{children}</div>
+);
+
+/** The tracked uppercase micro label above a heading or block. */
+export const Eyebrow = ({ children, className = '' }: { readonly children: ReactNode; readonly className?: string }): React.JSX.Element => (
+  <p className={`t-eyebrow ${className}`}>{children}</p>
+);
+
+/**
+ * A big selectable option (game, league, fixture, answer). Selected = gold frame + gold tint, so the
+ * state never relies on colour alone: `aria-pressed`/`aria-checked` is set by the caller via `role`.
+ */
+export const OptionButton = ({
+  selected = false,
+  className = '',
+  children,
+  ...rest
+}: ButtonHTMLAttributes<HTMLButtonElement> & { readonly selected?: boolean }): React.JSX.Element => (
+  <button
+    type="button"
+    className={`tap-target pressable rounded-md border-2 px-4 py-3 text-left font-bold disabled:opacity-60 ${
+      selected ? 'border-accent bg-selected text-fg' : 'border-border bg-card text-fg'
+    } ${className}`}
+    {...rest}
+  >
+    {children}
+  </button>
+);
+
+/** A labelled text input (56px, chalk outline, gold focus). */
+export const Field = ({
+  label,
+  className = '',
+  ...rest
+}: InputHTMLAttributes<HTMLInputElement> & { readonly label: string }): React.JSX.Element => (
+  <label className="flex flex-col gap-1.5">
+    <span className="t-eyebrow">{label}</span>
+    <input className={`field-input ${className}`} {...rest} />
+  </label>
 );
 
 export const Spinner = ({ label }: { readonly label: string }): React.JSX.Element => (
   <div className="flex flex-col items-center gap-3 py-6 text-center" role="status" aria-live="polite">
     <div
-      className="h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-pitch-500 motion-reduce:animate-none"
+      className="h-10 w-10 animate-spin rounded-full border-4 border-border border-t-accent motion-reduce:animate-none"
       aria-hidden
     />
-    <p className="text-sm text-white/70">{label}</p>
+    <p className="t-body text-fg-muted">{label}</p>
   </div>
 );
 
@@ -47,11 +86,15 @@ export const Banner = ({
 }): React.JSX.Element => {
   const toneClasses =
     tone === 'error'
-      ? 'border-red-500/50 bg-red-500/10 text-red-200'
+      ? 'border-down/60 bg-down/10 text-down'
       : tone === 'warn'
-        ? 'border-amber-500/50 bg-amber-500/10 text-amber-200'
-        : 'border-white/20 bg-white/5 text-white/80';
-  return <div className={`rounded-2xl border px-4 py-3 text-sm ${toneClasses}`} role="status">{children}</div>;
+        ? 'border-warn/60 bg-warn/10 text-warn'
+        : 'border-border bg-card text-fg-muted';
+  return (
+    <div className={`rounded-md border-2 px-4 py-3 text-sm font-semibold leading-snug ${toneClasses}`} role="status">
+      {children}
+    </div>
+  );
 };
 
 /**
@@ -89,17 +132,17 @@ export const ConfirmDialog = ({
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-scrim p-4 sm:items-center"
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-md rounded-3xl border border-white/10 bg-neutral-900 p-6"
+        className="w-full max-w-md rounded-lg border-2 border-border-strong bg-bg-raised p-6 shadow-sheet"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="confirm-dialog-title" className="text-xl font-black">
+        <h2 id="confirm-dialog-title" className="t-d2">
           {title}
         </h2>
-        <p className="mt-2 text-sm text-white/70">{message}</p>
+        <p className="t-body mt-2 text-fg-muted">{message}</p>
         <div className="mt-5 flex flex-col gap-3">
           <BigButton variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm}>
             {confirmLabel}
@@ -114,11 +157,11 @@ export const ConfirmDialog = ({
 };
 
 export const PinBadge = ({ pin }: { readonly pin: string }): React.JSX.Element => (
-  <div className="flex justify-center gap-2" aria-label={`Room PIN ${pin.split('').join(' ')}`}>
+  <div className="flex justify-center gap-1.5 sm:gap-2" aria-label={`Room PIN ${pin.split('').join(' ')}`}>
     {pin.split('').map((char, index) => (
       <span
         key={`${char}-${index}`}
-        className="flex h-14 w-10 items-center justify-center rounded-xl bg-white/10 text-3xl font-black text-white sm:h-16 sm:w-12"
+        className="flex h-14 w-10 items-center justify-center rounded-md bg-bg-sunken text-3xl font-black text-fg shadow-[var(--edge-hairline)] sm:h-16 sm:w-12"
       >
         {char}
       </span>
@@ -141,13 +184,13 @@ export const CountdownBar = ({
   const ratio = totalMs <= 0 ? 0 : Math.min(100, Math.max(0, (remainingMs / totalMs) * 100));
   return (
     <div className="w-full" aria-live="off">
-      <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+      <div className="h-3 w-full overflow-hidden rounded-full bg-bg-sunken">
         <div
-          className="h-full bg-pitch-500 transition-[width] duration-300 ease-linear motion-reduce:transition-none"
+          className="h-full bg-accent transition-[width] duration-300 ease-linear motion-reduce:transition-none"
           style={{ width: `${ratio}%` }}
         />
       </div>
-      <p className="mt-1 text-center text-sm font-semibold text-white/70">{seconds}s left</p>
+      <p className="tnum mt-1 text-center text-sm font-bold text-fg-muted">{seconds}s left</p>
     </div>
   );
 };

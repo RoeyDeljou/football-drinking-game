@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { RevealFooter } from '@/components/RevealFooter';
 import { RoundShell } from '@/components/RoundShell';
-import { BigButton, Card } from '@/components/ui';
+import { BigButton, Card, Eyebrow } from '@/components/ui';
 import { nicknameOf } from '@/lib/roomHelpers';
 import type { GameScreenProps } from './types';
 
@@ -25,14 +25,14 @@ export const M3ShirtNumber = ({ room, round, onSubmit }: GameScreenProps): React
     return (
       <RoundShell title="Shirt Number" round={round} room={room} now={Date.now()}>
         <Card>
-          <p className="text-lg font-semibold">{payload.target.name}</p>
-          <p className="text-sm text-white/50">
+          <p className="t-d2">{payload.target.name}</p>
+          <p className="t-sm text-fg-muted">
             {payload.target.position} · {payload.target.isStarter ? 'Starting XI' : 'Bench'}
           </p>
-          <p className="mt-3 text-5xl font-black text-pitch-500">#{solution.shirtNumber}</p>
+          <p className="t-score tnum mt-3 text-accent">#{solution.shirtNumber}</p>
         </Card>
         <Card>
-          <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-white/50">Guesses</h2>
+          <Eyebrow className="mb-2">Guesses</Eyebrow>
           <ul className="flex flex-col gap-2">
             {round.submissions
               .slice()
@@ -42,7 +42,7 @@ export const M3ShirtNumber = ({ room, round, onSubmit }: GameScreenProps): React
                   Math.abs((b.payload as { guess: number }).guess - solution.shirtNumber),
               )
               .map((submission) => (
-                <li key={submission.playerId} className="flex justify-between rounded-xl bg-white/5 px-4 py-2 text-sm">
+                <li key={submission.playerId} className="flex justify-between rounded-md bg-hover px-4 py-3 text-base">
                   <span>{nicknameOf(room, submission.playerId)}</span>
                   <span className="font-bold">#{(submission.payload as { guess: number }).guess}</span>
                 </li>
@@ -57,11 +57,11 @@ export const M3ShirtNumber = ({ room, round, onSubmit }: GameScreenProps): React
   return (
     <RoundShell title="Shirt Number" round={round} room={room} now={Date.now()}>
       <Card>
-        <p className="text-lg font-semibold">{payload.target.name}</p>
-        <p className="mb-4 text-sm text-white/50">
+        <p className="t-d2">{payload.target.name}</p>
+        <p className="t-sm mb-4 text-fg-muted">
           {payload.target.position} · {payload.target.isStarter ? 'Starting XI' : 'Bench'}
         </p>
-        <p className="mb-2 text-center text-6xl font-black tabular-nums">{guess}</p>
+        <p className="t-score tnum mb-2 text-center text-[72px]">{guess}</p>
         <input
           type="range"
           min={1}
@@ -69,7 +69,7 @@ export const M3ShirtNumber = ({ room, round, onSubmit }: GameScreenProps): React
           value={guess}
           disabled={alreadySubmitted}
           onChange={(event) => setGuess(Number(event.target.value))}
-          className="tap-target w-full accent-pitch-500"
+          className="tap-target w-full accent-accent"
           aria-label="Shirt number guess"
         />
         <BigButton

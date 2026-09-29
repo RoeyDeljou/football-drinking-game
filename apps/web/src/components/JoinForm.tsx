@@ -6,7 +6,7 @@ import { fetchRoomByPin } from '@/lib/api';
 import { markUpcomingNavigationAsReplace } from '@/lib/backNavigation';
 import { shouldAutoJoinRedirect } from '@/lib/joinGuard';
 import { useRoom } from '@/lib/room-context';
-import { Banner, BigButton, Card } from './ui';
+import { Banner, BigButton, Card, Field } from './ui';
 
 export const JoinForm = ({ initialPin = '' }: { readonly initialPin?: string }): React.JSX.Element => {
   const router = useRouter();
@@ -59,29 +59,30 @@ export const JoinForm = ({ initialPin = '' }: { readonly initialPin?: string }):
   return (
     <Card>
       <form className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)}>
-        <label className="flex flex-col gap-1 text-sm font-semibold text-white/70">
-          Room PIN
-          <input
-            value={pin}
-            onChange={(event) => setPin(event.target.value.toUpperCase().slice(0, 6))}
-            maxLength={6}
-            autoCapitalize="characters"
-            inputMode="text"
-            placeholder="ABC123"
-            className="tap-target rounded-xl border border-white/15 bg-white/5 px-4 text-center text-3xl font-black tracking-[0.4em] text-white"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm font-semibold text-white/70">
-          Nickname
-          <input
-            value={nickname}
-            onChange={(event) => setNickname(event.target.value)}
-            maxLength={24}
-            placeholder="Your name at the table"
-            className="tap-target rounded-xl border border-white/15 bg-white/5 px-4 text-lg text-white"
-          />
-        </label>
-        {error !== null ? <Banner tone="error">{error}</Banner> : null}
+        <Field
+          label="Room PIN"
+          value={pin}
+          onChange={(event) => setPin(event.target.value.toUpperCase().slice(0, 6))}
+          maxLength={6}
+          autoCapitalize="characters"
+          autoComplete="off"
+          inputMode="text"
+          placeholder="ABC123"
+          className="text-center text-3xl font-black tracking-[0.3em] placeholder:tracking-[0.3em]"
+        />
+        <Field
+          label="Nickname"
+          value={nickname}
+          onChange={(event) => setNickname(event.target.value)}
+          maxLength={24}
+          autoComplete="nickname"
+          placeholder="Your name at the table"
+        />
+        {error !== null ? (
+          <div role="alert">
+            <Banner tone="error">{error}</Banner>
+          </div>
+        ) : null}
         <BigButton type="submit" disabled={checking || status === 'connecting'}>
           {checking || status === 'connecting' ? 'Joining…' : 'Join room'}
         </BigButton>

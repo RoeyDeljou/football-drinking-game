@@ -47,7 +47,7 @@ export const RoomExitControls = ({
           type="button"
           onClick={() => setConfirmingDelete(true)}
           disabled={deletingRoom}
-          className="tap-target self-end rounded-xl border border-red-500/40 bg-red-500/10 px-4 text-sm font-bold text-red-300 active:bg-red-500/20 disabled:opacity-50"
+          className="pressable mt-2 min-h-11 self-center rounded-md px-3 text-xs font-semibold text-down/80 underline underline-offset-4 disabled:opacity-50"
         >
           {deletingRoom ? 'Ending room…' : 'Delete room'}
         </button>
@@ -72,7 +72,7 @@ export const RoomExitControls = ({
       <button
         type="button"
         onClick={onLeaveRoom}
-        className="tap-target self-end rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-bold text-white/70 active:bg-white/10"
+        className="pressable mt-2 min-h-11 self-center rounded-md px-3 text-xs font-semibold text-fg-muted underline underline-offset-4"
       >
         Leave room
       </button>
@@ -84,7 +84,7 @@ export const RoomExitControls = ({
       <button
         type="button"
         onClick={() => setConfirmingLeave(true)}
-        className="tap-target self-end rounded-xl px-3 text-xs font-semibold text-white/40 active:text-white/70"
+        className="pressable mt-2 min-h-11 self-center rounded-md px-3 text-xs font-semibold text-fg-subtle"
       >
         Leave game
       </button>

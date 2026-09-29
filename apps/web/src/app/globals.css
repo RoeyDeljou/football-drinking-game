@@ -2,38 +2,209 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Design tokens live in ../styles/tokens.css (imported by the root layout before this file). */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    /* The chalk grid is ruled across the whole board; it scrolls with the page (a fixed
+       background repaints every scroll frame on iOS). */
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+    color: var(--fg);
+    min-height: 100dvh;
+    margin: 0;
+    font-family: var(--font-body), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+    overflow-x: hidden;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  button,
+  [role='button'],
+  a.tap-target {
+    touch-action: manipulation;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.001ms !important;
+    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
 
-html {
-  color-scheme: dark;
+@layer components {
+  .tap-target {
+    min-height: 56px;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Every tappable thing acknowledges the touch within one frame. */
+  .pressable {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      transform 100ms var(--ease-out),
+      background-color 100ms var(--ease-out),
+      border-color 100ms var(--ease-out);
+  }
+  .pressable:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    /* An overlay, not a background-color, so hover never repaints a gold primary button grey. */
+    .pressable:not(:disabled):hover {
+      background-image: linear-gradient(var(--bg-hover), var(--bg-hover));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pressable:active:not(:disabled) {
+      transform: none;
+    }
+  }
+
+  /* A darker patch of board inside a chalk hairline. */
+  .card {
+    background: var(--bg-card);
+    border-radius: var(--r-md);
+    box-shadow: var(--edge-hairline);
+  }
+  /* The one thing to do now. */
+  .card-gold {
+    background: rgb(var(--accent-rgb) / 0.1);
+    border: 2px solid rgb(var(--accent-rgb));
+    border-radius: var(--r-lg);
+  }
+  .card-dashed {
+    background: rgb(var(--accent-rgb) / 0.06);
+    border: 2px dashed rgb(var(--accent-rgb));
+    border-radius: var(--r-lg);
+  }
+
+  .chalknote {
+    font-family: var(--font-hand-stack);
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 1.15;
+    color: rgb(var(--accent-rgb));
+  }
+
+  .chrome {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(12px) saturate(1.4);
+  }
+
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: rgb(var(--bg-sunken-rgb));
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--grad-skeleton);
+    transform: translateX(-100%);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .skeleton::after {
+      animation: skeleton-sweep 1.4s var(--ease-in-out) infinite;
+    }
+  }
+
+  /* Type scale. Caveat leans, so its last glyph overhangs: pad the end. */
+  .t-score,
+  .t-d1,
+  .t-hand {
+    padding-inline-end: 0.15em;
+  }
+  .t-score {
+    font: var(--t-score);
+    text-shadow: 0 0 10px rgb(233 239 231 / 0.22);
+  }
+  .t-d1 {
+    font: var(--t-d1);
+    text-shadow: 0 0 6px rgb(233 239 231 / 0.2);
+  }
+  .t-hand {
+    font-family: var(--font-hand-stack);
+    font-weight: 700;
+  }
+  .t-d2 {
+    font: var(--t-d2);
+    letter-spacing: -0.005em;
+  }
+  .t-h3 {
+    font: var(--t-h3);
+  }
+  .t-body {
+    font: var(--t-body);
+  }
+  .t-sm {
+    font: var(--t-sm);
+  }
+  .t-xs {
+    font: var(--t-xs);
+  }
+  .t-eyebrow {
+    font: var(--t-micro);
+    letter-spacing: var(--track-caps);
+    text-transform: uppercase;
+    color: rgb(var(--fg-subtle-rgb));
+  }
+
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  /* Text inputs: 56px, chalk outline, gold on focus. */
+  .field-input {
+    min-height: 56px;
+    width: 100%;
+    border-radius: var(--r-md);
+    border: 2px solid var(--border-strong);
+    background: rgb(var(--bg-sunken-rgb));
+    padding: 0 16px;
+    font-size: 18px;
+    color: rgb(var(--fg-rgb));
+  }
+  .field-input::placeholder {
+    color: rgb(var(--fg-subtle-rgb));
+  }
+  .field-input:focus {
+    border-color: rgb(var(--accent-rgb));
+  }
 }
 
-body {
-  background-color: #0a0e14;
-  color: #f5f7fa;
-  min-height: 100dvh;
-}
-
-/* Huge, thumb-friendly tap targets by default. */
-button,
-[role='button'],
-a.tap-target {
-  touch-action: manipulation;
-}
-
-.tap-target {
-  min-height: 56px;
-}
-
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+@keyframes skeleton-sweep {
+  to {
+    transform: translateX(100%);
+  }
 }

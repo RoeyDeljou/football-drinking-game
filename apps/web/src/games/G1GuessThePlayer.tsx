@@ -1,6 +1,6 @@
 import { RevealFooter } from '@/components/RevealFooter';
 import { RoundShell } from '@/components/RoundShell';
-import { Card } from '@/components/ui';
+import { Card, Eyebrow, OptionButton } from '@/components/ui';
 import type { GameScreenProps } from './types';
 
 type Clue =
@@ -61,13 +61,13 @@ export const G1GuessThePlayer = ({ room, round, onSubmit }: GameScreenProps): Re
     return (
       <RoundShell title="Guess the Player" round={round} room={room} now={Date.now()}>
         <Card>
-          <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-white/50">All clues</h2>
-          <ul className="mb-4 flex flex-col gap-1 text-sm text-white/80">
+          <Eyebrow className="mb-2">All clues</Eyebrow>
+          <ul className="t-body mb-4 flex flex-col gap-1 text-fg-muted">
             {payload.clues.map((clue) => (
               <li key={clue.kind}>{clueText(clue)}</li>
             ))}
           </ul>
-          <p className="text-3xl font-black text-pitch-500">{solution.name}</p>
+          <p className="t-score text-accent">{solution.name}</p>
         </Card>
         <RevealFooter round={round} room={room} />
       </RoundShell>
@@ -77,30 +77,26 @@ export const G1GuessThePlayer = ({ room, round, onSubmit }: GameScreenProps): Re
   return (
     <RoundShell title="Guess the Player" round={round} room={room} now={Date.now()}>
       <Card>
-        <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-white/50">
-          Clues unlocked ({payload.clues.length})
-        </h2>
-        <ul className="mb-4 flex flex-col gap-1 text-base font-semibold">
+        <Eyebrow className="mb-2">Clues unlocked ({payload.clues.length})</Eyebrow>
+        <ul className="t-h3 mb-4 flex flex-col gap-1">
           {payload.clues.map((clue) => (
             <li key={clue.kind}>{clueText(clue)}</li>
           ))}
         </ul>
         <div className="grid grid-cols-2 gap-3">
           {payload.options.map((option) => (
-            <button
+            <OptionButton
               key={option.playerId}
-              type="button"
+              selected={yourPick === option.playerId}
               disabled={alreadySubmitted}
               onClick={() => onSubmit({ playerId: option.playerId })}
-              className={`tap-target rounded-2xl border-2 px-3 text-left text-sm font-bold disabled:opacity-60 ${
-                yourPick === option.playerId ? 'border-pitch-500 bg-pitch-500/30' : 'border-white/15 bg-white/5'
-              }`}
+              className="min-h-[64px] px-3 text-sm"
             >
               {option.name}
-            </button>
+            </OptionButton>
           ))}
         </div>
-        {alreadySubmitted ? <p className="mt-3 text-center text-sm text-white/50">Answer locked in. More clues keep unlocking for everyone else.</p> : null}
+        {alreadySubmitted ? <p className="t-sm mt-3 text-center text-fg-muted">Answer locked in. More clues keep unlocking for everyone else.</p> : null}
       </Card>
     </RoundShell>
   );

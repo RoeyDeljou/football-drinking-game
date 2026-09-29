@@ -54,3 +54,13 @@ export const matchdayAvailability = (checks: readonly CompetitionLiveCheck[], no
   const allSettled = checks.length > 0 && checks.every((check) => check.status === 'settled');
   return allSettled ? 'unavailable' : 'searching';
 };
+
+/**
+ * Whether the host page renders the Matchday category at all. It is hidden (not greyed out) unless
+ * the sweep found a live game: no disabled button, and no flicker while the sweep is `'searching'`.
+ *
+ * A host who is already on Matchday keeps seeing it even if a re-check flips to `'unavailable'` —
+ * availability only gates a *new* selection, it never yanks the host out of what they're setting up.
+ */
+export const isMatchdayVisible = (availability: MatchdayAvailability, currentCategory: 'matchday' | 'general'): boolean =>
+  availability === 'available' || currentCategory === 'matchday';

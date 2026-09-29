@@ -30,22 +30,22 @@ export const LoadingScreen = ({
   const elapsedMessage = loadingElapsedMessage(elapsedPhase);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <Card>
-        <h1 className="mb-4 text-center text-2xl font-black">{allDone ? 'Ready!' : 'Getting the match ready…'}</h1>
+        <h1 className="t-d1 mb-4 text-center">{allDone ? 'Ready!' : 'Getting the match ready…'}</h1>
         <ul className="flex flex-col gap-3">
           {loading.steps.map((step) => (
-            <li key={step.key} className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-3">
-              <span className="font-semibold">{STEP_LABEL[step.key] ?? step.key}</span>
+            <li key={step.key} className="flex items-center justify-between rounded-md bg-hover px-4 py-3">
+              <span className="text-base font-bold">{STEP_LABEL[step.key] ?? step.key}</span>
               <span
                 className={`text-sm font-bold ${
                   step.status === 'done'
-                    ? 'text-pitch-400'
+                    ? 'text-up'
                     : step.status === 'failed'
-                      ? 'text-red-400'
+                      ? 'text-down'
                       : step.status === 'active'
-                        ? 'text-amber-300'
-                        : 'text-white/40'
+                        ? 'text-accent'
+                        : 'text-fg-subtle'
                 }`}
               >
                 {step.status === 'done' ? '✓ done' : step.status === 'failed' ? '✗ failed' : step.status === 'active' ? 'loading…' : 'queued'}

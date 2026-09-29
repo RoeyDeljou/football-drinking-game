@@ -2,7 +2,7 @@ import type { G6QuestionKind } from '@fdg/game-core';
 import { useState } from 'react';
 import { RevealFooter } from '@/components/RevealFooter';
 import { RoundShell } from '@/components/RoundShell';
-import { Card } from '@/components/ui';
+import { Card, OptionButton } from '@/components/ui';
 import type { GameScreenProps } from './types';
 
 interface Option {
@@ -49,7 +49,7 @@ export const G6TriviaRush = ({ room, round, onSubmit }: GameScreenProps): React.
     return (
       <RoundShell title="Trivia Rush" round={round} room={room} now={Date.now()}>
         <Card>
-          <p className="mb-3 text-lg font-semibold">{questionText(payload.question.kind, payload.question.subjectName)}</p>
+          <p className="t-d2 mb-3">{questionText(payload.question.kind, payload.question.subjectName)}</p>
           <div className="flex flex-col gap-2">
             {payload.options.map((option) => {
               const isCorrect = option.id === solution.optionId;
@@ -57,13 +57,13 @@ export const G6TriviaRush = ({ room, round, onSubmit }: GameScreenProps): React.
               return (
                 <div
                   key={option.id}
-                  className={`rounded-xl px-4 py-3 font-semibold ${
-                    isCorrect ? 'bg-pitch-600 text-white' : 'bg-white/5 text-white/70'
+                  className={`rounded-md border-2 px-4 py-3 font-semibold ${
+                    isCorrect ? 'border-up bg-up/15 text-fg' : 'border-transparent bg-hover text-fg-muted'
                   }`}
                 >
                   {option.label}
                   {isCorrect ? ' ✓' : ''}
-                  {picks.length > 0 ? <span className="ml-2 text-xs opacity-70">({picks.length})</span> : null}
+                  {picks.length > 0 ? <span className="tnum ml-2 text-xs opacity-70">({picks.length})</span> : null}
                 </div>
               );
             })}
@@ -77,28 +77,24 @@ export const G6TriviaRush = ({ room, round, onSubmit }: GameScreenProps): React.
   return (
     <RoundShell title="Trivia Rush" round={round} room={room} now={Date.now()}>
       <Card>
-        <p className="mb-4 text-lg font-semibold">{questionText(payload.question.kind, payload.question.subjectName)}</p>
+        <p className="t-d2 mb-4">{questionText(payload.question.kind, payload.question.subjectName)}</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {payload.options.map((option) => (
-            <button
+            <OptionButton
               key={option.id}
-              type="button"
+              selected={picked === option.id || (round.yourSubmission as { optionId: string } | null)?.optionId === option.id}
               disabled={alreadySubmitted}
               onClick={() => {
                 setPicked(option.id);
                 onSubmit({ optionId: option.id });
               }}
-              className={`tap-target rounded-2xl border-2 px-4 font-bold transition-colors disabled:opacity-60 ${
-                picked === option.id || (round.yourSubmission as { optionId: string } | null)?.optionId === option.id
-                  ? 'border-pitch-500 bg-pitch-500/30'
-                  : 'border-white/15 bg-white/5'
-              }`}
+              className="min-h-[64px] text-base"
             >
               {option.label}
-            </button>
+            </OptionButton>
           ))}
         </div>
-        {alreadySubmitted ? <p className="mt-3 text-center text-sm text-white/50">Answer locked in.</p> : null}
+        {alreadySubmitted ? <p className="t-sm mt-3 text-center text-fg-muted">Answer locked in.</p> : null}
       </Card>
     </RoundShell>
   );

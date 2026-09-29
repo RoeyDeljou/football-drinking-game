@@ -14,7 +14,7 @@ export const MixedGameScreen = (props: GameScreenProps): React.JSX.Element => {
 
   if (InnerScreen === undefined) {
     return (
-      <p className="text-center text-sm text-white/50">
+      <p className="t-sm text-center text-fg-muted">
         This round picked an unsupported game ({moduleId}). It should resolve on its own shortly.
       </p>
     );
@@ -22,7 +22,7 @@ export const MixedGameScreen = (props: GameScreenProps): React.JSX.Element => {
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-center text-xs font-bold uppercase tracking-wide text-pitch-400">
+      <p className="t-eyebrow text-center text-accent">
         Now playing: {gameName(moduleId)}
       </p>
       <InnerScreen {...props} round={round} />

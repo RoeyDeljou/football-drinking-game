@@ -18,15 +18,15 @@ export const NowPlayingBanner = ({
   if (label === null || currentFixture === null) return null;
 
   return (
-    <div className="flex items-center justify-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-center">
+    <div className="flex items-center justify-center gap-2 rounded-md bg-card px-3 py-2 shadow-[var(--edge-hairline)] text-center">
       {currentFixture.homeTeam.crestUrl !== null ? (
         <img src={currentFixture.homeTeam.crestUrl} alt="" className="h-5 w-5 object-contain" />
       ) : null}
       <div className="flex flex-col leading-tight">
-        <span className="text-xs font-bold uppercase tracking-wide text-white/50">
-          Now playing: <span className="text-white/80">{label.primary}</span>
+        <span className="t-eyebrow">
+          Now playing: <span className="text-fg">{label.primary}</span>
         </span>
-        {label.secondary !== null ? <span className="text-[11px] text-white/40">{label.secondary}</span> : null}
+        {label.secondary !== null ? <span className="text-[11px] text-fg-subtle">{label.secondary}</span> : null}
       </div>
       {currentFixture.awayTeam.crestUrl !== null ? (
         <img src={currentFixture.awayTeam.crestUrl} alt="" className="h-5 w-5 object-contain" />
