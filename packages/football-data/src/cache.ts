@@ -61,6 +61,12 @@ export const DEFAULT_CACHE_TTL: CacheTtlConfig = {
   matchEvents: 15 * 1000,
 };
 
+/** The live-match cache TTLs follow the configured live poll interval and are never longer than it. */
+export function withLivePollTtl(ttl: CacheTtlConfig, poll: { readonly liveEventsMs: number }): CacheTtlConfig {
+  const cap = Math.max(1, poll.liveEventsMs);
+  return { ...ttl, liveMatch: Math.min(ttl.liveMatch, cap), matchEvents: Math.min(ttl.matchEvents, cap) };
+}
+
 export class ResourceCache {
   private readonly clock: DataClock;
   private readonly maxEntries: number;

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_CACHE_TTL, withLivePollTtl } from '../cache.js';
 import { createManualClock } from '../clock.js';
 import { COMPETITIONS } from '../competitions.js';
 import type { HttpClient, HttpRequest, HttpResponse } from '../http.js';
-import { EspnProvider } from './espn-provider.js';
+import { asFixtureId } from '../domain.js';
+import { EspnProvider, scheduledSummaryTtl } from './espn-provider.js';
 
 const LA_LIGA = COMPETITIONS.LA_LIGA;
 const NATIONAL_TEAMS = COMPETITIONS.NATIONAL_TEAMS;
@@ -314,5 +316,82 @@ describe('EspnProvider — National Teams: a multi-slug competition aggregated a
     // slug's team list more than once each.
     const teamsRequests = requests.filter((request) => request.url.includes('/teams') && !request.url.includes('/roster'));
     expect(teamsRequests.length).toBeGreaterThan(0);
+  });
+});
+
+describe('EspnProvider — pre-match summary TTL follows the scheduled kickoff', () => {
+  const KICKOFF = Date.parse('2026-09-16T17:00:00Z');
+  const ttl = { ...DEFAULT_CACHE_TTL };
+
+  it('is 5 minutes when kickoff is well ahead, capped at the time left until kickoff - 2 min', () => {
+    expect(scheduledSummaryTtl(ttl, '2026-09-16T17:00Z', KICKOFF - 60 * 60_000)).toBe(5 * 60_000);
+    expect(scheduledSummaryTtl(ttl, '2026-09-16T17:00Z', KICKOFF - 5 * 60_000)).toBe(3 * 60_000);
+    expect(scheduledSummaryTtl(ttl, '2026-09-16T17:00Z', KICKOFF - 2 * 60_000 - 20_000)).toBe(20_000);
+  });
+
+  it('is the live TTL from 2 minutes before kickoff and after the scheduled time has passed', () => {
+    expect(scheduledSummaryTtl(ttl, '2026-09-16T17:00Z', KICKOFF - 2 * 60_000)).toBe(ttl.liveMatch);
+    expect(scheduledSummaryTtl(ttl, '2026-09-16T17:00Z', KICKOFF)).toBe(ttl.liveMatch);
+    expect(scheduledSummaryTtl(ttl, '2026-09-16T17:00Z', KICKOFF + 10 * 60_000)).toBe(ttl.liveMatch);
+  });
+
+  it('falls back to 5 minutes for an unparseable kickoff', () => {
+    expect(scheduledSummaryTtl(ttl, null, KICKOFF)).toBe(5 * 60_000);
+  });
+
+  it('a summary cached early is re-fetched once the live window opens (injected clock)', async () => {
+    const clock = createManualClock(KICKOFF - 6 * 60_000);
+    const pre = {
+      header: {
+        id: '9',
+        league: { slug: 'esp.1' },
+        competitions: [
+          {
+            id: '9',
+            date: '2026-09-16T17:00Z',
+            status: { clock: 0, displayClock: '', period: 0, type: { name: 'STATUS_SCHEDULED', state: 'pre' } },
+            competitors: [
+              { id: 'h', homeAway: 'home', score: '0', team: { id: '1', displayName: 'Home FC' } },
+              { id: 'a', homeAway: 'away', score: '0', team: { id: '2', displayName: 'Away FC' } },
+            ],
+          },
+        ],
+      },
+    };
+    const { http, requests } = scriptedHttp([okResponse(pre)]);
+    const provider = new EspnProvider({ http, clock });
+    await provider.getLiveMatchState(asFixtureId('9'));
+    await clock.advance(3 * 60_000); // still before kickoff - 2 min: cached
+    await provider.getLiveMatchState(asFixtureId('9'));
+    expect(requests).toHaveLength(1);
+    await clock.advance(1 * 60_000 + 1); // 4 min after caching = the window opens: TTL (capped at 4 min) expired
+    await provider.getLiveMatchState(asFixtureId('9'));
+    expect(requests).toHaveLength(2);
+    await clock.advance(16_000); // now on the live cadence
+    await provider.getLiveMatchState(asFixtureId('9'));
+    expect(requests).toHaveLength(3);
+  });
+});
+
+describe('live cache TTL follows the live poll interval', () => {
+  it('never exceeds liveEventsMs, and never raises a shorter explicit TTL', () => {
+    expect(withLivePollTtl(DEFAULT_CACHE_TTL, { liveEventsMs: 5_000 }).liveMatch).toBe(5_000);
+    expect(withLivePollTtl(DEFAULT_CACHE_TTL, { liveEventsMs: 5_000 }).matchEvents).toBe(5_000);
+    expect(withLivePollTtl(DEFAULT_CACHE_TTL, { liveEventsMs: 60_000 }).liveMatch).toBe(DEFAULT_CACHE_TTL.liveMatch);
+    expect(withLivePollTtl({ ...DEFAULT_CACHE_TTL, liveMatch: 2_000 }, { liveEventsMs: 60_000 }).liveMatch).toBe(2_000);
+  });
+
+  it('a provider configured with a 4s poll re-fetches a live summary after 4s, not 15s', async () => {
+    const clock = createManualClock();
+    const live = { header: { id: '9', league: { slug: 'esp.1' }, competitions: [{ id: '9', date: '2026-09-16T17:00Z', status: { clock: 0, displayClock: "10'", period: 1, type: { name: 'STATUS_IN_PROGRESS', state: 'in' } }, competitors: [{ id: 'h', homeAway: 'home', score: '0', team: { id: '1', displayName: 'Home FC' } }, { id: 'a', homeAway: 'away', score: '0', team: { id: '2', displayName: 'Away FC' } }] }] } };
+    const { http, requests } = scriptedHttp([okResponse(live)]);
+    const provider = new EspnProvider({ http, clock, pollIntervals: { liveEventsMs: 4_000 } });
+    await provider.getLiveMatchState(asFixtureId('9'));
+    await clock.advance(3_000);
+    await provider.getLiveMatchState(asFixtureId('9'));
+    expect(requests).toHaveLength(1);
+    await clock.advance(1_001);
+    await provider.getLiveMatchState(asFixtureId('9'));
+    expect(requests).toHaveLength(2);
   });
 });

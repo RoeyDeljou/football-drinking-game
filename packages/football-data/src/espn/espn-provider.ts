@@ -24,7 +24,7 @@
  */
 
 import type { CacheTtlConfig } from '../cache.js';
-import { DEFAULT_CACHE_TTL } from '../cache.js';
+import { DEFAULT_CACHE_TTL, withLivePollTtl } from '../cache.js';
 import type { DataClock } from '../clock.js';
 import { systemDataClock } from '../clock.js';
 import type { CompetitionConfig } from '../competitions.js';
@@ -122,6 +122,8 @@ export interface EspnProviderConfig {
 /** ESPN-specific TTLs on top of the shared defaults: summaries of finished matches barely change. */
 const FINISHED_SUMMARY_TTL_MS = 6 * 60 * 60 * 1000;
 const SCHEDULED_SUMMARY_TTL_MS = 5 * 60 * 1000;
+/** From this long before the scheduled kickoff a pre-match summary is polled at the live cadence. */
+export const PRE_KICKOFF_LIVE_WINDOW_MS = 2 * 60 * 1000;
 
 export class EspnProvider implements FootballDataProvider {
   readonly kind: ProviderKind = 'espn';
@@ -140,8 +142,8 @@ export class EspnProvider implements FootballDataProvider {
   constructor(config: EspnProviderConfig = {}) {
     this.baseUrl = (config.baseUrl ?? ESPN_DEFAULT_BASE_URL).replace(/\/+$/, '');
     this.athleteBaseUrl = (config.athleteBaseUrl ?? ESPN_DEFAULT_ATHLETE_BASE_URL).replace(/\/+$/, '');
-    this.ttl = { ...DEFAULT_CACHE_TTL, ...config.cacheTtl };
     this.pollIntervals = { ...DEFAULT_POLL_INTERVALS, ...config.pollIntervals };
+    this.ttl = withLivePollTtl({ ...DEFAULT_CACHE_TTL, ...config.cacheTtl }, this.pollIntervals);
     const retry: RetryConfig = { ...DEFAULT_RETRY, ...config.retry };
     this.clock = config.clock ?? systemDataClock;
     this.client = new UpstreamClient({
@@ -439,7 +441,7 @@ export class EspnProvider implements FootballDataProvider {
     fixtureId: FixtureId,
   ): Promise<DataResult<{ payload: EspnSummary; config: CompetitionConfig } | null>> {
     const url = `${this.baseUrl}/all/summary?event=${encodeURIComponent(fixtureId)}`;
-    const result = await this.client.getJson(`summary:${fixtureId}`, url, summaryTtl(this.ttl), espnSummarySchema);
+    const result = await this.client.getJson(`summary:${fixtureId}`, url, summaryTtl(this.ttl, () => this.clock.now()), espnSummarySchema);
     if (!result.ok) return result;
     const slug = result.value.header.league?.slug ?? null;
     if (slug === null) {
@@ -532,7 +534,7 @@ export class EspnProvider implements FootballDataProvider {
   }
 }
 
-function summaryTtl(ttl: CacheTtlConfig): (payload: EspnSummary) => number {
+function summaryTtl(ttl: CacheTtlConfig, now: () => number): (payload: EspnSummary) => number {
   return (payload) => {
     const type = payload.header.competitions[0]?.status?.type;
     if (type?.completed === true || type?.state === 'post') {
@@ -543,9 +545,23 @@ function summaryTtl(ttl: CacheTtlConfig): (payload: EspnSummary) => number {
       if (hasPlays && !hasFullTimePlay(payload)) return ttl.liveMatch;
       return FINISHED_SUMMARY_TTL_MS;
     }
-    if (type?.state === 'pre') return SCHEDULED_SUMMARY_TTL_MS;
+    if (type?.state === 'pre') return scheduledSummaryTtl(ttl, payload.header.competitions[0]?.date, now());
     return ttl.liveMatch;
   };
+}
+
+/**
+ * TTL for a pre-match summary, derived from the scheduled kickoff so kickoff is never seen late. Far from kickoff it
+ * is 5 minutes, but never longer than the time left until the live window opens (kickoff − 2 min), so an entry cached
+ * early cannot outlive that window. From the window opening — and after the scheduled time has passed while ESPN
+ * still says 'pre' — it is the live TTL. An unparseable kickoff falls back to the 5 minute default.
+ */
+export function scheduledSummaryTtl(ttl: CacheTtlConfig, kickoff: string | null | undefined, nowMs: number): number {
+  const kickoffMs = kickoff === null || kickoff === undefined ? Number.NaN : Date.parse(kickoff);
+  if (Number.isNaN(kickoffMs)) return SCHEDULED_SUMMARY_TTL_MS;
+  const untilWindow = kickoffMs - PRE_KICKOFF_LIVE_WINDOW_MS - nowMs;
+  if (untilWindow <= 0) return ttl.liveMatch;
+  return Math.max(ttl.liveMatch, Math.min(SCHEDULED_SUMMARY_TTL_MS, untilWindow));
 }
 
 /** `2026-09-16` → `20260916`; null for anything else. */
