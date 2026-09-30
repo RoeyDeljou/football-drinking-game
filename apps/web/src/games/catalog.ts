@@ -34,6 +34,18 @@ export const GAME_CATALOG: readonly {
     blurb: "See a real starter, guess their shirt number — closest guess wins.",
   },
   {
+    id: 'M7',
+    name: 'Minute Sniper',
+    category: 'matchday',
+    blurb: 'Pick the minute of the next goal — closest wins, furthest drinks.',
+  },
+  {
+    id: 'M10',
+    name: 'Lineup Recall',
+    category: 'matchday',
+    blurb: 'Name the starting XI from memory, against the clock — a sip for every one you miss.',
+  },
+  {
     id: 'G-MIX',
     name: 'Shuffle game',
     category: 'general',

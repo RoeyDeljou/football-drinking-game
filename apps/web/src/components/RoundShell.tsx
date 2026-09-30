@@ -10,6 +10,7 @@ export const RoundShell = ({
   now,
   children,
   split = false,
+  countdown = true,
 }: {
   readonly title: string;
   readonly round: ProjectedRound;
@@ -18,6 +19,8 @@ export const RoundShell = ({
   readonly children: React.ReactNode;
   /** Reveal screens: lay two blocks side by side from 1024px / on a landscape phone. */
   readonly split?: boolean;
+  /** Set false when the game shows its own clock state (M7 after the pick window closes). */
+  readonly countdown?: boolean;
 }): React.JSX.Element => {
   const answeredCount = round.submissionStatus.filter((entry) => entry.submitted).length;
   const total = round.submissionStatus.length;
@@ -32,7 +35,7 @@ export const RoundShell = ({
           Round {round.index + 1} · {room.session?.roundsPlanned ?? '?'} planned
         </span>
       </div>
-      {round.visibility === 'pre-reveal' ? <CountdownBar deadlineAt={round.deadlineAt} now={now} totalMs={totalMs} /> : null}
+      {round.visibility === 'pre-reveal' && countdown ? <CountdownBar deadlineAt={round.deadlineAt} now={now} totalMs={totalMs} /> : null}
       <div
         className={
           split
