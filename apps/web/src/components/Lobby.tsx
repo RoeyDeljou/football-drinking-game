@@ -52,9 +52,9 @@ export const Lobby = ({
     // Phones: one column (PIN, players, picker). Landscape phones / tablets / laptops / TV: the PIN + QR
     // (the thing everyone at the table needs to see) get their own large column, players + setup + Start
     // sit beside it.
-    // Two columns only while each keeps >=18rem, so large OS text stacks them instead of cramping.
-    <div className="mx-auto flex w-full flex-col gap-4 md:flex-row md:flex-wrap md:items-start md:gap-6 land:flex-row land:flex-wrap land:items-start land:gap-4 lg:gap-8">
-      <Card className="text-center md:min-w-[18rem] md:flex-[5_1_18rem] land:min-w-[18rem] land:flex-[5_1_18rem] lg:p-8 [@media(min-width:768px)_and_(min-height:760px)]:sticky [@media(min-width:768px)_and_(min-height:760px)]:top-6">
+    // Single column until 1024px (so the PIN can be big on a tablet); two columns only while each keeps >=18rem, so large OS text stacks them instead of cramping.
+    <div className="mx-auto flex w-full flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-start lg:gap-8 land:flex-row land:flex-wrap land:items-start land:gap-4">
+      <Card className="text-center lg:min-w-[18rem] lg:flex-[5_1_18rem] land:min-w-[18rem] land:flex-[5_1_18rem] lg:p-8">
         <Eyebrow className="mb-2 lg:mb-4">Room PIN</Eyebrow>
         <PinBadge pin={room.pin} size="hero" />
         {joinUrl.length > 0 ? (
@@ -74,7 +74,7 @@ export const Lobby = ({
         ) : null}
       </Card>
 
-      <div className="flex min-w-0 flex-col gap-4 md:min-w-[18rem] md:flex-[6_1_18rem] land:min-w-[18rem] land:flex-[6_1_18rem]">
+      <div className="flex min-w-0 flex-col gap-4 lg:min-w-[18rem] lg:flex-[6_1_18rem] land:min-w-[18rem] land:flex-[6_1_18rem]">
         <PlayerList players={room.players} viewerId={room.viewerId} />
 
         {!canStart ? (

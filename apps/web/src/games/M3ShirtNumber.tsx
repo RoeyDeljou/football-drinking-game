@@ -43,9 +43,9 @@ export const M3ShirtNumber = ({ room, round, onSubmit }: GameScreenProps): React
                   Math.abs((b.payload as { guess: number }).guess - solution.shirtNumber),
               )
               .map((submission) => (
-                <li key={submission.playerId} className="flex min-h-12 justify-between gap-2 rounded-md bg-hover px-4 py-3 text-base">
-                  <span className="min-w-0">{nicknameOf(room, submission.playerId)}</span>
-                  <span className="shrink-0 font-bold">#{(submission.payload as { guess: number }).guess}</span>
+                <li key={submission.playerId} className="flex min-h-12 flex-wrap justify-between gap-x-2 gap-y-1 rounded-md bg-hover px-4 py-3 text-base">
+                  <span className="min-w-0 flex-1 basis-32">{nicknameOf(room, submission.playerId)}</span>
+                  <span className="ml-auto shrink-0 whitespace-nowrap font-bold">#{(submission.payload as { guess: number }).guess}</span>
                 </li>
               ))}
           </ul>

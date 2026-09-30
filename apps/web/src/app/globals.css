@@ -41,8 +41,10 @@
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
     overflow-x: hidden;
-    /* A 24-character nickname or "Borussia Mönchengladbach" must wrap, never push the page wider. */
-    overflow-wrap: anywhere;
+    /* A 24-character nickname or "Borussia Mönchengladbach" must wrap, never push the page wider. `break-word` (not `anywhere`) so
+       min-content stays a whole word: layouts size columns for whole words and only a single overlong
+       word ever breaks. */
+    overflow-wrap: break-word;
   }
 
   :focus-visible {
@@ -171,6 +173,12 @@
   .pin-hero {
     --pin-max: 5rem;
     --pin-gap: 0.5rem;
+  }
+  @media (min-width: 640px) {
+    .pin-hero {
+      --pin-max: 6rem;
+      --pin-gap: 0.625rem;
+    }
   }
   @media (min-width: 1024px) {
     .pin-hero {

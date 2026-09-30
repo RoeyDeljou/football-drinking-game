@@ -18,12 +18,12 @@ export const DrinkTally = ({
         {rows.map((row) => (
           <li
             key={row.playerId}
-            className={`flex min-h-12 items-center justify-between gap-2 rounded-md border-2 px-4 py-3 text-base ${
+            className={`flex min-h-12 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-md border-2 px-4 py-3 text-base ${
               row.playerId === viewerId && row.sips > 0 ? 'border-accent bg-selected' : 'border-transparent bg-hover'
             }`}
           >
-            <span className="min-w-0 font-semibold">{row.nickname}</span>
-            <span className={`tnum shrink-0 pl-2 font-black ${row.sips > 0 ? 'text-accent' : 'text-fg-subtle'}`}>
+            <span className="min-w-0 flex-1 basis-32 font-semibold">{row.nickname}</span>
+            <span className={`tnum ml-auto shrink-0 whitespace-nowrap font-black ${row.sips > 0 ? 'text-accent' : 'text-fg-subtle'}`}>
               {sipsLabel(row.sips)}
             </span>
           </li>

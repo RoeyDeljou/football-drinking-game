@@ -152,12 +152,12 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
               );
               const option = market.options.find((candidate) => candidate.id === pickedOptionId);
               return (
-                <li key={market.id} className="flex min-h-12 items-center justify-between gap-2 rounded-md bg-hover px-4 py-3 text-sm">
-                  <span className="min-w-0">
+                <li key={market.id} className="flex min-h-12 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-md bg-hover px-4 py-3 text-sm">
+                  <span className="min-w-0 flex-1 basis-32">
                     {marketTitle(market.kind, market.line)}: {option === undefined ? '—' : optionLabel(market, option)}
                   </span>
                   <span
-                    className={`shrink-0 font-bold ${
+                    className={`ml-auto shrink-0 whitespace-nowrap font-bold ${
                       settlement === undefined ? 'text-fg-subtle' : settlement.outcome === 'WON' ? 'text-up' : 'text-down'
                     }`}
                   >

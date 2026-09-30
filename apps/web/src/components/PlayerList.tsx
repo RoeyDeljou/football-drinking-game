@@ -16,16 +16,18 @@ export const PlayerList = ({
         .map((player) => (
           <li
             key={player.id}
-            className="flex min-h-12 items-center justify-between gap-2 rounded-md bg-hover px-4 py-3 text-base"
+            className="flex min-h-12 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-md bg-hover px-4 py-3 text-base"
           >
-            <span className="flex min-w-0 items-center gap-2 font-semibold">
+            <span className="flex min-w-0 flex-1 basis-32 items-center gap-2 font-semibold">
               <span
                 className={`h-2.5 w-2.5 shrink-0 rounded-full ${player.connected ? 'bg-up' : 'bg-fg-subtle'}`}
                 aria-hidden
               />
-              {player.nickname}
-              {player.id === viewerId ? ' (you)' : ''}
-              {player.isHost ? ' 👑' : ''}
+              <span className="min-w-0">
+                {player.nickname}
+                {player.id === viewerId ? ' (you)' : ''}
+              </span>
+              {player.isHost ? <span className="shrink-0">👑</span> : null}
             </span>
             <span className="shrink-0 text-sm text-fg-muted">{!player.connected ? 'offline' : ''}</span>
           </li>

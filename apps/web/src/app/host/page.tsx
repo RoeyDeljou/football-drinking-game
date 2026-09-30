@@ -136,6 +136,7 @@ function HostPageContent(): React.JSX.Element {
   const switchCategory = (next: Category): void => {
     if (next === category) return;
     setCategory(next);
+    setError(null);
     setModeChoice(choiceAfterCategoryChange());
   };
 
@@ -315,16 +316,16 @@ function HostPageContent(): React.JSX.Element {
       {matchdayVisible ? (
         <Card>
           <Eyebrow className="mb-3">Category</Eyebrow>
-          <div className="grid grid-cols-1 gap-3 min-[340px]:grid-cols-2" role="radiogroup" aria-label="Category">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))] gap-3" role="radiogroup" aria-label="Category">
             <OptionButton
               role="radio"
               aria-checked={category === 'matchday'}
               selected={category === 'matchday'}
               onClick={() => switchCategory('matchday')}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex flex-wrap items-center gap-x-2">
                 Matchday
-                <span className="rounded-full bg-live/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-live">
+                <span className="whitespace-nowrap rounded-full bg-live/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-live">
                   Live
                 </span>
               </span>
@@ -358,7 +359,7 @@ function HostPageContent(): React.JSX.Element {
                 </div>
               ) : null}
               {compView.status === 'ready' ? (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2 2xl:grid-cols-3" role="listbox" aria-label="Leagues">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,8.5rem),1fr))] gap-3" role="listbox" aria-label="Leagues">
                   {compView.competitions.map((competition) => (
                     <OptionButton
                       key={competition.id}
@@ -425,7 +426,7 @@ function HostPageContent(): React.JSX.Element {
                     >
                       <span className="flex items-center justify-between gap-2">
                         <span className="min-w-0">Play the whole live gameday</span>
-                        <span className="shrink-0 rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">LIVE</span>
+                        <span className="shrink-0 whitespace-nowrap rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">LIVE</span>
                       </span>
                       <span className="t-xs font-normal text-fg-muted">
                         {gamedayOptionLabel(liveFixtureCount(fixView.fixtures))} — rounds rotate across every one
@@ -451,7 +452,7 @@ function HostPageContent(): React.JSX.Element {
                               {fixture.homeTeam.name} vs {fixture.awayTeam.name}
                             </span>
                             {live ? (
-                              <span className="shrink-0 rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">{badge}</span>
+                              <span className="shrink-0 whitespace-nowrap rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">{badge}</span>
                             ) : null}
                           </div>
                           {!live ? (
@@ -486,7 +487,7 @@ function HostPageContent(): React.JSX.Element {
             </div>
           ) : null}
           {compView.status === 'ready' ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2 2xl:grid-cols-3" role="listbox" aria-label="Competitions">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,8.5rem),1fr))] gap-3" role="listbox" aria-label="Competitions">
               <OptionButton
                 role="option"
                 aria-selected={generalCompetitionId === null}
@@ -520,7 +521,12 @@ function HostPageContent(): React.JSX.Element {
       <div className="flex min-w-0 flex-col gap-5 [@media(min-width:1024px)_and_(min-height:860px)]:sticky [@media(min-width:1024px)_and_(min-height:860px)]:top-6">
       <Card>
         <Eyebrow className="mb-3">Game</Eyebrow>
-        <GameModePicker category={category} value={modeChoice} onChange={setModeChoice} />
+        <GameModePicker category={category} value={modeChoice}
+          onChange={(next) => {
+            setModeChoice(next);
+            setError(null);
+          }}
+        />
         {modeChoice.mode === 'select' && resolveModuleId(category, modeChoice) === null ? (
           <p className="t-sm mt-3 font-semibold text-warn" role="status">
             {NO_MINI_GAME_MESSAGE}

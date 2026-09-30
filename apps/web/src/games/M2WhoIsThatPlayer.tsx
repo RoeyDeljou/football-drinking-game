@@ -61,11 +61,11 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
               return (
                 <div
                   key={option.playerId}
-                  className={`flex items-center justify-between gap-2 rounded-md border-2 px-4 py-3 font-semibold ${
+                  className={`flex flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-md border-2 px-4 py-3 font-semibold ${
                     isCorrect ? 'border-up bg-up/15 text-fg' : 'border-transparent bg-hover text-fg-muted'
                   }`}
                 >
-                  <span className="min-w-0">
+                  <span className="min-w-0 flex-1 basis-32">
                     {option.name}
                     {isCorrect ? ' ✓' : ''}
                   </span>
@@ -105,7 +105,7 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
               className="min-h-16 px-3 text-sm sm:text-base lg:min-h-20 lg:text-lg"
             >
               {option.name}
-              {option.shirtNumber !== null ? <span className="ml-1 text-fg-subtle">#{option.shirtNumber}</span> : null}
+              {option.shirtNumber !== null ? <span className="ml-1 whitespace-nowrap text-fg-subtle">#{option.shirtNumber}</span> : null}
             </OptionButton>
           ))}
         </div>
