@@ -29,13 +29,15 @@ import type { EngineDeps } from '../reducer.js';
 import { reduceAll, reduceRoom } from '../reducer.js';
 import { DEFAULT_SCORING } from '../scoring.js';
 import type { RoomState } from '../state.js';
-import { currentRound } from '../state.js';
+import { activeSession, currentRound } from '../state.js';
 import type { M1Counters, M1Settlement } from './m1-match-markets.js';
 import {
   EMPTY_M1_COUNTERS,
   foldMatchEvents,
   M1_DEFAULT_CONFIG,
   M1_ID,
+  M1_MIN_FILING_WINDOW_MS,
+  m1ContentKey,
   m1MatchMarkets as module,
   settleMarket,
 } from './m1-match-markets.js';
@@ -130,6 +132,7 @@ const observeMaybe = (
     config: M1_DEFAULT_CONFIG,
     round,
     events,
+    history: [],
     submissions,
     players: playerViews([HOST, P2, P3]),
     now: T0,
@@ -325,16 +328,33 @@ describe('M1 counters', () => {
     expect(counters.firstScorerPlayerId).toBe(ALL_BUILT[3]?.player.id);
   });
 
-  it('counts an own goal for the credited team but not as anyone scoring', () => {
+  it('counts an own goal for the opponent of its teamId (the conceding team) but not as anyone scoring', () => {
+    // Provider convention: an OWN_GOAL carries the team of the player who put it into his own net.
     const counters = foldMatchEvents(
       EMPTY_M1_COUNTERS,
-      [matchEvent('OWN_GOAL', { teamId: HOME_TEAM_ID, playerId: ALL_BUILT[12]?.player.id ?? null })],
+      [matchEvent('OWN_GOAL', { teamId: AWAY_TEAM_ID, playerId: ALL_BUILT[12]?.player.id ?? null })],
       HOME_TEAM_ID,
       AWAY_TEAM_ID,
     );
     expect(counters.homeGoals).toBe(1);
+    expect(counters.awayGoals).toBe(0);
     expect(counters.firstScorerPlayerId).toBeNull();
     expect(counters.scorerPlayerIds).toEqual([]);
+  });
+
+  it('credits a home player\'s own goal to the away side, so the counters match the scoreboard', () => {
+    const counters = foldMatchEvents(
+      EMPTY_M1_COUNTERS,
+      [
+        goal(HOME_TEAM_ID, 3, 10),
+        matchEvent('OWN_GOAL', { teamId: HOME_TEAM_ID, playerId: ALL_BUILT[2]?.player.id ?? null, minute: 20 }),
+        goal(AWAY_TEAM_ID, 12, 30),
+      ],
+      HOME_TEAM_ID,
+      AWAY_TEAM_ID,
+    );
+    expect([counters.homeGoals, counters.awayGoals]).toEqual([1, 2]);
+    expect(counters.scorerPlayerIds).not.toContain(ALL_BUILT[2]?.player.id);
   });
 
   it('counts a scored penalty as the taker scoring, and a missed one as nothing', () => {
@@ -398,6 +418,137 @@ describe('M1 counters', () => {
     expect(counters.halfTimeHomeGoals).toBe(1);
     expect(counters.halfTimeAwayGoals).toBe(0);
     expect(counters.awayGoals).toBe(2);
+  });
+});
+
+describe('M1 counters are regulation-time only', () => {
+  const fold = (events: readonly MatchEvent[], from: M1Counters = EMPTY_M1_COUNTERS): M1Counters =>
+    foldMatchEvents(from, events, HOME_TEAM_ID, AWAY_TEAM_ID);
+
+  /** A finished extra-time cup tie as ESPN lists it: end-regular-time FULL_TIME at 90', then extra time. */
+  const extraTimeTie = (): readonly MatchEvent[] => [
+    goal(HOME_TEAM_ID, 0, 30),
+    goal(AWAY_TEAM_ID, 12, 70),
+    matchEvent('FULL_TIME', { minute: 90, extraMinute: 4, id: 'end-regular' }),
+    goal(HOME_TEAM_ID, 1, 97),
+    matchEvent('CORNER', { minute: 100 }),
+    matchEvent('YELLOW_CARD', { minute: 101 }),
+    matchEvent('PENALTY_AWARDED', { minute: 104 }),
+    matchEvent('PENALTY_SCORED', { teamId: HOME_TEAM_ID, playerId: ALL_BUILT[2]?.player.id ?? null, minute: 105 }),
+    matchEvent('HALF_TIME', { minute: 105, extraMinute: 1 }),
+    goal(AWAY_TEAM_ID, 13, 118),
+    matchEvent('FULL_TIME', { minute: 120, extraMinute: 2, id: 'end-extra' }),
+  ];
+
+  it('ignores extra-time events listed after the first FULL_TIME of a batch', () => {
+    const counters = fold(extraTimeTie());
+    expect(counters.fullTime).toBe(true);
+    expect(counters.homeGoals).toBe(1);
+    expect(counters.awayGoals).toBe(1);
+    expect(counters.corners).toBe(0);
+    expect(counters.cards).toBe(0);
+    expect(counters.penaltyAwarded).toBe(false);
+    expect(counters.halfTimeRecorded).toBe(false);
+    expect(counters.scorerPlayerIds).toEqual([ALL_BUILT[0]?.player.id, ALL_BUILT[12]?.player.id]);
+  });
+
+  it('treats a second FULL_TIME as harmless, in the same batch or a later one', () => {
+    const once = fold([goal(HOME_TEAM_ID, 0, 30), matchEvent('FULL_TIME', { minute: 90 })]);
+    const sameBatch = fold([
+      goal(HOME_TEAM_ID, 0, 30),
+      matchEvent('FULL_TIME', { minute: 90 }),
+      matchEvent('FULL_TIME', { minute: 120 }),
+    ]);
+    expect(sameBatch).toEqual(once);
+    const laterBatch = fold([matchEvent('FULL_TIME', { minute: 120, id: 'end-extra' })], once);
+    expect(laterBatch).toBe(once);
+  });
+
+  it('ignores penalty-shootout kicks after FULL_TIME', () => {
+    const counters = fold([
+      goal(HOME_TEAM_ID, 0, 30),
+      goal(AWAY_TEAM_ID, 12, 60),
+      matchEvent('FULL_TIME', { minute: 90 }),
+      matchEvent('PENALTY_SCORED', { teamId: HOME_TEAM_ID, playerId: ALL_BUILT[1]?.player.id ?? null, minute: 120 }),
+      matchEvent('PENALTY_MISSED', { teamId: AWAY_TEAM_ID, playerId: ALL_BUILT[13]?.player.id ?? null, minute: 120 }),
+      matchEvent('PENALTY_SCORED', { teamId: HOME_TEAM_ID, playerId: ALL_BUILT[2]?.player.id ?? null, minute: 120 }),
+    ]);
+    expect(counters.homeGoals).toBe(1);
+    expect(counters.awayGoals).toBe(1);
+    expect(counters.scorerPlayerIds).toHaveLength(2);
+  });
+
+  it('ignores extra time even when the only FULL_TIME is the end-of-extra-time whistle', () => {
+    // The data layer keeps only the final whistle of a finished fixture, so the end-regular-time
+    // marker can be gone: the minute guard must still exclude extra time.
+    const counters = fold(extraTimeTie().filter((event) => event.id !== 'end-regular'));
+    expect(counters.fullTime).toBe(true);
+    expect(counters.homeGoals).toBe(1);
+    expect(counters.awayGoals).toBe(1);
+    expect(counters.penaltyAwarded).toBe(false);
+    expect(counters.halfTimeRecorded).toBe(false);
+  });
+
+  it('ignores an extra-time event before any FULL_TIME is seen', () => {
+    const counters = fold([goal(HOME_TEAM_ID, 0, 30), goal(AWAY_TEAM_ID, 12, 95)]);
+    expect(counters.fullTime).toBe(false);
+    expect(counters.awayGoals).toBe(0);
+  });
+
+  it('counts stoppage-time goals, even when listed before a FULL_TIME stamped plain 90', () => {
+    const counters = fold([
+      matchEvent('GOAL', { teamId: AWAY_TEAM_ID, playerId: ALL_BUILT[12]?.player.id ?? null, minute: 90, extraMinute: 3 }),
+      matchEvent('FULL_TIME', { minute: 90 }),
+    ]);
+    expect(counters.awayGoals).toBe(1);
+    expect(counters.fullTime).toBe(true);
+  });
+
+  it('keeps first-scorer clock ordering for events before the whistle', () => {
+    const counters = fold([
+      goal(AWAY_TEAM_ID, 12, 60),
+      goal(HOME_TEAM_ID, 3, 15),
+      matchEvent('FULL_TIME', { minute: 90 }),
+      goal(HOME_TEAM_ID, 4, 5),
+    ]);
+    expect(counters.firstScorerPlayerId).toBe(ALL_BUILT[3]?.player.id);
+    expect(counters.homeGoals).toBe(1);
+  });
+
+  it('freezes after full time: a late-published regulation goal in a later batch does not count', () => {
+    const settledAt = fold([goal(HOME_TEAM_ID, 0, 30), matchEvent('FULL_TIME', { minute: 90 })]);
+    const late = fold([goal(AWAY_TEAM_ID, 12, 78)], settledAt);
+    expect(late).toBe(settledAt);
+    expect(late.awayGoals).toBe(0);
+  });
+
+  it('does not mutate its inputs', () => {
+    const events = extraTimeTie();
+    const snapshot = JSON.stringify(events);
+    const from = { ...EMPTY_M1_COUNTERS };
+    fold(events, from);
+    expect(JSON.stringify(events)).toBe(snapshot);
+    expect(from).toEqual(EMPTY_M1_COUNTERS);
+  });
+
+  it('settles the 90-minute markets on the regulation score of an extra-time tie', () => {
+    const round = asRoundView(generated);
+    const draw = optionFor('MATCH_RESULT', 'DRAW');
+    const home = optionFor('MATCH_RESULT', 'HOME');
+    const { result } = advance(round, extraTimeTie(), [
+      sub(HOST, slip({ [marketOf('MATCH_RESULT').id]: draw })),
+      sub(P2, slip({ [marketOf('MATCH_RESULT').id]: home })),
+    ]);
+    expect(result.resolved).toBe(true);
+    const matchResult = marketOf('MATCH_RESULT').id;
+    const won = result.solution.settlements.filter(
+      (entry) => entry.marketId === matchResult && entry.outcome === 'WON',
+    );
+    expect(won.map((entry) => entry.optionId)).toEqual([draw]);
+    const lostResult = result.penalties.filter(
+      (event) => event.reason === 'LOST_MARKET' && event.meta?.['marketId'] === matchResult,
+    );
+    expect(lostResult.map((event) => event.playerId)).toEqual([P2]);
   });
 });
 
@@ -475,7 +626,7 @@ describe('M1 single-outcome settlement', () => {
     const counters = foldMatchEvents(
       EMPTY_M1_COUNTERS,
       [
-        matchEvent('OWN_GOAL', { teamId: HOME_TEAM_ID, playerId: unlistedPlayer(), minute: 3 }),
+        matchEvent('OWN_GOAL', { teamId: AWAY_TEAM_ID, playerId: unlistedPlayer(), minute: 3 }),
         goalBy(listed, 40),
       ],
       HOME_TEAM_ID,
@@ -598,15 +749,22 @@ describe('M1 live observation', () => {
 
 describe('M1 settlement scoring', () => {
   const round = asRoundView(generated);
-  const settleRound = (submissions: readonly ReturnType<typeof sub>[], events: readonly MatchEvent[]) => {
+  /** `lockedAt`: when the first live event locked the slip (default: 5 min in, a real filing window). */
+  const settleRound = (
+    submissions: readonly ReturnType<typeof sub>[],
+    events: readonly MatchEvent[],
+    lockedAt: number = T0 + 300_000,
+    players = playerViews([HOST, P2, P3]),
+  ) => {
     const observed = observe(round, events, submissions);
+    const publicPayload = { ...(observed.publicPayload as Record<string, unknown>), slipLockedAt: lockedAt };
     return module.scoreRound({
       config: M1_DEFAULT_CONFIG,
-      round: { ...round, publicPayload: observed.publicPayload, solution: observed.solution },
+      round: { ...round, publicPayload, solution: observed.solution },
       submissions,
-      players: playerViews([HOST, P2, P3]),
+      players,
       scoring: DEFAULT_SCORING,
-      now: T0,
+      now: T0 + 6_000_000,
       rng: scoreRng(),
     });
   };
@@ -653,6 +811,25 @@ describe('M1 settlement scoring', () => {
     expect(quiet.map((event) => event.sips)).toEqual(rollsForSeed(SCORE_SEED, 2));
     expect(quiet.every((event) => event.meta === ROLLED_PENALTY_META)).toBe(true);
     expect(outcome.scores.find((entry) => entry.playerId === P2)?.points).toBe(0);
+  });
+
+  it('charges nobody for a slip that locked on the first batch (round opened after kickoff)', () => {
+    const outcome = settleRound([sub(HOST, slip())], fullTime, T0 + 2_000);
+    expect(outcome.penalties.filter((event) => event.reason === 'NO_ANSWER')).toEqual([]);
+  });
+
+  it('charges only the players who were present for a full filing window', () => {
+    const late = playerViews([HOST, P2, P3]).map((player) =>
+      player.id === P3 ? { ...player, joinedAt: T0 + 290_000 } : player,
+    );
+    // Locked at 5 min: P2 had it all, P3 joined 10 s before the lock.
+    const outcome = settleRound([sub(HOST, slip())], fullTime, T0 + 300_000, late);
+    expect(outcome.penalties.filter((event) => event.reason === 'NO_ANSWER').map((event) => event.playerId)).toEqual([P2]);
+    // Exactly the threshold counts as a real window.
+    const edge = settleRound([sub(HOST, slip())], fullTime, T0 + M1_MIN_FILING_WINDOW_MS);
+    expect(edge.penalties.filter((event) => event.reason === 'NO_ANSWER')).toHaveLength(2);
+    const short = settleRound([sub(HOST, slip())], fullTime, T0 + M1_MIN_FILING_WINDOW_MS - 1);
+    expect(short.penalties.filter((event) => event.reason === 'NO_ANSWER')).toEqual([]);
   });
 
   it('keeps the worst-slip and perfect-slip penalties fixed, not rolled', () => {
@@ -1066,5 +1243,76 @@ describe('a long-running-bet round can never be manually locked', () => {
     expect(rejected.state.phase).toBe('playing');
     expect(rejected.state.penalties).toEqual([]);
     expect(rejected.state.players.every((player) => player.sips === 0)).toBe(true);
+  });
+});
+
+/* ------------------- late starts, one slip per fixture (release QA) ------------------- */
+
+describe('M1 opened after kickoff, and one slip per fixture', () => {
+  const liveFixture = { ...sampleData().fixture, status: 'LIVE', kickoff: new Date(T0 - 1_800_000).toISOString() } as NonNullable<
+    ReturnType<typeof sampleData>['fixture']
+  >;
+  const liveHarness = () => makeHarness({ data: sampleData({ fixture: liveFixture }) });
+  const startLive = (deps: EngineDeps): RoomState =>
+    reduceAll(
+      newRoom(),
+      [
+        { type: 'PLAYER_JOIN', playerId: P2, nickname: 'Bea', isGuest: true },
+        { type: 'PLAYER_JOIN', playerId: P3, nickname: 'Cal', isGuest: true },
+        { type: 'SELECT_GAME', actorId: HOST, moduleId: M1_ID, config: null },
+        { type: 'START_SESSION', actorId: HOST },
+      ],
+      deps,
+    ).state;
+
+  it('declares one round per session, whatever the room setting', () => {
+    expect(module.maxRoundsPerSession).toBe(1);
+    const { deps } = liveHarness();
+    const room = startLive(deps);
+    expect(room.settings.roundsPerSession).toBe(8);
+    expect(activeSession(room)?.roundsPlanned).toBe(1);
+  });
+
+  it('a round opened mid-match locks on its first batch and charges nobody for not filing', () => {
+    const { deps, clock } = liveHarness();
+    let room = startLive(deps);
+    clock.advance(1_000);
+    // The ingestion loop delivers the cached full list right after the round opens.
+    room = reduceRoom(room, { type: 'MATCH_EVENTS', events: [matchEvent('KICK_OFF', { id: 'ko', minute: 0 }), goal(HOME_TEAM_ID, 3, 12)] }, deps).state;
+    const round = currentRound(room);
+    expect((round?.publicPayload as { slipLockedAt: number | null }).slipLockedAt).toBe(T0 + 1_000);
+    const refused = reduceRoom(room, { type: 'SUBMIT_ANSWER', playerId: P2, roundId: round?.id ?? ('' as never), payload: slip() }, deps);
+    // Refused: the slip is locked (and here a market is already settled, which is checked first).
+    expect(['MARKET_SETTLED', 'SLIP_LOCKED']).toContain(refused.rejection?.submissionCode);
+    clock.advance(5_400_000);
+    room = reduceRoom(room, { type: 'MATCH_EVENTS', events: [matchEvent('FULL_TIME', { id: 'ft', minute: 90 })] }, deps).state;
+    expect(room.phase).toBe('roundReveal');
+    expect(room.penalties.filter((entry) => entry.reason === 'NO_ANSWER')).toEqual([]);
+  });
+
+  it('after the slip settles the session ends cleanly: no round 2, no second charge', () => {
+    const { deps, clock } = liveHarness();
+    let room = startLive(deps);
+    room = reduceRoom(room, { type: 'MATCH_EVENTS', events: [matchEvent('FULL_TIME', { id: 'ft', minute: 90 })] }, deps).state;
+    expect(room.phase).toBe('roundReveal');
+    const charged = room.penalties.length;
+    clock.advance(10_000);
+    const advanced = reduceRoom(room, { type: 'ADVANCE', actorId: HOST }, deps);
+    expect(advanced.events.map((event) => event.type)).toContain('SESSION_FINISHED');
+    expect(advanced.state.phase).toBe('intermission');
+    expect(activeSession(advanced.state)?.finishedAt).not.toBeNull();
+    const again = reduceRoom(advanced.state, { type: 'ADVANCE', actorId: HOST }, deps);
+    expect(again.rejection?.code).toBe('SESSION_FINISHED');
+    expect(again.state.penalties).toHaveLength(charged);
+    expect(activeSession(again.state)?.rounds).toHaveLength(1);
+  });
+
+  it('refuses a second slip for the same fixture, and a finished or cancelled fixture', () => {
+    const used = generateWith(module, { usedContentKeys: [m1ContentKey(liveFixture.id)] });
+    expect(used.ok ? null : used.reason).toBe('NO_UNUSED_CONTENT');
+    for (const status of ['FINISHED', 'CANCELLED'] as const) {
+      const over = generateWith(module, { data: sampleData({ fixture: { ...liveFixture, status } }) });
+      expect(over.ok ? null : over.reason).toBe('WRONG_ROUND_CONTEXT');
+    }
   });
 });

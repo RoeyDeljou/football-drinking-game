@@ -170,6 +170,9 @@ export const dispatchAction = async (
       await persistEngineEvents(ctx.prisma, reduction.state, reduction.events);
     }
 
+    // Keep the live-ingestion watch set in sync with the room (sync, never throws, never awaits a poll).
+    ctx.liveIngestion?.roomChanged(record);
+
     const { projections, hostScreen } = project(record.state, record.meta, { now: () => Date.now() });
     return {
       record,

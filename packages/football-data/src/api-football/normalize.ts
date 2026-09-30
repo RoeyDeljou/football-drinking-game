@@ -262,8 +262,9 @@ export function normalizeEventType(type: string, detail: string | null | undefin
   const info = (detail ?? '').trim().toLowerCase();
   if (kind === 'goal') {
     if (info.includes('own goal')) return 'OWN_GOAL';
-    if (info.includes('penalty')) return 'PENALTY_SCORED';
+    // "Missed Penalty" contains "penalty": test the more specific string first.
     if (info.includes('missed penalty')) return 'PENALTY_MISSED';
+    if (info.includes('penalty')) return 'PENALTY_SCORED';
     return 'GOAL';
   }
   if (kind === 'card') {
@@ -294,9 +295,18 @@ export function normalizeEventType(type: string, detail: string | null | undefin
   return 'FOUL';
 }
 
+/**
+ * API-Football events carry no id of their own, so ids are derived from content: fixture, type, team, player,
+ * assist, minute, extra minute and detail, plus an **occurrence counter** among otherwise-identical events (two
+ * identical yellow cards can't happen, but two identical fouls/corners in the same minute can). The array index is
+ * deliberately NOT part of the id: a late-inserted earlier event must not shift the ids of everything after it,
+ * or a re-poll would re-apply them (double goals/cards). Only inserting an identical twin changes counters, and
+ * only for events that were already twins.
+ */
 export function normalizeEvents(fixtureId: FixtureId, rows: readonly RawEvent[]): Normalized<readonly MatchEvent[]> {
   const notes: string[] = [];
   const events: MatchEvent[] = [];
+  const occurrences = new Map<string, number>();
   rows.forEach((row, index) => {
     const minute = row.time.elapsed;
     if (minute === null) {
@@ -307,9 +317,20 @@ export function normalizeEvents(fixtureId: FixtureId, rows: readonly RawEvent[])
     const teamId = row.team?.id ?? null;
     const playerId = row.player?.id ?? null;
     const assistId = row.assist?.id ?? null;
+    const key = [
+      fixtureId,
+      type,
+      String(teamId ?? 'none'),
+      String(playerId ?? 'none'),
+      String(assistId ?? 'none'),
+      String(minute),
+      String(row.time.extra ?? 0),
+      (row.detail ?? '').trim().toLowerCase().replace(/\s+/g, '-'),
+    ].join(':');
+    const occurrence = (occurrences.get(key) ?? 0) + 1;
+    occurrences.set(key, occurrence);
     events.push({
-      // Deterministic id so repeated polls of the same feed are idempotent.
-      id: `${fixtureId}:${String(minute)}:${String(row.time.extra ?? 0)}:${type}:${String(playerId ?? 'none')}:${String(index)}`,
+      id: `apif:${key}:${String(occurrence)}`,
       fixtureId,
       type,
       minute,

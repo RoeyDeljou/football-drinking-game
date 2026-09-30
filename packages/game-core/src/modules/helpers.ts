@@ -82,6 +82,24 @@ export const nonSubmitters = <S extends ModuleShape>(
     .map((player) => player.id);
 
 /**
+ * Did `player` have at least `minMs` of a real chance to answer? Their chance runs from the later of
+ * `opensAt` and when they joined the room, to `closesAt` (`null` = never opened, e.g. the match
+ * clock was never known). Pure — every input is engine time already stored in the round.
+ *
+ * Used to never punish "no answer" for a window a player could not use: a late joiner, a slip that
+ * locked on the round's very first event batch, a pick window during which no pick was accepted.
+ */
+export const hadAnswerWindow = (
+  player: Pick<RoundPlayerView, 'joinedAt'>,
+  opensAt: number | null,
+  closesAt: number | null,
+  minMs: number,
+): boolean => {
+  if (opensAt === null || closesAt === null) return false;
+  return closesAt - Math.max(opensAt, player.joinedAt) >= minMs;
+};
+
+/**
  * One `self` penalty per player in `playerIds`, all with the same fixed magnitude. For deliberate
  * "everyone in this bucket drinks exactly N" mechanics; misses use `rolledSelfPenalties` instead.
  */

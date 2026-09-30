@@ -20,6 +20,8 @@ import { lastCorrectPlayer, scoreChoiceRound } from './modules/helpers.js';
 import { M1_ID } from './modules/m1-match-markets.js';
 import { M2_DEFAULT_CONFIG, M2_ID, m2WhoIsThatPlayer } from './modules/m2-who-is-that-player.js';
 import { M3_DEFAULT_CONFIG, M3_ID, m3ShirtNumber } from './modules/m3-shirt-number.js';
+import { M7_ID } from './modules/m7-minute-sniper.js';
+import { M10_ID } from './modules/m10-lineup-recall.js';
 import { createModuleRegistry, PHASE_1_MODULES } from './modules/registry.js';
 import { applyPenalties, DEFAULT_PENALTY_CAPS, penalty } from './penalties.js';
 import { projectFor } from './projection.js';
@@ -670,6 +672,9 @@ const answerFor = (moduleId: GameModuleId, payload: unknown, index: number, roun
       return { guess: ((index * 7 + roundIndex * 13) % 99) + 1 };
     case G6_ID:
       return { optionId: pickFrom((payload as { options: { id: string }[] }).options)?.id };
+    case M10_ID:
+      // Free-text names; the payload carries none, so a scripted guess from the harness's naming.
+      return { guesses: [`home Player ${index + 1}`, `away Player ${roundIndex + 1}`] };
     default:
       throw new Error(`no answer script for ${moduleId}`);
   }
@@ -757,6 +762,8 @@ describe('N8: every Phase-1 module replays deterministically', () => {
       M1_ID,
       M2_ID,
       M3_ID,
+      M7_ID,
+      M10_ID,
       G_MIX_ID,
       G1_ID,
       G3_ID,
@@ -770,7 +777,8 @@ describe('N8: every Phase-1 module replays deterministically', () => {
       const second = playSession(moduleId, 2024, false);
       expect(second).toEqual(first);
       expect(JSON.stringify(second)).toBe(JSON.stringify(first));
-      expect(activeSession(first)?.rounds).toHaveLength(3);
+      // M1 is one slip per match (maxRoundsPerSession: 1); everything else plays the room's 3 rounds.
+      expect(activeSession(first)?.rounds).toHaveLength(moduleId === M1_ID ? 1 : 3);
       expect(first.players.some((player) => player.score > 0 || player.sips > 0)).toBe(true);
     });
 

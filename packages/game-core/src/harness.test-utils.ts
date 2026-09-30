@@ -237,6 +237,7 @@ export const matchEvent = (
     readonly teamId?: TeamId | null;
     readonly playerId?: FootballPlayerId | null;
     readonly minute?: number;
+    readonly extraMinute?: number | null;
     readonly id?: string;
   } = {},
 ): MatchEvent => {
@@ -246,7 +247,7 @@ export const matchEvent = (
     fixtureId: FIXTURE_ID,
     type,
     minute: options.minute ?? 1,
-    extraMinute: null,
+    extraMinute: options.extraMinute ?? null,
     teamId: options.teamId ?? null,
     playerId: options.playerId ?? null,
     playerName: null,
@@ -289,7 +290,7 @@ export const P3: PlayerId = asPlayerId('p3');
 /* --------------------- direct module-under-test helpers --------------------- */
 
 export const playerViews = (ids: readonly PlayerId[]): readonly RoundPlayerView[] =>
-  ids.map((id) => ({ id, nickname: id, connected: true, score: 0, streak: 0 }));
+  ids.map((id) => ({ id, nickname: id, connected: true, score: 0, streak: 0, joinedAt: 0 }));
 
 export const generateWith = (
   module: EngineGameModule,
@@ -335,6 +336,7 @@ export const asRoundView = (generated: GeneratedRound<ModuleShape>, now = T0): R
   privatePayloads: generated.privatePayloads,
   solution: generated.solution,
   turn: generated.turnOrder === null ? null : { order: generated.turnOrder, activeIndex: 0, eliminated: [] },
+  liveWindow: null,
 });
 
 /** The seed direct `scoreRound` tests use unless they pass their own RNG. */

@@ -259,6 +259,23 @@ describe('FixtureProvider — deterministic match replay (no timers, no live mat
     if (finished.ok) expect(finished.value?.status).toBe('FINISHED');
   });
 
+  it('a finished replay snapshot has exactly one FULL_TIME, last, even at the final minute', async () => {
+    const clock = createManualClock();
+    const p = provider({
+      dataSource: createNodeDataSource(),
+      clock,
+      replay: { fixtureId: REPLAY_FIXTURE, autoStart: false },
+    });
+    await p.ready();
+    p.advanceReplayTo(p.replayStatus()?.finalMinute ?? 0);
+    const live = await p.getLiveMatchState(REPLAY_FIXTURE);
+    expect(live.ok).toBe(true);
+    if (!live.ok || live.value === null) return;
+    expect(live.value.fixture.status).toBe('FINISHED');
+    expect(live.value.events.filter((e) => e.type === 'FULL_TIME')).toHaveLength(1);
+    expect(live.value.events.at(-1)?.type).toBe('FULL_TIME');
+  });
+
   // Regression for B3: a typo'd (or otherwise unresolvable) replay fixture id must be visible, not silent.
   it('a misconfigured replay fixture id is reported in notes rather than silently degrading', async () => {
     const clock = createManualClock();

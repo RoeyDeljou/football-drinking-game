@@ -12,6 +12,7 @@ import type { DataClock } from '../clock.js';
 import { systemDataClock } from '../clock.js';
 import { competitionConfigById } from '../competitions.js';
 import type { DataSource } from '../data-source.js';
+import { guaranteeFullTime } from '../full-time.js';
 import type {
   Competition,
   CompetitionId,
@@ -231,7 +232,8 @@ export class FixtureProvider implements FootballDataProvider {
     const loaded = await this.ensureDataset();
     if (!loaded.ok) return loaded;
     if (this.replay !== null && this.replay.fixtureId === fixtureId) {
-      const snapshot = this.replay.snapshot();
+      // The replay derives FINISHED from elapsed time even if the recording has no FULL_TIME marker.
+      const snapshot = guaranteeFullTime(this.replay.snapshot());
       return ok(snapshot, [
         ...loaded.notes,
         `Replayed from a recorded timeline (elapsed minute ${String(Math.floor(this.replay.currentMinute))}).`,
@@ -239,7 +241,7 @@ export class FixtureProvider implements FootballDataProvider {
     }
     const live = loaded.value.liveByFixture.get(fixtureId) ?? null;
     if (live === null) return ok(null, [...loaded.notes, `No recorded live state for fixture ${fixtureId}.`]);
-    return ok(live, loaded.notes);
+    return ok(guaranteeFullTime(live), loaded.notes);
   }
 
   async getMatchEvents(fixtureId: FixtureId): Promise<DataResult<readonly MatchEvent[]>> {

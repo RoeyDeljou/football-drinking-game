@@ -20,16 +20,22 @@
  * monotonic (an option never changes outcome once settled), which makes live ingestion idempotent:
  * replaying events can never settle an option twice or double-charge a sip.
  *
+ * All markets are **regulation-time** markets (90 minutes + stoppage): extra time and penalty
+ * shootouts never count, and the counter snapshot is frozen at the first `FULL_TIME` observed (see
+ * `foldMatchEvents`).
+ *
  * Goal attribution:
  *  - `GOAL` and `PENALTY_SCORED` count for the team *and* as the player scoring;
- *  - `OWN_GOAL` counts for the credited team (providers normalize `teamId` to the team credited with
- *    the goal) but **not** as anyone scoring, so it never wins a scorer pick;
+ *  - `OWN_GOAL` counts for the **opponent** of `event.teamId` — providers set an own goal's `teamId`
+ *    to the team of the player who put it into his own net, i.e. the conceding team (the convention
+ *    lives in `match-events.ts`) — and **not** as anyone scoring, so it never wins a scorer pick;
  *  - `PENALTY_MISSED` counts for nothing.
  */
 
 import type { FootballPlayerId, MatchEvent, PlayerPosition } from '@fdg/football-data';
 import { z } from 'zod';
 import { asGameModuleId } from '../ids.js';
+import { goalCreditedSide, goalScorerOf, isGoalEvent } from '../match-events.js';
 import { defineGameModule } from '../module.js';
 import type { PenaltyEvent } from '../penalties.js';
 import { penalty } from '../penalties.js';
@@ -37,6 +43,7 @@ import type { RoundScore } from '../scoring.js';
 import { scoreAnswer, scoreNoAnswer } from '../scoring.js';
 import {
   footballPlayerIdSchema,
+  hadAnswerWindow,
   nonSubmitters,
   pitchPlayers,
   rolledSelfPenalties,
@@ -159,6 +166,11 @@ const publicPayloadSchema = z
     settlements: z.array(settlementSchema),
     /** `true` once the first live event has been observed; no slip can be filed or edited after. */
     slipLocked: z.boolean(),
+    /**
+     * Engine time the first live event locked the slip; `null` while open (or locked only by the
+     * deadline). Defaults to `null` for rounds stored before it existed.
+     */
+    slipLockedAt: z.number().nullable().default(null),
   })
   .strict();
 
@@ -233,16 +245,42 @@ const option = (
   awayGoals: number | null = null,
 ): M1Option => ({ id, kind, label, playerId, homeGoals, awayGoals });
 
-/** Event types that count as a *player* scoring (and as a goal for `event.teamId`). */
-const SCORING_TYPES: readonly MatchEvent['type'][] = ['GOAL', 'PENALTY_SCORED'];
 const CARD_TYPES: readonly MatchEvent['type'][] = ['YELLOW_CARD', 'SECOND_YELLOW', 'RED_CARD'];
 
 const matchClock = (event: MatchEvent): number => event.minute * 100 + (event.extraMinute ?? 0);
 
 /**
- * Fold live events into the counter snapshot. Events in one batch are applied in match-clock order
- * (stable for ties), so a provider returning a batch out of order still gets the first scorer right.
- * The reducer guarantees each `MatchEvent.id` is folded at most once.
+ * The last minute of regulation time. Stoppage time is expressed as `minute: 90, extraMinute: n`
+ * (both providers normalize "90+4'" that way), so any event with `minute > 90` belongs to extra time
+ * or a penalty shootout.
+ */
+export const M1_REGULATION_LAST_MINUTE = 90;
+
+const isRegulationTime = (event: MatchEvent): boolean => event.minute <= M1_REGULATION_LAST_MINUTE;
+
+/**
+ * Fold live events into the counter snapshot.
+ *
+ * **Every M1 market is a regulation-time market (90 minutes + stoppage)**, as with any betting slip:
+ * extra time and penalty shootouts never count. The fold enforces that with three rules:
+ *
+ *  1. **Frozen after full time.** Once `counters.fullTime` is `true`, the snapshot never changes
+ *     again — later batches are ignored whole. That includes a late-published regulation-time event
+ *     (say a 78' goal the provider only lists after the final whistle): the `FULL_TIME` that settled
+ *     the markets also resolved the round and charged the sips, and settlement is monotonic, so a
+ *     late correction must not re-open it. Deliberate: the snapshot at the whistle is final.
+ *  2. **Cut at the first `FULL_TIME` of the batch, in batch (provider) order.** Everything listed
+ *     after it — extra-time goals, an `end-extra-time` second `FULL_TIME`, shootout kicks — is
+ *     ignored. Batch order, not clock order, decides the cut, so a 90+3' goal listed before a
+ *     `FULL_TIME` stamped plain 90' still counts.
+ *  3. **Regulation minutes only.** Among the events before the cut, any with `minute > 90` is
+ *     ignored. This covers a finished extra-time match whose list carries only the final
+ *     (end-of-extra-time) `FULL_TIME`, as the data layer's full-time guarantee produces. The
+ *     `FULL_TIME` itself still resolves the round whatever its minute.
+ *
+ * The surviving events are applied in match-clock order (stable for ties), so a provider returning
+ * a batch out of order still gets the first scorer right. The reducer guarantees each
+ * `MatchEvent.id` is folded at most once. Pure and deterministic.
  */
 export const foldMatchEvents = (
   counters: M1Counters,
@@ -250,22 +288,26 @@ export const foldMatchEvents = (
   homeTeamId: string,
   awayTeamId: string,
 ): M1Counters => {
-  let next: M1Counters = counters;
-  const ordered = events
+  if (counters.fullTime) return counters;
+
+  const fullTimeIndex = events.findIndex((event) => event.type === 'FULL_TIME');
+  const beforeWhistle = fullTimeIndex === -1 ? events : events.slice(0, fullTimeIndex);
+  const ordered = beforeWhistle
     .map((event, index) => ({ event, index }))
+    .filter((entry) => entry.event.type !== 'FULL_TIME' && isRegulationTime(entry.event))
     .sort((a, b) => matchClock(a.event) - matchClock(b.event) || a.index - b.index)
     .map((entry) => entry.event);
 
+  let next: M1Counters = counters;
   for (const event of ordered) {
-    const isHome = event.teamId === homeTeamId;
-    const isAway = event.teamId === awayTeamId;
-
-    if (SCORING_TYPES.includes(event.type) || event.type === 'OWN_GOAL') {
-      const scorer = event.type === 'OWN_GOAL' ? null : event.playerId;
+    if (isGoalEvent(event)) {
+      // Provider convention: an OWN_GOAL's `teamId` is the conceding team (see `match-events.ts`).
+      const side = goalCreditedSide(event, homeTeamId, awayTeamId);
+      const scorer = goalScorerOf(event);
       next = {
         ...next,
-        homeGoals: next.homeGoals + (isHome ? 1 : 0),
-        awayGoals: next.awayGoals + (isAway ? 1 : 0),
+        homeGoals: next.homeGoals + (side === 'home' ? 1 : 0),
+        awayGoals: next.awayGoals + (side === 'away' ? 1 : 0),
         firstScorerPlayerId: next.firstScorerPlayerId ?? scorer,
         scorerPlayerIds:
           scorer === null || next.scorerPlayerIds.includes(scorer)
@@ -294,14 +336,10 @@ export const foldMatchEvents = (
         halfTimeHomeGoals: next.homeGoals,
         halfTimeAwayGoals: next.awayGoals,
       };
-      continue;
-    }
-    if (event.type === 'FULL_TIME') {
-      next = { ...next, fullTime: true };
     }
   }
 
-  return next;
+  return fullTimeIndex === -1 ? next : { ...next, fullTime: true };
 };
 
 /** A single-outcome market: once the winning option is known, every option settles together. */
@@ -467,6 +505,14 @@ const outcomeOf = (settlements: readonly M1Settlement[], pick: M1Pick): M1Option
 const attackingFirst = (position: PlayerPosition): number =>
   position === 'FW' ? 0 : position === 'MF' ? 1 : position === 'DF' ? 2 : 3;
 
+export const m1ContentKey = (fixtureId: string): string => `${fixtureId}:slip`;
+
+/**
+ * Least slip-filing time (after joining) a player must have had before not filing one costs a drink.
+ * A slip has up to eleven markets; anything shorter was never a real chance.
+ */
+export const M1_MIN_FILING_WINDOW_MS = 60_000;
+
 export const m1MatchMarkets = defineGameModule<M1Shape>({
   id: M1_ID,
   category: 'matchday',
@@ -476,6 +522,10 @@ export const m1MatchMarkets = defineGameModule<M1Shape>({
   maxPlayers: null,
   // The slip can be edited until it locks — that is the whole point of a pre-kickoff slip.
   allowResubmission: true,
+  // The slip settles on the whole match: a round opened mid-match must still count earlier goals.
+  liveEventWindow: 'whole-match',
+  // One slip per match: the session ends after it instead of trying (and failing) to deal a second.
+  maxRoundsPerSession: 1,
   defaultConfig: M1_DEFAULT_CONFIG,
   configSchema,
   publicPayloadSchema,
@@ -486,6 +536,15 @@ export const m1MatchMarkets = defineGameModule<M1Shape>({
   generateRound: (ctx) => {
     const fixture = ctx.data.fixture;
     if (fixture === null) return { ok: false, reason: 'INSUFFICIENT_DATA', detail: 'no fixture' };
+    // One slip per fixture: a second round would be fed the same (possibly finished) match through the
+    // whole-match window and settle instantly. `maxRoundsPerSession: 1` normally ends the session
+    // first; this also guards gameday rotations and any other caller.
+    if (ctx.usedContentKeys.includes(m1ContentKey(fixture.id))) {
+      return { ok: false, reason: 'NO_UNUSED_CONTENT', detail: 'one slip per fixture' };
+    }
+    if (fixture.status === 'FINISHED' || fixture.status === 'CANCELLED') {
+      return { ok: false, reason: 'WRONG_ROUND_CONTEXT', detail: `fixture ${fixture.status}` };
+    }
 
     const onThePitch = pitchPlayers(ctx.data.lineups);
     const scorerPool = onThePitch
@@ -612,10 +671,11 @@ export const m1MatchMarkets = defineGameModule<M1Shape>({
           counters: EMPTY_M1_COUNTERS,
           settlements: [],
           slipLocked: false,
+          slipLockedAt: null,
         },
         privatePayloads: {},
         solution: { settled: false, settlements: [] },
-        contentKey: `${fixture.id}:slip`,
+        contentKey: m1ContentKey(fixture.id),
         // The window closes *submissions*; the round itself runs until full time.
         answerWindowMs: ctx.config.slipWindowMs,
         turnOrder: null,
@@ -687,6 +747,7 @@ export const m1MatchMarkets = defineGameModule<M1Shape>({
         settlements: settlements.slice(),
         // The engine only calls observeEvents with at least one new event: the match is under way.
         slipLocked: true,
+        slipLockedAt: payload.slipLockedAt ?? ctx.now,
       },
       privatePayloads: {},
       solution: { settled: counters.fullTime, settlements: settlements.slice() },
@@ -735,13 +796,25 @@ export const m1MatchMarkets = defineGameModule<M1Shape>({
     // No slip filed is drink-rolled per player (see `rollDrinkSips`); `noAnswerSips` is an on/off
     // switch. Lost markets, the worst slip and the perfect slip stay fixed: they are deliberate,
     // per-event mechanics (a lost market can fire a dozen times a match; a roll each would be brutal).
+    //
+    // Only players who genuinely had a slip window drink for not filing one: the slip closes at the
+    // first live event or the deadline, and a player needs `M1_MIN_FILING_WINDOW_MS` of it after they
+    // joined. A round opened after kickoff locks on its first batch (the full event list arrives
+    // within seconds), so nobody is charged for a slip they were never allowed to file.
+    const slipClosedAt = Math.min(
+      ctx.round.publicPayload.slipLockedAt ?? Number.POSITIVE_INFINITY,
+      ctx.round.deadlineAt ?? Number.POSITIVE_INFINITY,
+      ctx.now,
+    );
+    const silent = nonSubmitters<M1Shape>(ctx.players, ctx.submissions).filter((playerId) => {
+      const player = ctx.players.find((entry) => entry.id === playerId);
+      return (
+        player !== undefined &&
+        hadAnswerWindow(player, ctx.round.startedAt, slipClosedAt, M1_MIN_FILING_WINDOW_MS)
+      );
+    });
     const penalties: PenaltyEvent[] = [
-      ...rolledSelfPenalties(
-        ctx.rng,
-        nonSubmitters<M1Shape>(ctx.players, ctx.submissions),
-        'NO_ANSWER',
-        ctx.config.noAnswerSips > 0,
-      ),
+      ...rolledSelfPenalties(ctx.rng, silent, 'NO_ANSWER', ctx.config.noAnswerSips > 0),
     ];
 
     if (closedCount > 0 && ctx.submissions.length > 0) {

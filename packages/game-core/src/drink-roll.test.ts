@@ -16,7 +16,7 @@ import { G3_ID } from './modules/g3-career-path.js';
 import { G6_ID } from './modules/g6-trivia-rush.js';
 import { G_MIX_ID, M_MIX_ID } from './modules/mixed.js';
 import { ROLLED_PENALTY_META, rolledSelfPenalties, selfPenalties } from './modules/helpers.js';
-import { M1_ID } from './modules/m1-match-markets.js';
+import { M1_ID, M1_MIN_FILING_WINDOW_MS } from './modules/m1-match-markets.js';
 import { M2_ID } from './modules/m2-who-is-that-player.js';
 import { M3_ID } from './modules/m3-shirt-number.js';
 import type { PenaltyCaps, RecordedPenalty } from './penalties.js';
@@ -238,9 +238,11 @@ describe('reducer: scoreRound draws from the committed RNG state and commits the
   it('rolls every silent player from the pre-reveal rngState and commits exactly those draws', () => {
     for (const moduleId of MODULES_WITH_ROLLS) {
       for (let seed = 1; seed <= 25; seed += 1) {
-        const { deps } = makeHarness();
+        const { deps, clock } = makeHarness();
         const room = started(moduleId, deps, seed);
         const before = room.rngState;
+        // M1 only charges a missing slip after a real filing window (see M1_MIN_FILING_WINDOW_MS).
+        if (moduleId === M1_ID) clock.advance(M1_MIN_FILING_WINDOW_MS);
         const revealed = reduceRoom(room, REVEAL, deps);
         expect(revealed.rejection).toBeNull();
 

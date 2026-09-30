@@ -197,6 +197,7 @@ const projectRoundFor = (
             privatePayloads: round.privatePayloads,
             solution: round.solution,
             turn: round.turn,
+            liveWindow: round.liveWindow ?? null,
           },
           viewerId,
           visibility,

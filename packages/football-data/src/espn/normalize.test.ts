@@ -19,6 +19,7 @@ import {
   normalizeEspnRosterPlayers,
   normalizeEspnRosterSeasonStats,
   normalizeEspnScoreboard,
+  isEspnFinalConfirmed,
   normalizeEspnStatus,
   normalizeEspnSummaryFixture,
   normalizeEspnTeams,
@@ -44,6 +45,12 @@ describe('primitive mappings', () => {
     expect(normalizeEspnStatus('STATUS_SECOND_HALF', 'in')).toBe('LIVE');
     expect(normalizeEspnStatus('STATUS_FULL_TIME', 'post')).toBe('FINISHED');
     expect(normalizeEspnStatus('SOMETHING_NEW', 'in')).toBe('LIVE');
+    expect(normalizeEspnStatus('STATUS_SUSPENDED', 'post', false)).toBe('POSTPONED');
+    expect(normalizeEspnStatus('STATUS_UNKNOWN_END', 'post', true)).toBe('FINISHED');
+    expect(isEspnFinalConfirmed({ name: 'STATUS_FINAL_PEN' })).toBe(true);
+    expect(isEspnFinalConfirmed({ name: 'STATUS_SOMETHING', completed: true })).toBe(true);
+    expect(isEspnFinalConfirmed({ name: 'STATUS_SOMETHING' })).toBe(false);
+    expect(isEspnFinalConfirmed({ name: 'STATUS_FULL_TIME', completed: false })).toBe(false);
     expect(normalizeEspnStatus(undefined, undefined)).toBe('SCHEDULED');
   });
 
@@ -69,6 +76,80 @@ describe('primitive mappings', () => {
     expect(normalizeEspnPlayType('halftime')).toBe('HALF_TIME');
     expect(normalizeEspnPlayType('end-regular-time')).toBe('FULL_TIME');
     expect(normalizeEspnPlayType(null)).toBeNull();
+  });
+});
+
+describe('normalizeEspnPlayType — every slug, exact-before-prefix ordering', () => {
+  const cases: readonly (readonly [string, string | null])[] = [
+    // Real slugs seen in the recorded summaries.
+    ['goal', 'GOAL'],
+    ['goal---header', 'GOAL'],
+    ['goal---volley', 'GOAL'],
+    ['goal---free-kick', 'GOAL'],
+    ['yellow-card', 'YELLOW_CARD'],
+    ['substitution', 'SUBSTITUTION'],
+    ['corner-awarded', 'CORNER'],
+    ['offside', 'OFFSIDE'],
+    ['foul', 'FOUL'],
+    ['handball', 'FOUL'],
+    ['shot-on-target', 'SHOT_ON_TARGET'],
+    ['shot-off-target', 'SHOT_OFF_TARGET'],
+    ['shot-blocked', 'SHOT_OFF_TARGET'],
+    ['shot-hit-woodwork', 'SHOT_OFF_TARGET'],
+    ['kickoff', 'KICK_OFF'],
+    ['start-2nd-half', 'KICK_OFF'],
+    ['halftime', 'HALF_TIME'],
+    ['end-regular-time', 'FULL_TIME'],
+    ['end-extra-time', 'FULL_TIME'],
+    ['full-time', 'FULL_TIME'],
+    // Prefix-shadowing regressions: none of these may be a GOAL / KICK_OFF.
+    ['goal-kick', 'GOAL_KICK'],
+    ['goal-kick---taken', 'GOAL_KICK'],
+    ['own-goal', 'OWN_GOAL'],
+    ['goal---own', 'OWN_GOAL'],
+    ['throw-in', 'THROW_IN'],
+    ['shootout-goal', null],
+    ['penalty-shootout-goal', null],
+    ['shootout-miss', null],
+    ['start-shootout', null],
+    ['end-shootout', null],
+    ['start-extra-time', null],
+    ['start-1st-half-extra-time', null],
+    ['start-1st-half', 'KICK_OFF'],
+    ['saved', 'SAVE'],
+    ['save', 'SAVE'],
+    ['attempt-saved', 'SAVE'],
+    ['attempt-missed', 'SHOT_OFF_TARGET'],
+    ['start-delay', null],
+    ['end-delay', null],
+    ['goal---disallowed', 'VAR_CHECK'],
+    ['var---goal-cancelled', 'VAR_CHECK'],
+    ['var', 'VAR_CHECK'],
+    ['video-review', 'VAR_CHECK'],
+    // Penalties.
+    ['penalty---scored', 'PENALTY_SCORED'],
+    ['penalty---missed', 'PENALTY_MISSED'],
+    ['penalty---saved', 'PENALTY_MISSED'],
+    ['penalty-awarded', 'PENALTY_AWARDED'],
+    ['penalty-won', 'PENALTY_AWARDED'],
+    ['goal---penalty', 'PENALTY_SCORED'],
+    // Cards.
+    ['red-card', 'RED_CARD'],
+    ['yellow-red-card', 'SECOND_YELLOW'],
+    ['second-yellow-card', 'SECOND_YELLOW'],
+    // Unknown / empty are skipped, never guessed.
+    ['free-kick-won', null],
+    ['something-new', null],
+    ['', null],
+  ];
+  it.each(cases)('%s -> %s', (slug, expected) => {
+    expect(normalizeEspnPlayType(slug)).toBe(expected);
+  });
+
+  it('is case-insensitive, null-safe, and never files a goal kick as a goal', () => {
+    expect(normalizeEspnPlayType('Goal-Kick')).toBe('GOAL_KICK');
+    expect(normalizeEspnPlayType(undefined)).toBeNull();
+    expect(normalizeEspnPlayType('goal-kick')).not.toBe('GOAL');
   });
 });
 

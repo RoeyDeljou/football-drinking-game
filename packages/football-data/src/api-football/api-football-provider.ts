@@ -10,8 +10,9 @@
  */
 
 import type { CacheTtlConfig } from '../cache.js';
-import { cacheKey, DEFAULT_CACHE_TTL, ResourceCache } from '../cache.js';
+import { cacheKey, DEFAULT_CACHE_TTL, ResourceCache, withLivePollTtl } from '../cache.js';
 import type { DataClock } from '../clock.js';
+import { eventsMatchFixtureScore, withGuaranteedFullTime } from '../full-time.js';
 import { systemDataClock } from '../clock.js';
 import type { CompetitionConfig } from '../competitions.js';
 import {
@@ -135,7 +136,6 @@ export class ApiFootballProvider implements FootballDataProvider {
     this.host = config.host ?? API_FOOTBALL_DEFAULT_HOST;
     this.baseUrl = (config.baseUrl ?? API_FOOTBALL_DEFAULT_BASE_URL).replace(/\/+$/, '');
     this.seasonYear = config.seasonYear ?? null;
-    this.ttl = { ...DEFAULT_CACHE_TTL, ...config.cacheTtl };
     this.retry = { ...DEFAULT_RETRY, ...config.retry };
     this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.http = config.http ?? createFetchHttpClient();
@@ -143,6 +143,7 @@ export class ApiFootballProvider implements FootballDataProvider {
     this.cache = new ResourceCache({ clock: this.clock });
     this.limiter = new RateLimiter({ ...DEFAULT_RATE_LIMIT, ...config.rateLimit }, this.clock);
     this.pollIntervals = { ...DEFAULT_POLL_INTERVALS, ...config.pollIntervals };
+    this.ttl = withLivePollTtl({ ...DEFAULT_CACHE_TTL, ...config.cacheTtl }, this.pollIntervals);
     this.maxPlayerPages = Math.max(1, config.maxPlayerPages ?? 3);
   }
 
@@ -381,10 +382,12 @@ export class ApiFootballProvider implements FootballDataProvider {
       notes.push(`Player match statistics unavailable for fixture ${fixtureId}: ${playersResult.error.message}`);
     }
 
+    // A finished fixture always carries exactly one FULL_TIME event (see full-time.ts).
+    const guaranteedEvents = fixture.status === 'FINISHED' ? withGuaranteedFullTime(fixtureId, events, eventsMatchFixtureScore(fixture, events)) : events;
     return ok(
       {
         fixture,
-        events,
+        events: guaranteedEvents,
         teamStats,
         playerStats,
         updatedAt: new Date(this.clock.now()).toISOString(),

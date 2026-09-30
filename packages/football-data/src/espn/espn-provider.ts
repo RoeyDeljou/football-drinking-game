@@ -24,7 +24,7 @@
  */
 
 import type { CacheTtlConfig } from '../cache.js';
-import { DEFAULT_CACHE_TTL } from '../cache.js';
+import { DEFAULT_CACHE_TTL, withLivePollTtl } from '../cache.js';
 import type { DataClock } from '../clock.js';
 import { systemDataClock } from '../clock.js';
 import type { CompetitionConfig } from '../competitions.js';
@@ -66,7 +66,10 @@ import type { DataResult } from '../result.js';
 import { fail, ok } from '../result.js';
 import type { UpstreamTelemetry } from '../upstream.js';
 import { UpstreamClient } from '../upstream.js';
+import { eventsMatchFixtureScore, withGuaranteedFullTime } from '../full-time.js';
 import {
+  isEspnFinalConfirmed,
+  isEspnSummaryComplete,
   normalizeEspnAthlete,
   normalizeEspnEvents,
   normalizeEspnLineups,
@@ -119,6 +122,12 @@ export interface EspnProviderConfig {
 /** ESPN-specific TTLs on top of the shared defaults: summaries of finished matches barely change. */
 const FINISHED_SUMMARY_TTL_MS = 6 * 60 * 60 * 1000;
 const SCHEDULED_SUMMARY_TTL_MS = 5 * 60 * 1000;
+/** A 'post' summary that is not provably complete is polled at the live cadence for this long after kickoff. */
+const INCOMPLETE_SUMMARY_GRACE_MS = 4 * 60 * 60 * 1000;
+/** ...then re-checked at this moderate interval. */
+const INCOMPLETE_SUMMARY_TTL_MS = 30 * 60 * 1000;
+/** From this long before the scheduled kickoff a pre-match summary is polled at the live cadence. */
+export const PRE_KICKOFF_LIVE_WINDOW_MS = 2 * 60 * 1000;
 
 export class EspnProvider implements FootballDataProvider {
   readonly kind: ProviderKind = 'espn';
@@ -137,8 +146,8 @@ export class EspnProvider implements FootballDataProvider {
   constructor(config: EspnProviderConfig = {}) {
     this.baseUrl = (config.baseUrl ?? ESPN_DEFAULT_BASE_URL).replace(/\/+$/, '');
     this.athleteBaseUrl = (config.athleteBaseUrl ?? ESPN_DEFAULT_ATHLETE_BASE_URL).replace(/\/+$/, '');
-    this.ttl = { ...DEFAULT_CACHE_TTL, ...config.cacheTtl };
     this.pollIntervals = { ...DEFAULT_POLL_INTERVALS, ...config.pollIntervals };
+    this.ttl = withLivePollTtl({ ...DEFAULT_CACHE_TTL, ...config.cacheTtl }, this.pollIntervals);
     const retry: RetryConfig = { ...DEFAULT_RETRY, ...config.retry };
     this.clock = config.clock ?? systemDataClock;
     this.client = new UpstreamClient({
@@ -347,18 +356,21 @@ export class EspnProvider implements FootballDataProvider {
     const events = normalizeEspnEvents(payload, fixtureId);
     const fixture = normalizeEspnSummaryFixture(payload, config, events.value);
     if (fixture.value === null) return ok(null, [...summary.notes, ...fixture.notes]);
+    const finalized = finalizeEvents(payload, fixture.value, fixtureId, events.value);
+    const guaranteed = finalized.events;
+    const synthesized = finalized.notes;
     const teamStats = normalizeEspnTeamStats(payload);
     const playerStats = normalizeEspnPlayerMatchStats(payload, fixture.value);
 
     return ok(
       {
         fixture: fixture.value,
-        events: events.value,
+        events: guaranteed,
         teamStats: teamStats.value,
         playerStats: playerStats.value,
         updatedAt: new Date(this.clock.now()).toISOString(),
       },
-      dedupeNotes([...summary.notes, ...events.notes, ...fixture.notes, ...teamStats.notes, ...playerStats.notes]),
+      dedupeNotes([...summary.notes, ...events.notes, ...synthesized, ...fixture.notes, ...teamStats.notes, ...playerStats.notes]),
       summary.fromCache,
     );
   }
@@ -367,8 +379,15 @@ export class EspnProvider implements FootballDataProvider {
     const summary = await this.summary(fixtureId);
     if (!summary.ok) return summary;
     if (summary.value === null) return ok([], summary.notes);
-    const events = normalizeEspnEvents(summary.value.payload, fixtureId);
-    return ok(events.value, [...summary.notes, ...events.notes], summary.fromCache);
+    const { payload, config } = summary.value;
+    const events = normalizeEspnEvents(payload, fixtureId);
+    const fixture = normalizeEspnSummaryFixture(payload, config, events.value);
+    const finalized =
+      fixture.value === null
+        ? { events: events.value, notes: [] as string[] }
+        : finalizeEvents(payload, fixture.value, fixtureId, events.value);
+    const guaranteed = finalized.events;
+    return ok(guaranteed, [...summary.notes, ...events.notes, ...finalized.notes], summary.fromCache);
   }
 
   // ---- endpoint helpers ---------------------------------------------------
@@ -429,7 +448,7 @@ export class EspnProvider implements FootballDataProvider {
     fixtureId: FixtureId,
   ): Promise<DataResult<{ payload: EspnSummary; config: CompetitionConfig } | null>> {
     const url = `${this.baseUrl}/all/summary?event=${encodeURIComponent(fixtureId)}`;
-    const result = await this.client.getJson(`summary:${fixtureId}`, url, summaryTtl(this.ttl), espnSummarySchema);
+    const result = await this.client.getJson(`summary:${fixtureId}`, url, summaryTtl(this.ttl, () => this.clock.now()), espnSummarySchema);
     if (!result.ok) return result;
     const slug = result.value.header.league?.slug ?? null;
     if (slug === null) {
@@ -522,13 +541,70 @@ export class EspnProvider implements FootballDataProvider {
   }
 }
 
-function summaryTtl(ttl: CacheTtlConfig): (payload: EspnSummary) => number {
+/**
+ * Apply the FULL_TIME guarantee (see full-time.ts) for a finished ESPN fixture. A synthetic FULL_TIME is only
+ * created when the status is an explicit final and the events add up to the header score.
+ */
+function finalizeEvents(
+  payload: EspnSummary,
+  fixture: Fixture,
+  fixtureId: FixtureId,
+  events: readonly MatchEvent[],
+): { events: readonly MatchEvent[]; notes: string[] } {
+  if (fixture.status !== 'FINISHED') return { events, notes: [] };
+  const confirmed = isEspnFinalConfirmed(payload.header.competitions[0]?.status?.type);
+  const consistent = eventsMatchFixtureScore(fixture, events);
+  const guaranteed = withGuaranteedFullTime(fixtureId, events, confirmed && consistent);
+  const hasFullTime = guaranteed.some((event) => event.type === 'FULL_TIME');
+  if (hasFullTime) {
+    return {
+      events: guaranteed,
+      notes: guaranteed.some((event) => event.id.startsWith('synthetic:'))
+        ? ['ESPN reported the match finished without a full-time play; a synthetic FULL_TIME event was added.']
+        : [],
+    };
+  }
+  return {
+    events: guaranteed,
+    notes: [
+      `ESPN fixture ${fixtureId} is finished but no FULL_TIME was synthesized: ${
+        confirmed ? 'the events do not add up to the reported score (feed still catching up)' : 'the final status is not confirmed'
+      }.`,
+    ],
+  };
+}
+
+function summaryTtl(ttl: CacheTtlConfig, now: () => number): (payload: EspnSummary) => number {
   return (payload) => {
     const type = payload.header.competitions[0]?.status?.type;
-    if (type?.completed === true || type?.state === 'post') return FINISHED_SUMMARY_TTL_MS;
-    if (type?.state === 'pre') return SCHEDULED_SUMMARY_TTL_MS;
+    if (type?.completed === true || type?.state === 'post') {
+      // Cache for hours only when the summary is provably complete: explicit final status, a real full-time play,
+      // and events that account for the header score. Anything else (ESPN flips to 'post' before its plays
+      // catch up, a suspended match, a payload with no plays) stays on the short live TTL while the match is
+      // recent, so late plays land on the next poll, then drops to a moderate TTL so an old, permanently
+      // incomplete summary is not hammered.
+      if (isEspnSummaryComplete(payload)) return FINISHED_SUMMARY_TTL_MS;
+      const kickoffMs = Date.parse(payload.header.competitions[0]?.date ?? '');
+      const recent = Number.isNaN(kickoffMs) || now() < kickoffMs + INCOMPLETE_SUMMARY_GRACE_MS;
+      return recent ? ttl.liveMatch : INCOMPLETE_SUMMARY_TTL_MS;
+    }
+    if (type?.state === 'pre') return scheduledSummaryTtl(ttl, payload.header.competitions[0]?.date, now());
     return ttl.liveMatch;
   };
+}
+
+/**
+ * TTL for a pre-match summary, derived from the scheduled kickoff so kickoff is never seen late. Far from kickoff it
+ * is 5 minutes, but never longer than the time left until the live window opens (kickoff − 2 min), so an entry cached
+ * early cannot outlive that window. From the window opening — and after the scheduled time has passed while ESPN
+ * still says 'pre' — it is the live TTL. An unparseable kickoff falls back to the 5 minute default.
+ */
+export function scheduledSummaryTtl(ttl: CacheTtlConfig, kickoff: string | null | undefined, nowMs: number): number {
+  const kickoffMs = kickoff === null || kickoff === undefined ? Number.NaN : Date.parse(kickoff);
+  if (Number.isNaN(kickoffMs)) return SCHEDULED_SUMMARY_TTL_MS;
+  const untilWindow = kickoffMs - PRE_KICKOFF_LIVE_WINDOW_MS - nowMs;
+  if (untilWindow <= 0) return ttl.liveMatch;
+  return Math.max(ttl.liveMatch, Math.min(SCHEDULED_SUMMARY_TTL_MS, untilWindow));
 }
 
 /** `2026-09-16` → `20260916`; null for anything else. */

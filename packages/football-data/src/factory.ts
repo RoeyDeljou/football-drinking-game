@@ -177,7 +177,7 @@ export function readFootballDataConfigFromEnv(env: FootballDataEnv): FootballDat
     userAgent?: string;
     espn: { baseUrl?: string; rateLimit?: { maxRequests: number; windowMs: number }; pollIntervals?: { liveEventsMs: number } };
     wikidata: { enabled?: boolean; endpoint?: string; maxQueriesPerHour?: number };
-    apiFootball: { apiKey?: string; host?: string; baseUrl?: string; seasonYear?: number };
+    apiFootball: { apiKey?: string; host?: string; baseUrl?: string; seasonYear?: number; pollIntervals?: { liveEventsMs: number } };
     fixture: { dataDir?: string; latencyMs?: number; replay?: FixtureReplayConfig };
   } = { espn: {}, wikidata: {}, apiFootball: {}, fixture: {} };
 
@@ -189,7 +189,10 @@ export function readFootballDataConfigFromEnv(env: FootballDataEnv): FootballDat
     // Expressed per minute for operators; enforced as a 5-second window so bursts stay small.
     config.espn.rateLimit = { maxRequests: Math.max(1, Math.round(perMinute / 12)), windowMs: 5_000 };
   });
-  setIf(parseInteger(env[vars.livePollMs]), (value) => (config.espn.pollIntervals = { liveEventsMs: value }));
+  setIf(parseInteger(env[vars.livePollMs]), (value) => {
+    config.espn.pollIntervals = { liveEventsMs: value };
+    config.apiFootball.pollIntervals = { liveEventsMs: value };
+  });
 
   const wikidataEnabled = nonEmpty(env[vars.wikidataEnabled])?.toLowerCase() ?? null;
   if (wikidataEnabled !== null) config.wikidata.enabled = !['0', 'false', 'no', 'off'].includes(wikidataEnabled);

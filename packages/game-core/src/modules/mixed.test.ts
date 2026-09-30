@@ -51,6 +51,8 @@ import { ROLLED_PENALTY_META } from './helpers.js';
 import { M1_ID, m1MatchMarkets } from './m1-match-markets.js';
 import { M2_ID, m2WhoIsThatPlayer } from './m2-who-is-that-player.js';
 import { M3_ID, m3ShirtNumber } from './m3-shirt-number.js';
+import { M7_ID, m7MinuteSniper } from './m7-minute-sniper.js';
+import { M10_ID, m10LineupRecall } from './m10-lineup-recall.js';
 import {
   createMixedModule,
   G_MIX_ID,
@@ -67,6 +69,7 @@ import {
   createModuleRegistry,
   generalMixed,
   matchdayMixed,
+  MIXED_ROTATION_EXCLUDED,
   STANDALONE_MODULES,
 } from './registry.js';
 
@@ -301,6 +304,10 @@ describe('Mixed modules: construction and registry', { timeout: 60_000 }, () => 
     expect(generalMixed.defaultConfig).toEqual({ modules: [G1_ID, G3_ID, G6_ID] });
     expect(matchdayMixed.defaultConfig).toEqual({ modules: [M2_ID, M3_ID] });
     expect(isMixable(m1MatchMarkets, 'matchday')).toBe(false);
+    // M7 waits on live goals; M10 is mixable but held out of the default rotation until its screen ships.
+    expect(isMixable(m7MinuteSniper, 'matchday')).toBe(false);
+    expect(isMixable(m10LineupRecall, 'matchday')).toBe(true);
+    expect(MIXED_ROTATION_EXCLUDED).toEqual([M10_ID]);
     expect(isMixable(m2WhoIsThatPlayer, 'matchday')).toBe(true);
     expect(isMixable(m2WhoIsThatPlayer, 'general')).toBe(false);
   });
@@ -865,6 +872,23 @@ describe('Mixed sessions rotate and never repeat content', { timeout: 60_000 }, 
       for (const round of generateSession(matchdayMixed, seed, 8, live)) {
         expect([M2_ID, M3_ID]).toContain(envelopeOf(round).moduleId);
         expect(envelopeOf(round).moduleId).not.toBe(M1_ID);
+        expect(envelopeOf(round).moduleId).not.toBe(M7_ID);
+      }
+    }
+  });
+
+  it('M10 plays inside M-MIX when a host configures it explicitly: both XIs early, then M2/M3 carry on', () => {
+    const withM10 = { modules: [M2_ID, M3_ID, M10_ID] };
+    expect(matchdayMixed.parseConfig(withM10).ok).toBe(true);
+    for (const seed of SEEDS.slice(0, 100)) {
+      const rounds = generateSession(matchdayMixed, seed, 10, MATCHDAY, withM10);
+      const ids = rounds.map((round) => envelopeOf(round).moduleId);
+      for (let index = 1; index < ids.length; index += 1) expect(ids[index]).not.toBe(ids[index - 1]);
+      expect(ids.filter((id) => id === M10_ID)).toHaveLength(2);
+      expect([...ids.slice(0, 3)].sort()).toEqual([M10_ID, M2_ID, M3_ID].sort());
+      for (const round of rounds.filter((entry) => envelopeOf(entry).moduleId === M10_ID)) {
+        expect((envelopeOf(round).inner as { kind: string }).kind).toBe('LINEUP_RECALL');
+        expect(JSON.stringify(round.solution)).not.toContain('shirtNumber');
       }
     }
   });
@@ -1598,6 +1622,7 @@ const roundViewOf = (round: NonNullable<ReturnType<typeof currentRound>>): Round
   privatePayloads: round.privatePayloads,
   solution: round.solution,
   turn: round.turn,
+  liveWindow: round.liveWindow,
 });
 
 describe('Mixed registration does not disturb the rest of the catalog', () => {

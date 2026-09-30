@@ -10,6 +10,7 @@ import type { MatchEvent } from '@fdg/football-data';
 import type { RoomAction } from './actions.js';
 import type { RoundDataContext } from './data.js';
 import { checkModulePlayable } from './data.js';
+import { initialLiveWindow, stepLiveWindow } from './live-window.js';
 import type { GameModuleId, PlayerId, RoundId, SessionId } from './ids.js';
 import { asRoundId, asSessionId } from './ids.js';
 import type {
@@ -204,6 +205,7 @@ const toPlayerViews = (room: RoomState): readonly RoundPlayerView[] =>
     connected: player.connected,
     score: player.score,
     streak: player.streak,
+    joinedAt: player.joinedAt,
   }));
 
 const toRoundView = (round: RoundRecord): RoundView<ModuleShape> => ({
@@ -216,6 +218,7 @@ const toRoundView = (round: RoundRecord): RoundView<ModuleShape> => ({
   privatePayloads: round.privatePayloads,
   solution: round.solution,
   turn: round.turn,
+  liveWindow: round.liveWindow ?? null,
 });
 
 const toTypedSubmissions = (round: RoundRecord): readonly TypedSubmission<ModuleShape>[] =>
@@ -353,6 +356,9 @@ const buildRound = (
     submissions: [],
     outcome: null,
     observedEventIds: [],
+    liveWindow: module.supportsLiveEvents
+      ? initialLiveWindow(module.liveEventWindow, deps.data.fixture, now)
+      : null,
     turn,
     contentChangeAt: null,
   };
@@ -918,7 +924,10 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
         moduleId: module.id,
         category: module.category,
         config: selection.config,
-        roundsPlanned: state.settings.roundsPerSession,
+        roundsPlanned:
+          module.maxRoundsPerSession === null
+            ? state.settings.roundsPerSession
+            : Math.min(state.settings.roundsPerSession, module.maxRoundsPerSession),
         rounds: [],
         startedAt: now,
         finishedAt: null,
@@ -1086,20 +1095,23 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
       // batch instead of reading a false success.
       if (slice.round.status !== 'open') return reject(state, 'ROUND_CLOSED', slice.round.status);
 
-      const seen = new Set(slice.round.observedEventIds);
-      const fresh: MatchEvent[] = [];
-      for (const event of action.events) {
-        // De-duplicate against earlier batches *and* within this batch.
-        if (seen.has(event.id)) continue;
-        seen.add(event.id);
-        fresh.push(event);
-      }
-      if (fresh.length === 0) return unchanged(state);
+      // De-duplicate against earlier batches *and* within this batch, then apply the module's live
+      // window (`live-window.ts`): a `since-round-open` round takes its first batch as the pre-round
+      // baseline and afterwards sees only events at or after the match time it opened at.
+      // `?? null`: a round stored before live windows existed has no field and keeps the old behaviour.
+      const step = stepLiveWindow(slice.round.liveWindow ?? null, action.events, new Set(slice.round.observedEventIds));
+      const fresh: readonly MatchEvent[] = step.kind === 'events' ? step.fresh : [];
+      const history: readonly MatchEvent[] = step.kind === 'baseline' ? step.history : [];
+      // Nothing new to react to. (A baseline always commits, even an empty one: it is what lets the
+      // *next* batch count as live.)
+      if (step.kind === 'events' && fresh.length === 0) return unchanged(state);
 
+      const windowedRound: RoundRecord = { ...slice.round, liveWindow: step.window };
       const observation = slice.module.observeEvents({
         config: slice.session.config,
-        round: toRoundView(slice.round),
+        round: toRoundView(windowedRound),
         events: fresh,
+        history,
         submissions: toTypedSubmissions(slice.round),
         players: toPlayerViews(state),
         now,
@@ -1117,11 +1129,15 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
       });
 
       const updatedRound: RoundRecord = {
-        ...slice.round,
+        ...windowedRound,
         publicPayload: observation.publicPayload,
         privatePayloads: observation.privatePayloads,
         solution: observation.solution,
-        observedEventIds: [...slice.round.observedEventIds, ...fresh.map((event) => event.id)],
+        observedEventIds: [
+          ...slice.round.observedEventIds,
+          ...history.map((event) => event.id),
+          ...fresh.map((event) => event.id),
+        ],
       };
 
       const deltas: readonly RoundScore[] = observation.scoreDeltas;

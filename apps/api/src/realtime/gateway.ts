@@ -56,6 +56,8 @@ const actorOf = (action: RoomAction): PlayerId | null => {
 };
 
 export interface RealtimeGateway {
+  /** Broadcast per-recipient projections of a record (used by system-driven dispatches, e.g. live ingestion). */
+  broadcast(record: RoomRecord): void;
   close(): void;
 }
 
@@ -449,6 +451,7 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
   tickInterval.unref?.();
 
   return {
+    broadcast: broadcastFromRecord,
     close: () => {
       clearInterval(tickInterval);
     },
