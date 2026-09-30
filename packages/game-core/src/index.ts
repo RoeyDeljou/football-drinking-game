@@ -335,6 +335,20 @@ export {
   m8StatValue,
   playM8Bracket,
 } from './modules/m8-stat-duel.js';
+export type { M9Answer, M9PublicPayload, M9Question, M9QuestionType, M9Settlement, M9Solution } from './modules/m9-flash-rounds.js';
+export {
+  ANSWERS as M9_ANSWERS,
+  buildM9Question,
+  M9_DEFAULT_CONFIG,
+  M9_ID,
+  M9_LAST_MINUTE,
+  M9_MIN_ANSWER_MS,
+  m9ContentKey,
+  m9FlashRounds,
+  MIN_WINDOW_MINUTES as M9_MIN_WINDOW_MINUTES,
+  QUESTION_TYPES as M9_QUESTION_TYPES,
+  settleM9,
+} from './modules/m9-flash-rounds.js';
 export type { M5Fire, M5PublicPayload, M5Solution } from './modules/m5-event-roulette.js';
 export {
   dealEventKinds,

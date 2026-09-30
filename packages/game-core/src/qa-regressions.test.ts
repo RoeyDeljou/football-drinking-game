@@ -25,6 +25,7 @@ import { M5_ID } from './modules/m5-event-roulette.js';
 import { M6_ID } from './modules/m6-match-bingo.js';
 import { M7_ID } from './modules/m7-minute-sniper.js';
 import { M8_ID } from './modules/m8-stat-duel.js';
+import { M9_ID } from './modules/m9-flash-rounds.js';
 import { M10_ID } from './modules/m10-lineup-recall.js';
 import { createModuleRegistry, PHASE_1_MODULES } from './modules/registry.js';
 import { applyPenalties, DEFAULT_PENALTY_CAPS, penalty } from './penalties.js';
@@ -771,6 +772,7 @@ describe('N8: every Phase-1 module replays deterministically', () => {
       M6_ID,
       M7_ID,
       M8_ID,
+      M9_ID,
       M10_ID,
       G_MIX_ID,
       G1_ID,

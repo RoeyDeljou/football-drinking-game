@@ -24,6 +24,7 @@ import { m5EventRoulette } from './m5-event-roulette.js';
 import { m6MatchBingo } from './m6-match-bingo.js';
 import { m7MinuteSniper } from './m7-minute-sniper.js';
 import { m8StatDuel } from './m8-stat-duel.js';
+import { m9FlashRounds } from './m9-flash-rounds.js';
 import { m10LineupRecall } from './m10-lineup-recall.js';
 import { createMixedModule, G_MIX_ID, M_MIX_ID } from './mixed.js';
 
@@ -74,6 +75,7 @@ export const STANDALONE_MODULES: readonly EngineGameModule[] = [
   m6MatchBingo,
   m7MinuteSniper,
   m8StatDuel,
+  m9FlashRounds,
   m10LineupRecall,
   g1GuessThePlayer,
   g3CareerPath,
@@ -90,7 +92,7 @@ export const MIXED_ROTATION_EXCLUDED: readonly GameModuleId[] = [];
 
 /**
  * Matchday "all games in one": by default rotates M2, M3 and M10 (M10 skips itself per round when the
- * lineups are unconfirmed, and has two XIs per fixture). Never M1, M4, M5, M6, M7 or M8: live
+ * lineups are unconfirmed, and has two XIs per fixture). Never M1, M4-M9: live
  * rounds that wait on the match, not one self-contained question (`isMixable` filters them out).
  */
 export const matchdayMixed: EngineGameModule = createMixedModule({
@@ -122,6 +124,7 @@ export const PHASE_1_MODULES: readonly EngineGameModule[] = [
   m6MatchBingo,
   m7MinuteSniper,
   m8StatDuel,
+  m9FlashRounds,
   m10LineupRecall,
   generalMixed,
   g1GuessThePlayer,
