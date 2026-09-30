@@ -256,6 +256,7 @@ export {
   createModuleRegistry,
   generalMixed,
   matchdayMixed,
+  MIXED_ROTATION_EXCLUDED,
   PHASE_1_MODULES,
   STANDALONE_MODULES,
 } from './modules/registry.js';

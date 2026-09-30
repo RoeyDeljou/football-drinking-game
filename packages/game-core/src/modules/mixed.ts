@@ -217,6 +217,12 @@ export interface MixedModuleOptions {
    * here with `isMixable`, so passing the whole list (M1 included) is correct and intended.
    */
   readonly pool: readonly EngineGameModule[];
+  /**
+   * Mixable modules left out of the **default** rotation (`defaultConfig.modules`) while staying
+   * eligible: a host can still name them in `config.modules`. For games whose client screen has not
+   * shipped yet. Data requirements are declared over the default rotation.
+   */
+  readonly excludeFromDefault?: readonly GameModuleId[];
 }
 
 const failureRank = (reason: RoundGenerationFailure): number => (reason === 'NO_UNUSED_CONTENT' ? 0 : 1);
@@ -298,7 +304,12 @@ export const createMixedModule = (options: MixedModuleOptions): EngineGameModule
   const innerPublicPayload = (sub: EngineGameModule, payload: unknown, configured: readonly GameModuleId[]): unknown =>
     suppressesShirtNumbers(sub.id, configured) ? suppressOptionShirtNumbers(payload) : payload;
 
-  const defaultConfig: MixedConfig ={ modules: eligible.map((module) => module.id) };
+  const excluded = options.excludeFromDefault ?? [];
+  const defaults = eligible.filter((module) => !excluded.includes(module.id));
+  if (defaults.length === 0) {
+    throw new EngineInvariantError(`${id} excludes every mixable ${category} module from its default rotation`);
+  }
+  const defaultConfig: MixedConfig = { modules: defaults.map((module) => module.id) };
 
   return defineGameModule<MixedShape>({
     id,
@@ -306,9 +317,9 @@ export const createMixedModule = (options: MixedModuleOptions): EngineGameModule
     kind: 'simultaneous-answer',
     // Only what *every* sub-game needs (e.g. `hasLineups` for matchday). Per-round playability is
     // decided inside `generateRound`, against whichever sub-games the data can actually serve.
-    dataRequirements: commonRequirements(eligible),
+    dataRequirements: commonRequirements(defaults),
     // …and at least one sub-game's full set, so the picker greys Mixed out when no sub-game can play.
-    dataRequirementsAnyOf: eligible.map((module) => module.dataRequirements),
+    dataRequirementsAnyOf: defaults.map((module) => module.dataRequirements),
     minPlayers: Math.min(...eligible.map((module) => module.minPlayers)),
     maxPlayers: eligible.some((module) => module.maxPlayers === null)
       ? null
