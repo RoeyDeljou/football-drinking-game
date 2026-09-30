@@ -347,6 +347,12 @@ export interface GameModuleDefinition<S extends ModuleShape> {
    * (reveal → intermission, session finished) instead of failing to generate round 2. Omit for none.
    */
   readonly maxRoundsPerSession?: number;
+  /**
+   * Optional, data-aware version of the cap: how many rounds this session's data can serve (M10: one
+   * per usable starting XI). Called once at `START_SESSION` with the session's config and data; the
+   * session plans `min(room.roundsPerSession, maxRoundsPerSession, plannedRounds)` rounds (at least 1).
+   */
+  plannedRounds?: (ctx: { readonly config: S['config']; readonly data: RoundDataContext }) => number;
   /** May a player replace an accepted submission while the round is open? (M1 slip edits.) */
   readonly allowResubmission: boolean;
   readonly defaultConfig: S['config'];
@@ -403,6 +409,8 @@ export interface EngineGameModule {
   readonly maxPlayers: number | null;
   /** `null` = no cap. See `GameModuleDefinition.maxRoundsPerSession`. */
   readonly maxRoundsPerSession: number | null;
+  /** `null` when the module does not declare `plannedRounds`. */
+  plannedRounds(ctx: { readonly config: unknown; readonly data: RoundDataContext }): number | null;
   readonly allowResubmission: boolean;
   readonly defaultConfig: unknown;
   readonly supportsLiveEvents: boolean;
@@ -501,6 +509,12 @@ export const defineGameModule = <S extends ModuleShape>(
     minPlayers: definition.minPlayers,
     maxPlayers: definition.maxPlayers,
     maxRoundsPerSession: cap ?? null,
+    plannedRounds: (ctx) => {
+      const planner = definition.plannedRounds;
+      if (planner === undefined) return null;
+      const planned = planner({ config: typedConfig(ctx.config), data: ctx.data });
+      return Number.isFinite(planned) ? Math.max(0, Math.floor(planned)) : null;
+    },
     allowResubmission: definition.allowResubmission,
     defaultConfig: definition.defaultConfig,
     supportsLiveEvents: definition.observeEvents !== undefined,

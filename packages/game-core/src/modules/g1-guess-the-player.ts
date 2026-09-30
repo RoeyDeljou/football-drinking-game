@@ -36,7 +36,7 @@ import type { Rng } from '../ports.js';
 import { pickRoundWinners } from '../scoring.js';
 import {
   footballPlayerIdSchema,
-  nonSubmitters,
+  fairNonSubmitters,
   positionSchema,
   rolledSelfPenalties,
   scoreChoiceRound,
@@ -464,7 +464,7 @@ export const g1GuessThePlayer = defineGameModule<G1Shape>({
       ),
       ...rolledSelfPenalties(
         ctx.rng,
-        nonSubmitters<G1Shape>(ctx.players, ctx.submissions),
+        fairNonSubmitters<G1Shape>(ctx.players, ctx.submissions, ctx.round),
         'NO_ANSWER',
         ctx.config.noAnswerSips > 0,
       ),

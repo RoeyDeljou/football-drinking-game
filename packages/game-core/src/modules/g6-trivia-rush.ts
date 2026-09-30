@@ -25,7 +25,7 @@ import { pickRoundWinners } from '../scoring.js';
 import {
   footballPlayerIdSchema,
   lastCorrectPlayer,
-  nonSubmitters,
+  fairNonSubmitters,
   rolledSelfPenalties,
   scoreChoiceRound,
 } from './helpers.js';
@@ -298,7 +298,7 @@ export const g6TriviaRush = defineGameModule<G6Shape>({
       ),
       ...rolledSelfPenalties(
         ctx.rng,
-        nonSubmitters<G6Shape>(ctx.players, ctx.submissions),
+        fairNonSubmitters<G6Shape>(ctx.players, ctx.submissions, ctx.round),
         'NO_ANSWER',
         ctx.config.noAnswerSips > 0,
       ),

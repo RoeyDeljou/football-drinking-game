@@ -997,10 +997,14 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
         moduleId: module.id,
         category: module.category,
         config: selection.config,
-        roundsPlanned:
-          module.maxRoundsPerSession === null
-            ? state.settings.roundsPerSession
-            : Math.min(state.settings.roundsPerSession, module.maxRoundsPerSession),
+        roundsPlanned: Math.max(
+          1,
+          Math.min(
+            state.settings.roundsPerSession,
+            module.maxRoundsPerSession ?? Number.POSITIVE_INFINITY,
+            module.plannedRounds({ config: selection.config, data: deps.data }) ?? Number.POSITIVE_INFINITY,
+          ),
+        ),
         rounds: [],
         startedAt: now,
         finishedAt: null,

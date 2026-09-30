@@ -40,7 +40,7 @@ import { penalty } from '../penalties.js';
 import type { Rng } from '../ports.js';
 import { pickRoundWinners } from '../scoring.js';
 import { maxOpeningDecoys, nextClueUnlockAt, visibleClueCount } from './g1-guess-the-player.js';
-import { footballPlayerIdSchema, nonSubmitters, rolledSelfPenalties, scoreChoiceRound } from './helpers.js';
+import { footballPlayerIdSchema, fairNonSubmitters, rolledSelfPenalties, scoreChoiceRound } from './helpers.js';
 
 export const G3_ID = asGameModuleId('G3');
 
@@ -462,7 +462,7 @@ export const g3CareerPath = defineGameModule<G3Shape>({
       ),
       ...rolledSelfPenalties(
         ctx.rng,
-        nonSubmitters<G3Shape>(ctx.players, ctx.submissions),
+        fairNonSubmitters<G3Shape>(ctx.players, ctx.submissions, ctx.round),
         'NO_ANSWER',
         ctx.config.noAnswerSips > 0,
       ),
