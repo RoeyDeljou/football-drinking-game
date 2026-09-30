@@ -30,6 +30,14 @@
  * - `whole-match`: every event of the match, including those before the round opened (M1, whose
  *   slip settles on the whole match).
  *
+ * ## Live stats
+ *
+ * A module that declares `observeStats` also receives `MATCH_STATS` snapshots while its round is
+ * `open`: the fixture's full cumulative per-player and per-team stat line (latest `asOf` wins; older
+ * or repeated snapshots never reach the module). Snapshots are whole-match; a module that wants
+ * "since the round opened" diffs against a snapshot it keeps. Only goals, assists, shots, shots on
+ * target, fouls committed and minutes are live on ESPN — see `live-stats.ts` for the contract.
+ *
  * Reading events — match clock ordering and **goal attribution** (an `OWN_GOAL`'s `teamId` is the
  * *conceding* team; the goal counts for its opponent) — goes through `match-events.ts`, never
  * re-derived per module.
@@ -41,6 +49,7 @@ import type { DataRequirementKey, RoundDataContext } from './data.js';
 import { EngineInvariantError } from './errors.js';
 import type { GameModuleId, PlayerId, RoundId, SessionId } from './ids.js';
 import { asPlayerId } from './ids.js';
+import type { LiveStatsSnapshot } from './live-stats.js';
 import type { LiveEventWindow, LiveEventWindowMode } from './live-window.js';
 import { DEFAULT_LIVE_EVENT_WINDOW } from './live-window.js';
 import type { PenaltyEvent } from './penalties.js';
@@ -306,6 +315,16 @@ export interface ObserveEventsResult<S extends ModuleShape> {
   readonly resolved: boolean;
 }
 
+export interface ObserveStatsContext<S extends ModuleShape> {
+  readonly config: S['config'];
+  readonly round: RoundView<S>;
+  /** A snapshot strictly newer than any this round accepted before. */
+  readonly snapshot: LiveStatsSnapshot;
+  readonly submissions: readonly TypedSubmission<S>[];
+  readonly players: readonly RoundPlayerView[];
+  readonly now: number;
+}
+
 /* -------------------------------------------------------------------------- */
 /* The module itself                                                           */
 /* -------------------------------------------------------------------------- */
@@ -341,6 +360,8 @@ export interface GameModuleDefinition<S extends ModuleShape> {
   scoreRound(ctx: ScoreRoundContext<S>): RoundOutcome;
   projectRound(ctx: ProjectRoundContext<S>): RoundProjection<S>;
   observeEvents?: (ctx: ObserveEventsContext<S>) => ObserveEventsResult<S>;
+  /** Live stats snapshots (see "Live stats"). Same result shape as `observeEvents`. */
+  observeStats?: (ctx: ObserveStatsContext<S>) => ObserveEventsResult<S>;
   /**
    * Which live events `observeEvents` sees (see "Live events" above). Omit for the default,
    * `since-round-open`. Ignored for modules without `observeEvents`.
@@ -385,6 +406,8 @@ export interface EngineGameModule {
   readonly allowResubmission: boolean;
   readonly defaultConfig: unknown;
   readonly supportsLiveEvents: boolean;
+  /** `true` when the module declares `observeStats`: the transport should send it `MATCH_STATS`. */
+  readonly supportsLiveStats: boolean;
   /** Resolved `liveEventWindow` (default applied). Meaningful only when `supportsLiveEvents`. */
   readonly liveEventWindow: LiveEventWindowMode;
   /** `true` when the module declares `nextContentChangeAt`, i.e. its projection changes with time. */
@@ -395,6 +418,7 @@ export interface EngineGameModule {
   scoreRound(ctx: ScoreRoundContext<ModuleShape>): RoundOutcome;
   projectRound(ctx: ProjectRoundContext<ModuleShape>): RoundProjection<ModuleShape>;
   observeEvents(ctx: ObserveEventsContext<ModuleShape>): ObserveEventsResult<ModuleShape> | null;
+  observeStats(ctx: ObserveStatsContext<ModuleShape>): ObserveEventsResult<ModuleShape> | null;
   afterSubmission(ctx: AfterSubmissionContext<ModuleShape>): AfterSubmissionResult | null;
   /** `null` for modules without timed content. Validated: never `<= ctx.now`, always finite. */
   nextContentChangeAt(ctx: ContentScheduleContext<ModuleShape>): number | null;
@@ -480,6 +504,7 @@ export const defineGameModule = <S extends ModuleShape>(
     allowResubmission: definition.allowResubmission,
     defaultConfig: definition.defaultConfig,
     supportsLiveEvents: definition.observeEvents !== undefined,
+    supportsLiveStats: definition.observeStats !== undefined,
     liveEventWindow: definition.liveEventWindow ?? DEFAULT_LIVE_EVENT_WINDOW,
     hasTimedContent: definition.nextContentChangeAt !== undefined,
 
@@ -547,6 +572,19 @@ export const defineGameModule = <S extends ModuleShape>(
         round: typedRound(ctx.round),
         events: ctx.events,
         history: ctx.history,
+        submissions: typedSubmissions(ctx.submissions),
+        players: ctx.players,
+        now: ctx.now,
+      });
+    },
+
+    observeStats: (ctx) => {
+      const observe = definition.observeStats;
+      if (observe === undefined) return null;
+      return observe({
+        config: typedConfig(ctx.config),
+        round: typedRound(ctx.round),
+        snapshot: ctx.snapshot,
         submissions: typedSubmissions(ctx.submissions),
         players: ctx.players,
         now: ctx.now,

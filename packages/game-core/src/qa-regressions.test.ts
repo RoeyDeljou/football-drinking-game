@@ -20,9 +20,11 @@ import { lastCorrectPlayer, scoreChoiceRound } from './modules/helpers.js';
 import { M1_ID } from './modules/m1-match-markets.js';
 import { M2_DEFAULT_CONFIG, M2_ID, m2WhoIsThatPlayer } from './modules/m2-who-is-that-player.js';
 import { M3_DEFAULT_CONFIG, M3_ID, m3ShirtNumber } from './modules/m3-shirt-number.js';
+import { M4_ID } from './modules/m4-your-man.js';
 import { M5_ID } from './modules/m5-event-roulette.js';
 import { M6_ID } from './modules/m6-match-bingo.js';
 import { M7_ID } from './modules/m7-minute-sniper.js';
+import { M8_ID } from './modules/m8-stat-duel.js';
 import { M10_ID } from './modules/m10-lineup-recall.js';
 import { createModuleRegistry, PHASE_1_MODULES } from './modules/registry.js';
 import { applyPenalties, DEFAULT_PENALTY_CAPS, penalty } from './penalties.js';
@@ -764,9 +766,11 @@ describe('N8: every Phase-1 module replays deterministically', () => {
       M1_ID,
       M2_ID,
       M3_ID,
+      M4_ID,
       M5_ID,
       M6_ID,
       M7_ID,
+      M8_ID,
       M10_ID,
       G_MIX_ID,
       G1_ID,

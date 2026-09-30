@@ -108,6 +108,8 @@ export {
   laterClock,
   matchClockSchema,
 } from './match-events.js';
+export type { LiveStatsSnapshot } from './live-stats.js';
+export { matchStatsActionSchema, playerMatchStatsSchema, teamMatchStatsSchema } from './live-stats.js';
 export type { LiveBaselineSource, LiveEventWindow, LiveEventWindowMode, LiveWindowStep } from './live-window.js';
 export { DEFAULT_LIVE_EVENT_WINDOW, initialLiveWindow, stepLiveWindow } from './live-window.js';
 /* free-text name matching (M10; reusable by recall games) */
@@ -135,6 +137,7 @@ export type {
   ModuleShape,
   ObserveEventsContext,
   ObserveEventsResult,
+  ObserveStatsContext,
   PerPlayer,
   ProjectRoundContext,
   RoundGenerationContext,
@@ -201,6 +204,7 @@ export type {
   LoadingProgressAction,
   LockRoundAction,
   MatchEventsAction,
+  MatchStatsAction,
   ParseClientActionResult,
   PlayerDisconnectedAction,
   PlayerJoinAction,
@@ -319,6 +323,18 @@ export {
   liveEventSideOf,
   orderLiveBatch,
 } from './modules/live-event-kinds.js';
+export type { M4Action, M4DraftEntry, M4LogEntry, M4PublicPayload, M4Solution } from './modules/m4-your-man.js';
+export { draftStarters, M4_ACTIONS, M4_DEFAULT_CONFIG, M4_ID, m4ActionsOf, m4YourMan } from './modules/m4-your-man.js';
+export type { M8Bracket, M8Duel, M8PublicPayload, M8Solution, M8Stat, M8StatRow } from './modules/m8-stat-duel.js';
+export {
+  M8_DEFAULT_CONFIG,
+  M8_ID,
+  M8_STATS,
+  M8_TIEBREAK_ORDER,
+  m8StatDuel,
+  m8StatValue,
+  playM8Bracket,
+} from './modules/m8-stat-duel.js';
 export type { M5Fire, M5PublicPayload, M5Solution } from './modules/m5-event-roulette.js';
 export {
   dealEventKinds,

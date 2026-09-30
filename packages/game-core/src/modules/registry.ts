@@ -19,9 +19,11 @@ import { g6TriviaRush } from './g6-trivia-rush.js';
 import { m1MatchMarkets } from './m1-match-markets.js';
 import { m2WhoIsThatPlayer } from './m2-who-is-that-player.js';
 import { m3ShirtNumber } from './m3-shirt-number.js';
+import { m4YourMan } from './m4-your-man.js';
 import { m5EventRoulette } from './m5-event-roulette.js';
 import { m6MatchBingo } from './m6-match-bingo.js';
 import { m7MinuteSniper } from './m7-minute-sniper.js';
+import { m8StatDuel } from './m8-stat-duel.js';
 import { m10LineupRecall } from './m10-lineup-recall.js';
 import { createMixedModule, G_MIX_ID, M_MIX_ID } from './mixed.js';
 
@@ -67,9 +69,11 @@ export const STANDALONE_MODULES: readonly EngineGameModule[] = [
   m1MatchMarkets,
   m2WhoIsThatPlayer,
   m3ShirtNumber,
+  m4YourMan,
   m5EventRoulette,
   m6MatchBingo,
   m7MinuteSniper,
+  m8StatDuel,
   m10LineupRecall,
   g1GuessThePlayer,
   g3CareerPath,
@@ -86,8 +90,8 @@ export const MIXED_ROTATION_EXCLUDED: readonly GameModuleId[] = [];
 
 /**
  * Matchday "all games in one": by default rotates M2, M3 and M10 (M10 skips itself per round when the
- * lineups are unconfirmed, and has two XIs per fixture). Never M1, M5, M6 or M7: live rounds that wait on the match, not one self-contained
- * question (`isMixable` filters them out).
+ * lineups are unconfirmed, and has two XIs per fixture). Never M1, M4, M5, M6, M7 or M8: live
+ * rounds that wait on the match, not one self-contained question (`isMixable` filters them out).
  */
 export const matchdayMixed: EngineGameModule = createMixedModule({
   id: M_MIX_ID,
@@ -113,9 +117,11 @@ export const PHASE_1_MODULES: readonly EngineGameModule[] = [
   m1MatchMarkets,
   m2WhoIsThatPlayer,
   m3ShirtNumber,
+  m4YourMan,
   m5EventRoulette,
   m6MatchBingo,
   m7MinuteSniper,
+  m8StatDuel,
   m10LineupRecall,
   generalMixed,
   g1GuessThePlayer,
