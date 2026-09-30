@@ -80,7 +80,7 @@ const MatchStrip = ({
   const names = teamNames(room);
   return (
     <div className="rounded-md bg-hover px-4 py-3 text-center">
-      <p className="t-h3 max-w-full">
+      <p className="t-h3 max-w-full text-[min(1.0625rem,5.5vw)] sm:text-[1.0625rem]">
         {names.home} <span className="text-fg-muted">vs</span> {names.away}
       </p>
       <p className="t-body mt-1 flex flex-wrap items-baseline justify-center gap-x-4 text-fg-muted">
@@ -256,7 +256,7 @@ export const M7MinuteSniper = ({ room, round, now, onSubmit }: GameScreenProps):
                 aria-label="One minute earlier"
                 disabled={minute <= min}
                 onClick={() => setChosen(minute - 1)}
-                className="tap-target pressable min-w-[56px] flex-[0_0_4rem] rounded-md border-2 border-border-strong text-2xl font-bold disabled:opacity-40"
+                className="tap-target pressable w-14 shrink-0 rounded-md border-2 border-border-strong text-2xl font-bold disabled:opacity-40"
               >
                 −
               </button>
@@ -274,7 +274,7 @@ export const M7MinuteSniper = ({ room, round, now, onSubmit }: GameScreenProps):
                 aria-label="One minute later"
                 disabled={minute >= max}
                 onClick={() => setChosen(minute + 1)}
-                className="tap-target pressable min-w-[56px] flex-[0_0_4rem] rounded-md border-2 border-border-strong text-2xl font-bold disabled:opacity-40"
+                className="tap-target pressable w-14 shrink-0 rounded-md border-2 border-border-strong text-2xl font-bold disabled:opacity-40"
               >
                 +
               </button>

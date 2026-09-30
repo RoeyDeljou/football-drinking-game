@@ -105,10 +105,8 @@ const BigCard = ({ card, size }: { readonly card: Card_; readonly size: number }
                   <span className="sr-only">Ticked </span>
                   {cell.tickedAt !== null ? minuteLabel(cell.tickedAt.minute, cell.tickedAt.extraMinute) : ''}
                 </>
-              ) : cell.count > 1 ? (
-                `${cell.progress}/${cell.count}`
               ) : (
-                <span className="opacity-60">waiting</span>
+                `${cell.progress}/${cell.count}`
               )}
             </span>
           </li>
@@ -190,7 +188,7 @@ export const M6MatchBingo = ({ room, round, now }: GameScreenProps): React.JSX.E
       .slice()
       .sort((a, b) => Number(b.fullHouse) - Number(a.fullHouse) || b.lines.length - a.lines.length);
     return (
-      <RoundShell title="Match Bingo" round={round} room={room} now={now} split showAnswered={false}>
+      <RoundShell title="Match Bingo" round={round} room={room} now={now} split splitMin="26rem" showAnswered={false}>
         <div className="flex flex-col gap-4">
           <Card>
             <Eyebrow>{solution.status === 'void' ? 'Round void' : 'Round over'}</Eyebrow>

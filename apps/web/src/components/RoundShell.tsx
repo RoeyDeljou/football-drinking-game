@@ -12,6 +12,7 @@ export const RoundShell = ({
   split = false,
   countdown = true,
   showAnswered = true,
+  splitMin,
 }: {
   readonly title: string;
   readonly round: ProjectedRound;
@@ -24,6 +25,8 @@ export const RoundShell = ({
   readonly countdown?: boolean;
   /** Set false for games with nothing to submit (Event Roulette, Match Bingo). */
   readonly showAnswered?: boolean;
+  /** Minimum width of each split column before they stack (CSS length, default 18rem). */
+  readonly splitMin?: string;
 }): React.JSX.Element => {
   const answeredCount = round.submissionStatus.filter((entry) => entry.submitted).length;
   const total = round.submissionStatus.length;
@@ -40,6 +43,7 @@ export const RoundShell = ({
       </div>
       {round.visibility === 'pre-reveal' && countdown ? <CountdownBar deadlineAt={round.deadlineAt} now={now} totalMs={totalMs} /> : null}
       <div
+        style={split && splitMin !== undefined ? ({ '--split-min': splitMin } as React.CSSProperties) : undefined}
         className={
           split
             ? 'split-cols gap-4 lg:items-start lg:gap-6 land:items-start'
