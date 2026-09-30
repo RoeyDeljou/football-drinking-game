@@ -78,6 +78,24 @@ const M1_CONFIG = {
   noAnswerSips: 4,
 };
 
+const startRoom = async (server: TestServer, moduleId: string, config: unknown) => {
+  const created = await jsonFetch(`${server.baseUrl}/rooms`, {
+    method: 'POST',
+    body: JSON.stringify({ category: 'matchday', fixtureId: FIXTURE_ID, hostNickname: 'Hosty', settings: { minPlayersToStart: 1 } }),
+  });
+  expect(created.status).toBe(201);
+  const { roomToken, roomId } = created.body as { roomToken: string; roomId: string };
+  const host = await connectAndTrack<RoomView>(server, { mode: 'reconnect', roomToken });
+  const playerId = host.joined.playerId;
+  host.socket.emit('room:action', { type: 'SELECT_GAME', actorId: playerId, moduleId, config });
+  await host.state.waitFor((s) => s.selection?.moduleId === moduleId, 15_000);
+  host.socket.emit('room:action', { type: 'START_LOADING', actorId: playerId, stepKeys: ['fixture', 'lineups', 'squads', 'stats'] });
+  await host.state.waitFor((s) => s.loading?.steps.every((step) => step.status === 'done') === true, 30_000);
+  host.socket.emit('room:action', { type: 'START_SESSION', actorId: playerId });
+  await host.state.waitFor((s) => s.round?.status === 'open', 15_000);
+  return { host, roomId };
+};
+
 const startM1Room = async (server: TestServer) => {
   const created = await jsonFetch(`${server.baseUrl}/rooms`, {
     method: 'POST',
@@ -108,7 +126,7 @@ describe('live ingestion side effects', () => {
   let server: TestServer;
   let provider: FixtureProvider;
   let liveCalls = 0;
-  let fullTimeMode: 'real' | 'synthetic' | 'withheld' = 'real';
+  let fullTimeMode: 'real' | 'synthetic' | 'withheld' | 'empty' = 'real';
   const fake = createFakeScheduler();
 
   beforeAll(async () => {
@@ -123,6 +141,7 @@ describe('live ingestion side effects', () => {
       const result = await original(id);
       if (fullTimeMode === 'real' || !result.ok || result.value === null) return result;
       // A feed that flipped to FINISHED but never published a final-whistle play: the data layer synthesizes one.
+      if (fullTimeMode === 'empty') return { ...result, value: { ...result.value, events: [] } };
       const events = result.value.events.filter((event) => event.type !== 'FULL_TIME');
       const stripped = { ...result.value, events };
       return { ...result, value: fullTimeMode === 'synthetic' ? guaranteeFullTime(stripped) : stripped };
@@ -218,6 +237,44 @@ describe('live ingestion side effects', () => {
     expect(final.round!.publicPayload.counters.fullTime).toBe(true);
     await idle();
     expect(ingestion.watchedFixtureIds()).toEqual([]);
+    host.socket.close();
+  }, 60_000);
+
+  it('a since-round-open round (M7) opened while the feed has no events still gets its baseline, without churn', async () => {
+    const ingestion = server.ctx.liveIngestion!;
+    const idle = (): Promise<void> => ingestion.idle();
+    const replay = provider.matchReplay()!;
+    replay.reset();
+    replay.advanceTo(0);
+    const { host, roomId } = await startRoom(server, 'M7', null); // prefetch sees real data (hasLiveEvents)
+    fullTimeMode = 'empty'; // ...then the feed goes quiet before the first poll (fake timers: none has fired yet)
+    const store = server.ctx.roomStore;
+    const window = async () => (await store.load(roomId as never))!.state.sessions.at(-1)!.rounds.at(-1)!.liveWindow;
+    expect(await window()).toMatchObject({ baselineSource: null });
+
+    await fake.advance(15_000, idle); // first poll: empty list, delivered once as the baseline
+    expect(await window()).toMatchObject({ baselineSource: 'first-batch', openedAt: null });
+
+    let saves = 0;
+    const originalSave = store.save.bind(store);
+    store.save = async (record) => {
+      saves += 1;
+      return originalSave(record);
+    };
+    let broadcasts = 0;
+    host.socket.on('room:state', () => {
+      broadcasts += 1;
+    });
+    const persistBefore = persistCalls.count;
+    const callsBefore = liveCalls;
+    for (let i = 0; i < 3; i += 1) await fake.advance(15_000, idle);
+    expect(liveCalls - callsBefore).toBe(3);
+    expect(saves).toBe(0);
+    expect(broadcasts).toBe(0);
+    expect(persistCalls.count).toBe(persistBefore);
+
+    store.save = originalSave;
+    fullTimeMode = 'real';
     host.socket.close();
   }, 60_000);
 });

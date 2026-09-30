@@ -80,6 +80,8 @@ const BENIGN_REJECTIONS = new Set(['ROUND_CLOSED', 'WRONG_PHASE', 'NO_ACTIVE_SES
 interface Watcher {
   readonly fixtureId: FixtureId;
   readonly rooms: Map<RoomId, string>;
+  /** Room -> roundKey for which the first delivery (the round's baseline, possibly an empty list) was accepted. */
+  readonly baselined: Map<RoomId, string>;
   timer: TimerHandle | null;
   reapTimer: TimerHandle | null;
   inFlight: Promise<void> | null;
@@ -178,6 +180,7 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     if (roomFixtures.get(roomId)?.size === 0) roomFixtures.delete(roomId);
     if (watcher === undefined) return;
     watcher.rooms.delete(roomId);
+    watcher.baselined.delete(roomId);
     if (watcher.rooms.size === 0) dropWatcher(watcher);
   };
 
@@ -192,8 +195,17 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     return good;
   };
 
-  const deliver = async (roomId: RoomId, events: readonly MatchEvent[]): Promise<void> => {
-    if (events.length === 0) return;
+  /**
+   * Delivers one batch. Empty lists are skipped EXCEPT the first delivery per (room, round): a
+   * `since-round-open` round baselines on the first batch it receives and an empty one is a valid
+   * baseline (a round that opens after scheduled kickoff while the feed has no events yet). After that the
+   * reducer no-ops empty/duplicate batches, and we do not even send empty ones.
+   */
+  const deliver = async (fixtureId: FixtureId, roomId: RoomId, events: readonly MatchEvent[]): Promise<void> => {
+    const watcher = watchers.get(fixtureId);
+    const roundKey = watcher?.rooms.get(roomId);
+    const needsBaseline = watcher !== undefined && roundKey !== undefined && watcher.baselined.get(roomId) !== roundKey;
+    if (events.length === 0 && !needsBaseline) return;
     try {
       const outcome = await deps.dispatchMatchEvents(roomId, events);
       if (outcome === null) {
@@ -205,6 +217,9 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
           log.warn(`MATCH_EVENTS rejected for room ${roomId}: ${outcome.rejection.code}`);
         }
         return;
+      }
+      if (watcher !== undefined && roundKey !== undefined && watcher.rooms.get(roomId) === roundKey) {
+        watcher.baselined.set(roomId, roundKey);
       }
       if (outcome.changed) deps.onRoomChanged(outcome.record);
     } catch (error) {
@@ -249,7 +264,7 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     const status = fixtureStatusSchema.safeParse(state.fixture.status);
     const current = status.success ? status.data : 'LIVE';
 
-    for (const roomId of [...watcher.rooms.keys()]) await deliver(roomId, events);
+    for (const roomId of [...watcher.rooms.keys()]) await deliver(watcher.fixtureId, roomId, events);
     if (closed || watchers.get(watcher.fixtureId) !== watcher) return;
 
     if (current === 'FINISHED') {
@@ -313,6 +328,7 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
       watcher = {
         fixtureId: need.fixtureId,
         rooms: new Map(),
+        baselined: new Map(),
         timer: null,
         reapTimer: null,
         inFlight: null,
@@ -339,7 +355,7 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
       armReap(watcher); // long-lived watchers (postponed / awaiting full time) must not outlive their rooms
     } else if (previousKey !== need.roundKey && watcher.lastEvents !== null) {
       // Room (or its round) is new to a watcher that already has events: serve them from cache now.
-      track(deliver(roomId, watcher.lastEvents));
+      track(deliver(watcher.fixtureId, roomId, watcher.lastEvents));
     }
   };
 

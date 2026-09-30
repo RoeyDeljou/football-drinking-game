@@ -57,7 +57,7 @@ export const G6TriviaRush = ({ room, round, onSubmit }: GameScreenProps): React.
               return (
                 <div
                   key={option.id}
-                  className={`rounded-md border-2 px-3 py-3 font-semibold sm:px-4 ${
+                  className={`rounded-md border-2 px-3 py-3 text-[min(1rem,6vw)] font-semibold sm:px-4 sm:text-base ${
                     isCorrect ? 'border-up bg-up/15 text-fg' : 'border-transparent bg-hover text-fg-muted'
                   }`}
                 >
@@ -90,7 +90,7 @@ export const G6TriviaRush = ({ room, round, onSubmit }: GameScreenProps): React.
                 setPicked(option.id);
                 onSubmit({ optionId: option.id });
               }}
-              className="min-h-16 text-base lg:min-h-20 lg:text-lg"
+              className="min-h-16 text-[min(1rem,6vw)] sm:text-base lg:min-h-20 lg:text-lg"
             >
               {option.label}
             </OptionButton>

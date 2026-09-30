@@ -558,4 +558,73 @@ describe('live ingestion scheduler', () => {
     await t.service.close();
     expect(t.clock.pending()).toBe(0);
   });
+
+  it('delivers an empty list once per (room, round) as a baseline, then skips empty resends', async () => {
+    const t = setup();
+    t.sync('a', ['fx1']);
+    await t.clock.advance(0);
+    expect(t.delivered).toHaveLength(1);
+    expect(t.delivered[0]?.events).toEqual([]);
+    await t.clock.advance(3000);
+    expect(t.feed.polls).toBe(4);
+    expect(t.delivered).toHaveLength(1); // empty resends are skipped
+    // a second room joining a watcher that already has an (empty) cache gets its own baseline from cache
+    t.sync('b', ['fx1']);
+    await t.clock.advance(0);
+    expect(t.delivered.filter((d) => d.roomId === 'b')).toHaveLength(1);
+    expect(t.delivered.at(-1)?.events).toEqual([]);
+    await t.service.close();
+  });
+
+  it('a new round of the same room gets a fresh empty baseline from cache', async () => {
+    const clock = createFakeScheduler();
+    const delivered: Array<readonly MatchEvent[]> = [];
+    let round = 'r1';
+    let polls = 0;
+    const service = createLiveIngestion({
+      provider: {
+        getLiveMatchState: async (id) => {
+          polls += 1;
+          return { ok: true, notes: [], fromCache: false, value: { fixture: { id, status: 'LIVE', kickoff: 'x' }, events: [] } } as never;
+        },
+      },
+      dispatchMatchEvents: async (_room, events) => {
+        delivered.push(events);
+        return { rejection: null, changed: false, record: rec('a') } as unknown as DispatchOutcome;
+      },
+      onRoomChanged: () => undefined,
+      plan: () => [{ fixtureId: FIXTURE, roundKey: round }],
+      scheduler: clock.scheduler,
+      random: () => 0.5,
+      log: { warn: () => undefined },
+      config: { liveIntervalMs: 1000, jitterRatio: 0 },
+    });
+    service.roomChanged(rec('a'));
+    await clock.advance(0);
+    await clock.advance(2000);
+    expect(delivered).toHaveLength(1);
+    round = 'r2';
+    service.roomChanged(rec('a'));
+    await clock.advance(0);
+    expect(delivered).toHaveLength(2); // new round: baseline delivered even though the list is empty
+    await clock.advance(3000);
+    expect(delivered).toHaveLength(2);
+    expect(polls).toBeGreaterThan(3);
+    await service.close();
+  });
+
+  it('a rejected baseline delivery is retried on the next poll', async () => {
+    const t = setup();
+    t.rejectWith.code = 'ROUND_CLOSED';
+    t.sync('a', ['fx1']);
+    await t.clock.advance(0);
+    await t.clock.advance(1000);
+    expect(t.delivered).toHaveLength(2); // not marked as baselined, so empty is sent again
+    t.rejectWith.code = null;
+    await t.clock.advance(1000);
+    expect(t.delivered).toHaveLength(3);
+    await t.clock.advance(3000);
+    expect(t.delivered).toHaveLength(3);
+    await t.service.close();
+  });
 });
