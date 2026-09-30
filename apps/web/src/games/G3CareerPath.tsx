@@ -37,7 +37,7 @@ export const G3CareerPath = ({ room, round, onSubmit }: GameScreenProps): React.
   if (round.visibility === 'revealed') {
     const solution = round.solution as Solution;
     return (
-      <RoundShell title="Career Path" round={round} room={room} now={Date.now()}>
+      <RoundShell title="Career Path" round={round} room={room} now={Date.now()} split>
         <Card>
           <Eyebrow className="mb-2">Full career</Eyebrow>
           <ol className="t-body mb-4 flex flex-col gap-1 text-fg-muted">
@@ -54,21 +54,25 @@ export const G3CareerPath = ({ room, round, onSubmit }: GameScreenProps): React.
 
   return (
     <RoundShell title="Career Path" round={round} room={room} now={Date.now()}>
-      <Card>
+      <Card className="lg:p-8">
+        <div className="split-cols gap-4 lg:items-start lg:gap-8 land:items-start">
+        <div>
         <Eyebrow className="mb-2">Clubs revealed ({payload.clubs.length}) · oldest first</Eyebrow>
-        <ol className="t-h3 mb-4 flex flex-col gap-1">
+        <ol className="t-h3 flex flex-col gap-1 lg:text-2xl">
           {payload.clubs.map((club, index) => (
             <li key={`${club.name}-${index}`}>{clubText(club)}</li>
           ))}
         </ol>
-        <div className="grid grid-cols-2 gap-3">
+        </div>
+        <div>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-3">
           {payload.options.map((option) => (
             <OptionButton
               key={option.playerId}
               selected={yourPick === option.playerId}
               disabled={alreadySubmitted}
               onClick={() => onSubmit({ playerId: option.playerId })}
-              className="min-h-[64px] px-3 text-sm"
+              className="min-h-16 px-3 text-sm sm:text-base lg:min-h-20 lg:text-lg"
             >
               {option.name}
             </OptionButton>
@@ -79,6 +83,8 @@ export const G3CareerPath = ({ room, round, onSubmit }: GameScreenProps): React.
             Answer locked in. More clubs keep unlocking for everyone else.
           </p>
         ) : null}
+        </div>
+        </div>
       </Card>
     </RoundShell>
   );

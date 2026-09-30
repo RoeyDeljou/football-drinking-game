@@ -59,7 +59,7 @@ export const G1GuessThePlayer = ({ room, round, onSubmit }: GameScreenProps): Re
   if (round.visibility === 'revealed') {
     const solution = round.solution as Solution;
     return (
-      <RoundShell title="Guess the Player" round={round} room={room} now={Date.now()}>
+      <RoundShell title="Guess the Player" round={round} room={room} now={Date.now()} split>
         <Card>
           <Eyebrow className="mb-2">All clues</Eyebrow>
           <ul className="t-body mb-4 flex flex-col gap-1 text-fg-muted">
@@ -76,27 +76,33 @@ export const G1GuessThePlayer = ({ room, round, onSubmit }: GameScreenProps): Re
 
   return (
     <RoundShell title="Guess the Player" round={round} room={room} now={Date.now()}>
-      <Card>
+      <Card className="lg:p-8">
+        <div className="split-cols gap-4 lg:items-start lg:gap-8 land:items-start">
+        <div>
         <Eyebrow className="mb-2">Clues unlocked ({payload.clues.length})</Eyebrow>
-        <ul className="t-h3 mb-4 flex flex-col gap-1">
+        <ul className="t-h3 flex flex-col gap-1 lg:text-2xl">
           {payload.clues.map((clue) => (
             <li key={clue.kind}>{clueText(clue)}</li>
           ))}
         </ul>
-        <div className="grid grid-cols-2 gap-3">
+        </div>
+        <div>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-3">
           {payload.options.map((option) => (
             <OptionButton
               key={option.playerId}
               selected={yourPick === option.playerId}
               disabled={alreadySubmitted}
               onClick={() => onSubmit({ playerId: option.playerId })}
-              className="min-h-[64px] px-3 text-sm"
+              className="min-h-16 px-3 text-sm sm:text-base lg:min-h-20 lg:text-lg"
             >
               {option.name}
             </OptionButton>
           ))}
         </div>
         {alreadySubmitted ? <p className="t-sm mt-3 text-center text-fg-muted">Answer locked in. More clues keep unlocking for everyone else.</p> : null}
+        </div>
+        </div>
       </Card>
     </RoundShell>
   );

@@ -65,11 +65,11 @@ export const GameModePicker = ({
         aria-busy={shufflePending}
         disabled={disabled}
         onClick={() => onChange({ mode: 'shuffle', miniGameId: null })}
-        className={`pressable flex min-h-[112px] w-full items-center gap-4 p-5 text-left disabled:opacity-60 ${
+        className={`pressable flex min-h-28 w-full flex-wrap items-center gap-x-4 gap-y-2 p-4 sm:p-5 text-left disabled:opacity-60 ${
           shuffleSelected ? 'card-gold' : 'card-dashed'
         }`}
       >
-        <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="flex max-w-full flex-1 basis-40 flex-col gap-1">
           <span className="t-eyebrow text-accent">{shuffleSelected ? 'Default' : 'Recommended'}</span>
           <span className="t-d1 block">{SHUFFLE_LABEL}</span>
           <span className="t-sm text-fg-muted">{shuffleBlurb}</span>
@@ -87,7 +87,7 @@ export const GameModePicker = ({
           shuffleSelected ? 'border-border bg-card' : 'border-accent bg-selected'
         }`}
       >
-        <span className="flex flex-col">
+        <span className="flex max-w-full flex-col">
           <span className="text-base font-bold">{SELECT_LABEL}</span>
           <span className="t-xs text-fg-muted">Pick one game and stick with it</span>
         </span>
@@ -97,7 +97,7 @@ export const GameModePicker = ({
       </button>
 
       {!shuffleSelected ? (
-        <div className="flex flex-col gap-2" role="group" aria-label="Mini games">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-2" role="group" aria-label="Mini games">
           {games.map((game) => {
             const selected = value.miniGameId === game.id;
             const pending = pendingModuleId === game.id;
@@ -110,9 +110,9 @@ export const GameModePicker = ({
                 selected={selected}
                 disabled={disabled}
                 onClick={() => onChange({ mode: 'select', miniGameId: game.id })}
-                className="flex items-center gap-3"
+                className="flex flex-wrap items-center gap-x-3"
               >
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="flex max-w-full flex-1 basis-32 flex-col gap-0.5">
                   <span className="text-base font-bold">{game.name}</span>
                   <span className="t-xs font-normal text-fg-muted">{pending ? PICKER_COPY.cardPending : game.blurb}</span>
                 </span>

@@ -9,12 +9,15 @@ export const RoundShell = ({
   room,
   now,
   children,
+  split = false,
 }: {
   readonly title: string;
   readonly round: ProjectedRound;
   readonly room: ClientRoom;
   readonly now: number;
   readonly children: React.ReactNode;
+  /** Reveal screens: lay two blocks side by side from 1024px / on a landscape phone. */
+  readonly split?: boolean;
 }): React.JSX.Element => {
   const answeredCount = round.submissionStatus.filter((entry) => entry.submitted).length;
   const total = round.submissionStatus.length;
@@ -24,13 +27,21 @@ export const RoundShell = ({
     <div className="flex flex-col gap-4">
       <NowPlayingBanner currentFixture={room.currentFixture} />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="t-d1 min-w-0">{title}</h1>
-        <span className="rounded-full border border-border px-3 py-1 text-xs font-bold text-fg-muted">
+        <h1 className="t-d1 max-w-full flex-1 basis-40">{title}</h1>
+        <span className="shrink-0 rounded-full border border-border px-3 py-1 text-xs font-bold text-fg-muted">
           Round {round.index + 1} · {room.session?.roundsPlanned ?? '?'} planned
         </span>
       </div>
       {round.visibility === 'pre-reveal' ? <CountdownBar deadlineAt={round.deadlineAt} now={now} totalMs={totalMs} /> : null}
-      {children}
+      <div
+        className={
+          split
+            ? 'split-cols gap-4 lg:items-start lg:gap-6 land:items-start'
+            : 'flex flex-col gap-4 lg:gap-6'
+        }
+      >
+        {children}
+      </div>
       {round.visibility === 'pre-reveal' ? (
         <p className="tnum text-center text-sm text-fg-muted" aria-live="polite">
           {answeredCount}/{total} answered

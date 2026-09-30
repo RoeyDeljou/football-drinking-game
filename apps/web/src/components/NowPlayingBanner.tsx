@@ -22,7 +22,7 @@ export const NowPlayingBanner = ({
 
   return (
     <div className="flex items-center justify-center gap-2 rounded-md bg-card px-3 py-2 shadow-[var(--edge-hairline)] text-center">
-      <div className="flex flex-col leading-tight">
+      <div className="flex max-w-full flex-col leading-tight">
         <span className="t-eyebrow">
           Now playing: <span className="text-fg">{label.primary}</span>
         </span>

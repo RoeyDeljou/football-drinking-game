@@ -191,7 +191,7 @@ export default function RoomPage(): React.JSX.Element {
 
   if (redirecting) {
     return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-md items-center justify-center px-4">
+      <main className="page page-narrow page-center items-center">
         <Spinner label="Looking for that room…" />
       </main>
     );
@@ -199,7 +199,7 @@ export default function RoomPage(): React.JSX.Element {
 
   if (status === 'fatal') {
     return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-4 px-4 text-center">
+      <main className="page page-narrow page-center items-center gap-4 text-center">
         <Banner tone="error">This room is no longer reachable.</Banner>
         <BigButton onClick={() => router.push('/')}>Back to start</BigButton>
       </main>
@@ -208,7 +208,7 @@ export default function RoomPage(): React.JSX.Element {
 
   if (room === null || self === null) {
     return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-md items-center justify-center px-4">
+      <main className="page page-narrow page-center items-center">
         <Spinner label="Connecting to your room…" />
       </main>
     );
@@ -220,16 +220,13 @@ export default function RoomPage(): React.JSX.Element {
     room.phase === 'loading' && room.loading !== null && room.loading.steps.every((step) => step.status === 'done');
 
   return (
-    <main
-      className={`mx-auto flex min-h-dvh w-full max-w-md flex-col gap-4 px-4 py-6 safe-bottom ${
-        // Room for the fixed "Start playing" bar so it never covers the exit link below the content.
-        loadingDone ? 'pb-28' : ''
-      }`}
-    >
+    <main className="page page-wide">
+      {/* Banners stay a readable measure on a wide screen; the connection banner also stays pinned so a
+          dropped socket is visible wherever the page is scrolled. */}
       <ConnectionStatusBanner status={status} />
       {lastError !== null &&
       shouldShowGamedayExhaustedBanner(isGameday, lastError.code, lastActionTypeRef.current === 'ADVANCE') ? (
-        <div role="alert">
+        <div role="alert" className="mx-auto w-full max-w-3xl">
           <Banner tone="warn">
             No more live matches in this competition — there’s nothing left to rotate through.
             {isHost ? (
@@ -242,10 +239,10 @@ export default function RoomPage(): React.JSX.Element {
           </Banner>
         </div>
       ) : lastError !== null ? (
-        <div role="alert">
+        <div role="alert" className="mx-auto w-full max-w-3xl">
           <Banner tone="error">
             <span className="flex items-center justify-between gap-3">
-              <span>{errorMessage(lastError, category)}</span>
+              <span className="max-w-full">{errorMessage(lastError, category)}</span>
               <button type="button" onClick={clearError} className="tap-target shrink-0 px-2 underline">
                 dismiss
               </button>
@@ -269,12 +266,6 @@ export default function RoomPage(): React.JSX.Element {
 
       {room.phase === 'loading' && room.loading !== null ? (
         <LoadingScreen loading={room.loading} isHost={isHost} onRetry={startLoading} />
-      ) : null}
-
-      {loadingDone ? (
-        <div className="fixed inset-x-0 bottom-4 mx-auto max-w-md px-4 safe-bottom">
-          {isHost ? <BigButton onClick={startSession}>Start playing</BigButton> : null}
-        </div>
       ) : null}
 
       {(room.phase === 'playing' || room.phase === 'roundReveal') ? (
@@ -305,6 +296,16 @@ export default function RoomPage(): React.JSX.Element {
         onLeaveRoom={leaveAndGoHome}
         onDeleteRoom={deleteRoom}
       />
+
+      {/* Last in the flow and sticky to the bottom edge: it can never cover content or the exit link (the
+          page simply scrolls past it), and it clears the home indicator. Guests see nothing here. */}
+      {loadingDone && isHost ? (
+        <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-bg from-70% to-transparent px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-6 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
+          <div className="mx-auto w-full max-w-md">
+            <BigButton onClick={startSession}>Start playing</BigButton>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

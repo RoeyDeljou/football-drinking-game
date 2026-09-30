@@ -49,10 +49,10 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
   if (round.visibility === 'revealed') {
     const solution = round.solution as Solution;
     return (
-      <RoundShell title="Who's That Player?" round={round} room={room} now={Date.now()}>
+      <RoundShell title="Who's That Player?" round={round} room={room} now={Date.now()} split>
         <Card>
           <p className="t-d2 mb-3">{factText(payload.fact.kind, payload.fact.value)}</p>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 lg:text-lg">
             {payload.options.map((option) => {
               const isCorrect = option.playerId === solution.playerId;
               const picks = round.submissions.filter(
@@ -61,16 +61,16 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
               return (
                 <div
                   key={option.playerId}
-                  className={`flex items-center justify-between rounded-md border-2 px-4 py-3 font-semibold ${
+                  className={`flex flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-md border-2 px-4 py-3 font-semibold ${
                     isCorrect ? 'border-up bg-up/15 text-fg' : 'border-transparent bg-hover text-fg-muted'
                   }`}
                 >
-                  <span>
+                  <span className="max-w-full flex-1 basis-32">
                     {option.name}
                     {isCorrect ? ' ✓' : ''}
                   </span>
                   {picks.length > 0 ? (
-                    <span className="tnum text-xs opacity-70">
+                    <span className="tnum shrink-0 text-xs opacity-70">
                       {picks.length} {picks.length === 1 ? 'pick' : 'picks'}
                     </span>
                   ) : null}
@@ -86,26 +86,32 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
 
   return (
     <RoundShell title="Who's That Player?" round={round} room={room} now={Date.now()}>
-      <Card>
-        <p className="t-d2 mb-4">{factText(payload.fact.kind, payload.fact.value)}</p>
-        <p className="t-eyebrow mb-3">
+      <Card className="lg:p-8">
+        <div className="split-cols gap-4 lg:items-start lg:gap-8 land:items-start">
+        <div>
+        <p className="t-d2 mb-4 lg:text-4xl">{factText(payload.fact.kind, payload.fact.value)}</p>
+        <p className="t-eyebrow">
           One of these {payload.options.length} is the answer
         </p>
-        <div className="grid grid-cols-2 gap-3">
+        </div>
+        <div>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-3">
           {payload.options.map((option) => (
             <OptionButton
               key={option.playerId}
               selected={yourPick === option.playerId}
               disabled={alreadySubmitted}
               onClick={() => onSubmit({ playerId: option.playerId })}
-              className="min-h-[64px] px-3 text-sm"
+              className="min-h-16 px-3 text-sm sm:text-base lg:min-h-20 lg:text-lg"
             >
               {option.name}
-              {option.shirtNumber !== null ? <span className="ml-1 text-fg-subtle">#{option.shirtNumber}</span> : null}
+              {option.shirtNumber !== null ? <span className="ml-1 whitespace-nowrap text-fg-subtle">#{option.shirtNumber}</span> : null}
             </OptionButton>
           ))}
         </div>
         {alreadySubmitted ? <p className="t-sm mt-3 text-center text-fg-muted">Answer locked in.</p> : null}
+        </div>
+        </div>
       </Card>
     </RoundShell>
   );

@@ -9,7 +9,7 @@ export default function JoinWithPinPage({
 }): React.JSX.Element {
   return (
     <AgeGateGuard>
-      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-5 px-4 py-8">
+      <main className="page page-narrow page-center gap-5">
         {/* Arrived via a direct link/QR code: there is no in-app history to pop, so this always
             falls back to an explicit push to "/" rather than risking leaving the app entirely. */}
         <BackButton fallbackHref="/" />
