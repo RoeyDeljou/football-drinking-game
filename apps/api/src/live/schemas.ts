@@ -64,6 +64,8 @@ export const liveIngestionConfigSchema = z
     kickoffLeadMs: z.number().int().min(0).default(120_000),
     /** How often a stopped (finished/postponed) watcher re-checks that its rooms still exist. */
     reapIntervalMs: z.number().int().min(1).default(60_000),
+    /** Longest to keep slowly polling a FINISHED fixture that still has no FULL_TIME event. */
+    finishedWithoutFullTimeMaxMs: z.number().int().min(1).default(4 * 60 * 60 * 1000),
     /** Ceiling for the exponential error backoff. */
     maxBackoffMs: z.number().int().min(1).default(120_000),
     /** Multiplier applied per consecutive failure. */

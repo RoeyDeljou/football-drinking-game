@@ -108,7 +108,7 @@ describe('live ingestion side effects', () => {
   let server: TestServer;
   let provider: FixtureProvider;
   let liveCalls = 0;
-  let stripRealFullTime = false;
+  let fullTimeMode: 'real' | 'synthetic' | 'withheld' = 'real';
   const fake = createFakeScheduler();
 
   beforeAll(async () => {
@@ -121,10 +121,11 @@ describe('live ingestion side effects', () => {
     provider.getLiveMatchState = async (id: FixtureId) => {
       liveCalls += 1;
       const result = await original(id);
-      if (!stripRealFullTime || !result.ok || result.value === null) return result;
+      if (fullTimeMode === 'real' || !result.ok || result.value === null) return result;
       // A feed that flipped to FINISHED but never published a final-whistle play: the data layer synthesizes one.
       const events = result.value.events.filter((event) => event.type !== 'FULL_TIME');
-      return { ...result, value: guaranteeFullTime({ ...result.value, events }) };
+      const stripped = { ...result.value, events };
+      return { ...result, value: fullTimeMode === 'synthetic' ? guaranteeFullTime(stripped) : stripped };
     };
     server = await startTestServer({
       footballData: provider,
@@ -179,7 +180,7 @@ describe('live ingestion side effects', () => {
     const ingestion = server.ctx.liveIngestion!;
     const idle = (): Promise<void> => ingestion.idle();
     const replay = provider.matchReplay()!;
-    stripRealFullTime = true;
+    fullTimeMode = 'synthetic';
     const { host, roomId } = await startM1Room(server);
 
     replay.advanceTo(replay.status().finalMinute);
@@ -191,7 +192,32 @@ describe('live ingestion side effects', () => {
     const record = await server.ctx.roomStore.load(roomId as never);
     const round = record!.state.sessions[0]!.rounds[0]!;
     expect(round.observedEventIds).toContain(syntheticFullTimeId(FIXTURE_ID as FixtureId));
-    stripRealFullTime = false;
+    fullTimeMode = 'real';
+    host.socket.close();
+  }, 60_000);
+
+  it('FINISHED with FULL_TIME withheld keeps polling; the round resolves when FULL_TIME lands on a later poll', async () => {
+    const ingestion = server.ctx.liveIngestion!;
+    const idle = (): Promise<void> => ingestion.idle();
+    const replay = provider.matchReplay()!;
+    replay.reset();
+    fullTimeMode = 'withheld';
+    const { host, roomId } = await startM1Room(server);
+
+    replay.advanceTo(replay.status().finalMinute);
+    expect(replay.fixture().status).toBe('FINISHED');
+    await fake.advance(15_000, idle);
+    await fake.advance(15_000, idle);
+    const record = await server.ctx.roomStore.load(roomId as never);
+    expect(record!.state.sessions.at(-1)!.rounds[0]!.status).toBe('open'); // no full time yet: nothing resolves
+    expect(ingestion.watchedFixtureIds()).toEqual([FIXTURE_ID]); // ...and the loop is still watching
+
+    fullTimeMode = 'real';
+    await fake.advance(15_000, idle);
+    const final = await host.state.waitFor((s) => s.round?.status === 'resolved', 15_000);
+    expect(final.round!.publicPayload.counters.fullTime).toBe(true);
+    await idle();
+    expect(ingestion.watchedFixtureIds()).toEqual([]);
     host.socket.close();
   }, 60_000);
 });

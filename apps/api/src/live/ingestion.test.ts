@@ -55,7 +55,7 @@ const event = (id: string, type: MatchEvent['type'] = 'GOAL', fixtureId: Fixture
   detail: null,
 });
 
-type Status = 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'POSTPONED';
+type Status = 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'POSTPONED' | 'CANCELLED';
 
 const rec = (roomId: string): RoomRecord => ({ state: { id: roomId }, meta: {} }) as unknown as RoomRecord;
 
@@ -65,6 +65,7 @@ const setup = (initialNeeds: Record<string, readonly string[]> = {}, opts: { rea
   const needs: Record<string, readonly string[]> = { ...initialNeeds };
   const delivered: Array<{ roomId: string; events: readonly MatchEvent[] }> = [];
   const changed: string[] = [];
+  let nowMs = opts.nowMs ?? 0;
   const goneRooms = new Set<string>();
   const missingRooms = new Set<string>();
   const rejectWith: { code: string | null } = { code: null };
@@ -107,16 +108,16 @@ const setup = (initialNeeds: Record<string, readonly string[]> = {}, opts: { rea
       (needs[record.state.id] ?? []).map((fixtureId) => ({ fixtureId: asFixtureId(fixtureId), roundKey: 'r1' })),
     scheduler: clock.scheduler,
     random: () => 0.5,
-    now: () => opts.nowMs ?? 0,
+    now: () => nowMs,
     ...(opts.reap === true ? { loadRoom: async (id: RoomId) => (missingRooms.has(id) ? null : rec(id)) } : {}),
     log: { warn: () => undefined },
-    config: { reapIntervalMs: 30_000, kickoffLeadMs: 2000, liveIntervalMs: 1000, preKickoffIntervalMs: 5000, maxBackoffMs: 8000, backoffFactor: 2, jitterRatio: 0.1 },
+    config: { finishedWithoutFullTimeMaxMs: 20_000, reapIntervalMs: 30_000, kickoffLeadMs: 2000, liveIntervalMs: 1000, preKickoffIntervalMs: 5000, maxBackoffMs: 8000, backoffFactor: 2, jitterRatio: 0.1 },
   });
   const sync = (roomId: string, fixtures: readonly string[]): void => {
     needs[roomId] = fixtures;
     service.roomChanged(rec(roomId));
   };
-  return { clock, feed, delivered, changed, service, rejectWith, goneRooms, missingRooms, sync };
+  return { clock, feed, delivered, changed, service, rejectWith, goneRooms, missingRooms, sync, setNow: (ms: number) => { nowMs = ms; } };
 };
 
 const ROOM_A = 'a' as RoomId;
@@ -322,12 +323,102 @@ describe('live ingestion scheduler', () => {
     await t.service.close();
   });
 
-  it('stops immediately for a postponed fixture', async () => {
+  it('CANCELLED stops immediately', async () => {
     const t = setup();
-    t.feed.status = 'POSTPONED';
+    t.feed.status = 'CANCELLED';
     t.sync('a', ['fx1']);
     await t.clock.advance(60_000);
     expect(t.feed.polls).toBe(1);
+    expect(t.clock.pending()).toBe(0);
+  });
+
+  it('DELAYED -> POSTPONED keeps polling slowly, then LIVE resumes and delivers events', async () => {
+    const t = setup();
+    t.feed.status = 'POSTPONED'; // ESPN maps STATUS_DELAYED to this
+    t.sync('a', ['fx1']);
+    await t.clock.advance(0);
+    expect(t.feed.polls).toBe(1);
+    await t.clock.advance(4999);
+    expect(t.feed.polls).toBe(1);
+    await t.clock.advance(1); // slow (pre-kickoff) cadence
+    expect(t.feed.polls).toBe(2);
+    await t.clock.advance(10_000);
+    expect(t.feed.polls).toBe(4);
+    t.feed.status = 'LIVE';
+    t.feed.events = [event('k', 'KICK_OFF')];
+    await t.clock.advance(5000);
+    expect(t.delivered.at(-1)?.events.map((e) => e.id)).toEqual(['k']);
+    const polls = t.feed.polls;
+    await t.clock.advance(3000); // now at the live cadence
+    expect(t.feed.polls).toBe(polls + 3);
+    await t.service.close();
+  });
+
+  it('a match suspended mid-play (POSTPONED) then resumed keeps delivering', async () => {
+    const t = setup();
+    t.feed.events = [event('g1')];
+    t.sync('a', ['fx1']);
+    await t.clock.advance(0);
+    t.feed.status = 'POSTPONED';
+    await t.clock.advance(1000);
+    const suspended = t.feed.polls;
+    await t.clock.advance(5000);
+    expect(t.feed.polls).toBe(suspended + 1);
+    t.feed.status = 'LIVE';
+    t.feed.events = [event('g1'), event('g2')];
+    await t.clock.advance(5000);
+    expect(t.delivered.at(-1)?.events.map((e) => e.id)).toEqual(['g1', 'g2']);
+    await t.service.close();
+  });
+
+  it('a postponed watcher is released when its room vanishes without a dispatch (and with no events)', async () => {
+    const t = setup({}, { reap: true });
+    t.feed.status = 'POSTPONED';
+    t.sync('a', ['fx1']);
+    await t.clock.advance(0);
+    t.missingRooms.add('a');
+    await t.clock.advance(30_000);
+    expect(t.service.watchedFixtureIds()).toHaveLength(0);
+    expect(t.clock.pending()).toBe(0);
+  });
+
+  it('FINISHED without FULL_TIME polls slowly until FULL_TIME appears, then stops', async () => {
+    const t = setup();
+    t.feed.status = 'FINISHED';
+    t.feed.events = [event('g1')];
+    t.sync('a', ['fx1']);
+    await t.clock.advance(0);
+    expect(t.feed.polls).toBe(1);
+    t.setNow(5000);
+    await t.clock.advance(5000);
+    expect(t.feed.polls).toBe(2); // slow cadence, still waiting
+    t.feed.events = [event('g1'), event('ft', 'FULL_TIME')];
+    t.setNow(10_000);
+    await t.clock.advance(5000);
+    expect(t.delivered.at(-1)?.events.map((e) => e.id)).toEqual(['g1', 'ft']);
+    const polls = t.feed.polls;
+    expect(t.clock.pending()).toBe(0);
+    await t.clock.advance(60_000);
+    expect(t.feed.polls).toBe(polls);
+  });
+
+  it('gives up waiting for FULL_TIME once the bound passes', async () => {
+    const t = setup();
+    t.feed.status = 'FINISHED';
+    t.feed.events = [event('g1')];
+    t.sync('a', ['fx1']);
+    await t.clock.advance(0);
+    for (let ms = 5000; ms <= 15_000; ms += 5000) {
+      t.setNow(ms);
+      await t.clock.advance(5000);
+    }
+    expect(t.clock.pending()).toBe(1); // still polling below the 20s bound
+    t.setNow(20_000);
+    await t.clock.advance(5000);
+    const polls = t.feed.polls;
+    expect(t.clock.pending()).toBe(0);
+    await t.clock.advance(60_000);
+    expect(t.feed.polls).toBe(polls);
   });
 
   it('uses the slower pre-kickoff interval while SCHEDULED', async () => {

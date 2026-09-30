@@ -87,6 +87,8 @@ interface Watcher {
   sawNotFinished: boolean;
   finishedPolls: number;
   done: boolean;
+  /** When a FINISHED state without a FULL_TIME event was first seen (bounds the slow wait for one). */
+  finishedSeenAt: number | null;
   lastEvents: readonly MatchEvent[] | null;
 }
 
@@ -153,12 +155,12 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
   };
 
   /** Delay before the next poll of a fixture that has not finished. Tightens to the live cadence near kickoff. */
-  const cadenceFor = (status: string, kickoff: string): number => {
+  const cadenceFor = (status: string, kickoff: string, slowWhenPast: boolean): number => {
     if (status !== 'SCHEDULED') return config.liveIntervalMs;
     const untilKickoff = Date.parse(kickoff) - now();
     if (!Number.isFinite(untilKickoff)) return config.preKickoffIntervalMs;
     const untilWindow = untilKickoff - config.kickoffLeadMs;
-    if (untilWindow <= 0) return config.liveIntervalMs;
+    if (untilWindow <= 0) return slowWhenPast && untilKickoff <= 0 ? config.preKickoffIntervalMs : config.liveIntervalMs;
     return Math.max(config.liveIntervalMs, Math.min(config.preKickoffIntervalMs, untilWindow));
   };
 
@@ -250,15 +252,35 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     for (const roomId of [...watcher.rooms.keys()]) await deliver(roomId, events);
     if (closed || watchers.get(watcher.fixtureId) !== watcher) return;
 
-    if (current === 'POSTPONED' || current === 'CANCELLED') {
+    if (current === 'FINISHED') {
+      const hasFullTime = events.some((event) => event.type === 'FULL_TIME');
+      if (hasFullTime) {
+        watcher.finishedPolls += 1;
+        // Seen live -> one confirming poll (late plays); first seen already finished -> stop now.
+        if (!watcher.sawNotFinished || watcher.finishedPolls >= 2 || watcher.finishedSeenAt !== null) watcher.done = true;
+        else armTimer(watcher, jittered(config.liveIntervalMs));
+      } else {
+        // The provider withholds FULL_TIME when the events do not add up to the score, and keeps the summary on a
+        // short TTL so missing plays can land: keep polling slowly until one appears or the bound passes.
+        watcher.finishedSeenAt ??= now();
+        if (now() - watcher.finishedSeenAt >= config.finishedWithoutFullTimeMaxMs) {
+          log.warn(`giving up waiting for FULL_TIME on finished fixture ${watcher.fixtureId}`);
+          watcher.done = true;
+        } else {
+          armTimer(watcher, jittered(config.preKickoffIntervalMs));
+        }
+      }
+    } else if (current === 'CANCELLED') {
       watcher.done = true;
-    } else if (current === 'FINISHED') {
-      watcher.finishedPolls += 1;
-      if (!watcher.sawNotFinished || watcher.finishedPolls >= 2) watcher.done = true;
-      else armTimer(watcher, jittered(config.liveIntervalMs));
+    } else if (current === 'POSTPONED') {
+      // Also what providers report for a delayed kickoff or a suspended match: keep polling (slowly, tightening
+      // near a known kickoff) so play resuming is noticed. Only CANCELLED is terminal.
+      watcher.finishedSeenAt = null;
+      armTimer(watcher, jittered(cadenceFor('SCHEDULED', state.fixture.kickoff, true)));
     } else {
       watcher.sawNotFinished = true;
-      armTimer(watcher, jittered(cadenceFor(current, state.fixture.kickoff)));
+      watcher.finishedSeenAt = null;
+      armTimer(watcher, jittered(cadenceFor(current, state.fixture.kickoff, false)));
     }
     if (watcher.done) {
       if (watcher.timer !== null) scheduler.clearTimeout(watcher.timer);
@@ -298,6 +320,7 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
         sawNotFinished: false,
         finishedPolls: 0,
         done: false,
+        finishedSeenAt: null,
         lastEvents: null,
       };
       watchers.set(need.fixtureId, watcher);
@@ -313,6 +336,7 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
 
     if (isNew) {
       armTimer(watcher, 0);
+      armReap(watcher); // long-lived watchers (postponed / awaiting full time) must not outlive their rooms
     } else if (previousKey !== need.roundKey && watcher.lastEvents !== null) {
       // Room (or its round) is new to a watcher that already has events: serve them from cache now.
       track(deliver(roomId, watcher.lastEvents));

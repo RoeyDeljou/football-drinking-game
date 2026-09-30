@@ -110,7 +110,7 @@ Provider live events reach the engine through one loop, `createLiveIngestion` (`
   full id-stable event list as `MATCH_EVENTS` to every attached room via `dispatchAction`; the reducer dedupes by id, so
   duplicate polls, reconnects and restarts are no-ops (no save, no broadcast). Changed rooms are broadcast through
   `gateway.broadcast`.
-- **Stop conditions.** FINISHED (seen live) gets one confirming poll, then stops; POSTPONED/CANCELLED stop at once. A
+- **Stop conditions.** FINISHED with a FULL_TIME event (seen live) gets one confirming poll, then stops; FINISHED *without* one keeps polling slowly (pre-kickoff cadence) until it appears or 4h pass (`finishedWithoutFullTimeMaxMs`); only CANCELLED stops at once. POSTPONED is NOT terminal (providers report delayed kickoffs and suspended matches as POSTPONED): it polls slowly, tightening near a known kickoff, until play resumes. Every watcher also has a room-existence reap so long-lived ones cannot outlive their rooms. A
   stopped watcher keeps its cached events until no room references it (late rooms are served from the cache); a 60s reap re-checks its rooms against the store so a room removed without a dispatch cannot pin it. A poll still in flight when the last room detaches is chained ahead of any re-attached watcher, so two polls of one fixture never overlap. Last
   room detaches -> timer cleared. `close()` (called from `buildApp().close()`) clears every timer and awaits in-flight
   polls. Timers are injectable (`LiveScheduler`) for deterministic tests.
