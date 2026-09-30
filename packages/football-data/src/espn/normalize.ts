@@ -35,6 +35,7 @@ import type {
   TeamLineup,
   TeamMatchStats,
 } from '../domain.js';
+import { goalsMatchScore } from '../full-time.js';
 import { asFixtureId, asFootballPlayerId, asSeasonId, asTeamId } from '../domain.js';
 import type { Normalized } from '../api-football/normalize.js';
 import type {
@@ -57,7 +58,11 @@ import type {
 // ---------------------------------------------------------------------------
 
 /** ESPN status (`STATUS_HALFTIME`, …) plus its coarse state (`pre`/`in`/`post`) → `FixtureStatus`. */
-export function normalizeEspnStatus(name: string | null | undefined, state: string | null | undefined): FixtureStatus {
+export function normalizeEspnStatus(
+  name: string | null | undefined,
+  state: string | null | undefined,
+  completed?: boolean | null,
+): FixtureStatus {
   const value = (name ?? '').toUpperCase();
   if (value.includes('POSTPONED') || value.includes('DELAYED')) return 'POSTPONED';
   if (value.includes('CANCEL') || value.includes('ABANDON') || value.includes('FORFEIT')) return 'CANCELLED';
@@ -73,10 +78,30 @@ export function normalizeEspnStatus(name: string | null | undefined, state: stri
     case 'in':
       return 'LIVE';
     case 'post':
-      return 'FINISHED';
+      // An unrecognised status name in the 'post' state is only a finished match if ESPN says it completed. A
+      // 'post' + completed:false status (suspended, interrupted, …) is not finished and not in play; the closest
+      // existing FixtureStatus is POSTPONED (FixtureStatus has no SUSPENDED and adding one would leak a new value
+      // to every consumer's switch). `completed` absent keeps the legacy behaviour (FINISHED) but is NOT a
+      // confirmed final: see `isEspnFinalConfirmed`.
+      return completed === false ? 'POSTPONED' : 'FINISHED';
     default:
       return 'SCHEDULED';
   }
+}
+
+/**
+ * True only for an explicit final: `completed === true`, or a recognised final status name (STATUS_FULL_TIME,
+ * STATUS_FINAL, STATUS_FINAL_AET, STATUS_FINAL_PEN, STATUS_END_OF_GAME, …) with no `completed:false`. The bare
+ * `state: 'post'` fallback never counts. Synthetic FULL_TIME events require this.
+ */
+export function isEspnFinalConfirmed(
+  type: { name?: string | null | undefined; completed?: boolean | null | undefined } | null | undefined,
+): boolean {
+  if (type === null || type === undefined) return false;
+  if (type.completed === true) return true;
+  if (type.completed === false) return false;
+  const name = (type.name ?? '').toUpperCase();
+  return name.includes('FULL_TIME') || name.includes('FINAL') || name.includes('END_OF_GAME');
 }
 
 /**
@@ -135,6 +160,8 @@ export function normalizeEspnPlayType(slug: string | null | undefined, text?: st
   // Set pieces and restarts that merely contain the word "goal" or "kick".
   // `goal-kick` only when "goal" is the leading token: `goal---free-kick` is a goal scored from a free kick.
   if (ordered[0] === 'goal' && ordered[1] === 'kick') return 'GOAL_KICK';
+  // Shootout kicks are not goals (they must never move the score) and shootout start/end markers are not restarts.
+  if (has('shootout', 'shoot')) return null;
   if (has('throw')) return 'THROW_IN';
   if (has('own') && has('goal', 'goals')) return 'OWN_GOAL';
   if (has('penalty', 'penalties')) {
@@ -156,16 +183,18 @@ export function normalizeEspnPlayType(slug: string | null | undefined, text?: st
   if (has('corner')) return 'CORNER';
   if (has('offside')) return 'OFFSIDE';
   if (has('foul', 'handball')) return 'FOUL';
-  if (has('shot')) {
-    if (has('saved', 'save')) return 'SHOT_ON_TARGET';
+  if (has('saved', 'save', 'saves')) return 'SAVE'; // saved, attempt-saved, shot-saved
+  if (has('shot', 'attempt')) {
     if (has('on') && has('target')) return 'SHOT_ON_TARGET';
-    return 'SHOT_OFF_TARGET'; // off target, blocked, hit woodwork
+    return 'SHOT_OFF_TARGET'; // off target, blocked, missed, hit woodwork
   }
   if (has('woodwork', 'crossbar', 'post')) return 'SHOT_OFF_TARGET';
-  if (has('save', 'saves')) return 'SAVE';
   if (has('delay')) return null; // start-delay / end-delay are pauses, not restarts
   if (value === 'kickoff' || value === 'kick-off') return 'KICK_OFF';
-  if (tokens.has('start') && has('half')) return 'KICK_OFF'; // start-2nd-half, start-1st-half-extra-time, …
+  // Only the two regular-time restarts are KICK_OFF. start-extra-time / start-*-half-extra-time / start-shootout are
+  // deliberately null: a mid-match KICK_OFF would re-lock slips, and no consumer needs the extra-time restarts.
+  if (tokens.has('start') && has('extra')) return null;
+  if (tokens.has('start') && has('half')) return 'KICK_OFF'; // start-1st-half, start-2nd-half
   if (value === 'halftime' || value === 'half-time' || label === 'halftime') return 'HALF_TIME';
   if (value.startsWith('end-regular') || value.startsWith('end-extra') || value === 'full-time' || value === 'end-game') {
     return 'FULL_TIME';
@@ -247,7 +276,7 @@ export function normalizeEspnScoreboardEvent(
     return { value: null, notes: [`ESPN event ${event.id} is missing a home or away competitor; dropped.`] };
   }
   const status = competition.status ?? event.status ?? null;
-  const fixtureStatus = normalizeEspnStatus(status?.type?.name, status?.type?.state);
+  const fixtureStatus = normalizeEspnStatus(status?.type?.name, status?.type?.state, status?.type?.completed);
   const live = fixtureStatus === 'LIVE' || fixtureStatus === 'HALF_TIME' || fixtureStatus === 'EXTRA_TIME';
   const clock = live ? parseEspnClock(status?.displayClock, status?.clock) : null;
   const score = fixtureStatus === 'SCHEDULED' ? null : scoreFromCompetitors(competition.competitors);
@@ -600,6 +629,10 @@ export function normalizeEspnEvents(summary: EspnSummary, fixtureId: FixtureId):
       continue;
     }
     const period = play.period ?? (clock.minute > 45 ? 2 : 1);
+    if (period >= 5 && (type === 'PENALTY_SCORED' || type === 'PENALTY_MISSED' || type === 'PENALTY_AWARDED')) {
+      notes.push(`Skipped shootout penalty play ${play.id}: shootout kicks are not match events.`);
+      continue;
+    }
     let minute = clock.minute;
     let extraMinute = clock.extraMinute;
     if (type === 'KICK_OFF' && period === 2) {
@@ -648,6 +681,24 @@ export function normalizeEspnEvents(summary: EspnSummary, fixtureId: FixtureId):
 
   events.sort((left, right) => left.period - right.period || left.at - right.at || left.order - right.order);
   return { value: events.map((entry) => entry.event), notes };
+}
+
+/**
+ * True when a 'post' summary is safe to treat as final and cache for hours: an explicit final status, a real
+ * full-time play, and events that account for the header score (a lagging feed missing a late goal is not complete).
+ */
+export function isEspnSummaryComplete(summary: EspnSummary): boolean {
+  const competition = summary.header.competitions[0];
+  if (competition === undefined) return false;
+  if (!isEspnFinalConfirmed(competition.status?.type)) return false;
+  if (!hasFullTimePlay(summary)) return false;
+  const id = summary.header.id ?? competition.id ?? null;
+  if (id === null) return false;
+  const index = buildSummaryIndex(summary);
+  const score = scoreFromCompetitors(competition.competitors);
+  if (score === null || index.homeTeamId === null) return false;
+  const events = normalizeEspnEvents(summary, asFixtureId(id)).value;
+  return goalsMatchScore(events, score, index.homeTeamId);
 }
 
 /** True when the summary's plays already include the final-whistle play (so a 'post' summary is complete). */

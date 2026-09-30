@@ -19,6 +19,7 @@ import {
   normalizeEspnRosterPlayers,
   normalizeEspnRosterSeasonStats,
   normalizeEspnScoreboard,
+  isEspnFinalConfirmed,
   normalizeEspnStatus,
   normalizeEspnSummaryFixture,
   normalizeEspnTeams,
@@ -44,6 +45,12 @@ describe('primitive mappings', () => {
     expect(normalizeEspnStatus('STATUS_SECOND_HALF', 'in')).toBe('LIVE');
     expect(normalizeEspnStatus('STATUS_FULL_TIME', 'post')).toBe('FINISHED');
     expect(normalizeEspnStatus('SOMETHING_NEW', 'in')).toBe('LIVE');
+    expect(normalizeEspnStatus('STATUS_SUSPENDED', 'post', false)).toBe('POSTPONED');
+    expect(normalizeEspnStatus('STATUS_UNKNOWN_END', 'post', true)).toBe('FINISHED');
+    expect(isEspnFinalConfirmed({ name: 'STATUS_FINAL_PEN' })).toBe(true);
+    expect(isEspnFinalConfirmed({ name: 'STATUS_SOMETHING', completed: true })).toBe(true);
+    expect(isEspnFinalConfirmed({ name: 'STATUS_SOMETHING' })).toBe(false);
+    expect(isEspnFinalConfirmed({ name: 'STATUS_FULL_TIME', completed: false })).toBe(false);
     expect(normalizeEspnStatus(undefined, undefined)).toBe('SCHEDULED');
   });
 
@@ -101,6 +108,18 @@ describe('normalizeEspnPlayType — every slug, exact-before-prefix ordering', (
     ['own-goal', 'OWN_GOAL'],
     ['goal---own', 'OWN_GOAL'],
     ['throw-in', 'THROW_IN'],
+    ['shootout-goal', null],
+    ['penalty-shootout-goal', null],
+    ['shootout-miss', null],
+    ['start-shootout', null],
+    ['end-shootout', null],
+    ['start-extra-time', null],
+    ['start-1st-half-extra-time', null],
+    ['start-1st-half', 'KICK_OFF'],
+    ['saved', 'SAVE'],
+    ['save', 'SAVE'],
+    ['attempt-saved', 'SAVE'],
+    ['attempt-missed', 'SHOT_OFF_TARGET'],
     ['start-delay', null],
     ['end-delay', null],
     ['goal---disallowed', 'VAR_CHECK'],

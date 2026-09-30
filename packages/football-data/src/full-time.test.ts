@@ -5,7 +5,7 @@ import type { Fixture, LiveMatchState, MatchEvent } from './domain.js';
 import { asFixtureId, asTeamId } from './domain.js';
 import { EspnProvider } from './espn/espn-provider.js';
 import { loadEspnRawSample } from './espn/raw-samples.js';
-import { guaranteeFullTime, isSyntheticEvent, syntheticFullTimeId, withGuaranteedFullTime } from './full-time.js';
+import { goalsMatchScore, guaranteeFullTime, isSyntheticEvent, syntheticFullTimeId, withGuaranteedFullTime } from './full-time.js';
 import type { HttpClient, HttpRequest, HttpResponse } from './http.js';
 
 const FIXTURE = asFixtureId('401915445');
@@ -75,7 +75,7 @@ describe('withGuaranteedFullTime', () => {
 
 describe('guaranteeFullTime', () => {
   const state = (status: Fixture['status'], events: readonly MatchEvent[]): LiveMatchState => ({
-    fixture: { status, id: FIXTURE } as Fixture,
+    fixture: { status, id: FIXTURE, score: { home: 1, away: 0 }, homeTeam: { id: asTeamId('1') } } as Fixture,
     events,
     teamStats: [],
     playerStats: [],
@@ -161,5 +161,103 @@ describe('EspnProvider — FINISHED summaries always carry exactly one FULL_TIME
     const provider = new EspnProvider({ http, clock: createManualClock() });
     const events = await provider.getMatchEvents(FIXTURE);
     expect(events.ok && fullTimeCount(events.value)).toBe(1);
+  });
+});
+
+describe('EspnProvider — never synthesize an unsafe FULL_TIME', () => {
+  type Play = { type?: { type?: string }; clock?: { displayValue?: string } };
+  interface Sample {
+    header: { competitions: { status: { type: Record<string, unknown> } }[] };
+    keyEvents: Play[];
+    commentary: { play?: Play; time?: { displayValue?: string } }[];
+  }
+  const sample = (): Sample => structuredClone(loadEspnRawSample('summary-finished-psg-slovan')) as Sample;
+  const dropFullTime = (raw: Sample): Sample => {
+    raw.keyEvents = raw.keyEvents.filter((e) => e.type?.type !== 'end-regular-time');
+    raw.commentary = raw.commentary.filter((c) => c.play?.type?.type !== 'end-regular-time');
+    return raw;
+  };
+  function providerFor(body: unknown): EspnProvider {
+    const http: HttpClient = {
+      request: (): Promise<HttpResponse> => Promise.resolve({ status: 200, body, headers: {} }),
+    };
+    return new EspnProvider({ http, clock: createManualClock() });
+  }
+  const live = async (body: unknown): Promise<LiveMatchState> => {
+    const result = await providerFor(body).getLiveMatchState(FIXTURE);
+    if (!result.ok || result.value === null) throw new Error('no live state');
+    return result.value;
+  };
+
+  it('a lagging post summary missing the 87th-minute goal is not settled: no synthetic FULL_TIME', async () => {
+    const raw = dropFullTime(sample());
+    raw.keyEvents = raw.keyEvents.filter((e) => !(e.type?.type === 'goal' && e.clock?.displayValue === "87'"));
+    raw.commentary = raw.commentary.filter((c) => !(c.play?.type?.type === 'goal' && c.time?.displayValue === "87'"));
+    const state = await live(raw);
+    expect(state.fixture.status).toBe('FINISHED');
+    expect(state.fixture.score).toEqual({ home: 6, away: 1 });
+    expect(fullTimeCount(state.events)).toBe(0);
+  });
+
+  it('a post summary with no plays but a non-zero score gets no synthetic FULL_TIME', async () => {
+    const raw = sample();
+    raw.keyEvents = [];
+    raw.commentary = [];
+    const state = await live(raw);
+    expect(fullTimeCount(state.events)).toBe(0);
+  });
+
+  it('the consistent recorded sample without its full-time play still gets the synthetic one', async () => {
+    const state = await live(dropFullTime(sample()));
+    expect(state.events.at(-1)?.id).toBe(syntheticFullTimeId(FIXTURE));
+  });
+
+  it('a suspended match (unknown name, post, completed:false) is not FINISHED and gets no FULL_TIME', async () => {
+    const raw = dropFullTime(sample());
+    raw.header.competitions[0]!.status.type = {
+      id: 'x', name: 'STATUS_SUSPENDED', state: 'post', completed: false, description: 'Suspended', detail: 'Susp', shortDetail: 'Susp',
+    };
+    const state = await live(raw);
+    expect(state.fixture.status).not.toBe('FINISHED');
+    expect(fullTimeCount(state.events)).toBe(0);
+  });
+
+  it('a bare post with an unrecognised name and no completed flag is not a confirmed final: no synthetic', async () => {
+    const raw = dropFullTime(sample());
+    raw.header.competitions[0]!.status.type = { id: 'x', name: 'STATUS_SOMETHING', state: 'post' };
+    const state = await live(raw);
+    expect(fullTimeCount(state.events)).toBe(0);
+  });
+
+  it('incomplete post summaries stay on the short TTL; only a provably complete one is cached for hours', async () => {
+    const requests: number[] = [];
+    const bodies: unknown[] = [];
+    const clock = createManualClock(Date.parse('2026-09-09T22:00:00Z')); // ~3h after the 19:00 kickoff
+    const http: HttpClient = {
+      request: (): Promise<HttpResponse> => {
+        requests.push(1);
+        return Promise.resolve({ status: 200, body: bodies[Math.min(requests.length - 1, bodies.length - 1)], headers: {} });
+      },
+    };
+    const empty = sample();
+    empty.keyEvents = [];
+    empty.commentary = [];
+    bodies.push(empty, sample());
+    const provider = new EspnProvider({ http, clock });
+    await provider.getLiveMatchState(FIXTURE);
+    await clock.advance(16_000);
+    await provider.getLiveMatchState(FIXTURE); // re-fetched (short TTL) and now complete
+    expect(requests).toHaveLength(2);
+    await clock.advance(60 * 60_000);
+    await provider.getLiveMatchState(FIXTURE);
+    expect(requests).toHaveLength(2); // complete summary cached for hours
+  });
+});
+
+describe('goalsMatchScore', () => {
+  it('credits own goals to the opponent and rejects unattributable goals', () => {
+    const own: MatchEvent = { ...event('e1', 'OWN_GOAL', 10), teamId: asTeamId('2') };
+    expect(goalsMatchScore([own], { home: 1, away: 0 }, '1')).toBe(true);
+    expect(goalsMatchScore([{ ...event('e2', 'GOAL', 10), teamId: null }], { home: 1, away: 0 }, '1')).toBe(false);
   });
 });

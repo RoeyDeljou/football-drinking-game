@@ -12,7 +12,7 @@
 import type { CacheTtlConfig } from '../cache.js';
 import { cacheKey, DEFAULT_CACHE_TTL, ResourceCache, withLivePollTtl } from '../cache.js';
 import type { DataClock } from '../clock.js';
-import { withGuaranteedFullTime } from '../full-time.js';
+import { eventsMatchFixtureScore, withGuaranteedFullTime } from '../full-time.js';
 import { systemDataClock } from '../clock.js';
 import type { CompetitionConfig } from '../competitions.js';
 import {
@@ -383,7 +383,7 @@ export class ApiFootballProvider implements FootballDataProvider {
     }
 
     // A finished fixture always carries exactly one FULL_TIME event (see full-time.ts).
-    const guaranteedEvents = fixture.status === 'FINISHED' ? withGuaranteedFullTime(fixtureId, events) : events;
+    const guaranteedEvents = fixture.status === 'FINISHED' ? withGuaranteedFullTime(fixtureId, events, eventsMatchFixtureScore(fixture, events)) : events;
     return ok(
       {
         fixture,

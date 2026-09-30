@@ -66,9 +66,10 @@ import type { DataResult } from '../result.js';
 import { fail, ok } from '../result.js';
 import type { UpstreamTelemetry } from '../upstream.js';
 import { UpstreamClient } from '../upstream.js';
-import { isSyntheticEvent, withGuaranteedFullTime } from '../full-time.js';
+import { eventsMatchFixtureScore, withGuaranteedFullTime } from '../full-time.js';
 import {
-  hasFullTimePlay,
+  isEspnFinalConfirmed,
+  isEspnSummaryComplete,
   normalizeEspnAthlete,
   normalizeEspnEvents,
   normalizeEspnLineups,
@@ -76,7 +77,6 @@ import {
   normalizeEspnRosterPlayers,
   normalizeEspnRosterSeasonStats,
   normalizeEspnScoreboard,
-  normalizeEspnStatus,
   normalizeEspnSummaryFixture,
   normalizeEspnTeams,
   normalizeEspnTeamStats,
@@ -122,6 +122,10 @@ export interface EspnProviderConfig {
 /** ESPN-specific TTLs on top of the shared defaults: summaries of finished matches barely change. */
 const FINISHED_SUMMARY_TTL_MS = 6 * 60 * 60 * 1000;
 const SCHEDULED_SUMMARY_TTL_MS = 5 * 60 * 1000;
+/** A 'post' summary that is not provably complete is polled at the live cadence for this long after kickoff. */
+const INCOMPLETE_SUMMARY_GRACE_MS = 4 * 60 * 60 * 1000;
+/** ...then re-checked at this moderate interval. */
+const INCOMPLETE_SUMMARY_TTL_MS = 30 * 60 * 1000;
 /** From this long before the scheduled kickoff a pre-match summary is polled at the live cadence. */
 export const PRE_KICKOFF_LIVE_WINDOW_MS = 2 * 60 * 1000;
 
@@ -352,10 +356,9 @@ export class EspnProvider implements FootballDataProvider {
     const events = normalizeEspnEvents(payload, fixtureId);
     const fixture = normalizeEspnSummaryFixture(payload, config, events.value);
     if (fixture.value === null) return ok(null, [...summary.notes, ...fixture.notes]);
-    const guaranteed = fixture.value.status === 'FINISHED' ? withGuaranteedFullTime(fixtureId, events.value) : events.value;
-    const synthesized = guaranteed.some((event) => isSyntheticEvent(event))
-      ? ['ESPN reported the match finished without a full-time play; a synthetic FULL_TIME event was added.']
-      : [];
+    const finalized = finalizeEvents(payload, fixture.value, fixtureId, events.value);
+    const guaranteed = finalized.events;
+    const synthesized = finalized.notes;
     const teamStats = normalizeEspnTeamStats(payload);
     const playerStats = normalizeEspnPlayerMatchStats(payload, fixture.value);
 
@@ -376,11 +379,15 @@ export class EspnProvider implements FootballDataProvider {
     const summary = await this.summary(fixtureId);
     if (!summary.ok) return summary;
     if (summary.value === null) return ok([], summary.notes);
-    const events = normalizeEspnEvents(summary.value.payload, fixtureId);
-    const finished = summary.value.payload.header.competitions[0]?.status?.type;
-    const isFinished = normalizeEspnStatus(finished?.name, finished?.state) === 'FINISHED';
-    const guaranteed = isFinished ? withGuaranteedFullTime(fixtureId, events.value) : events.value;
-    return ok(guaranteed, [...summary.notes, ...events.notes], summary.fromCache);
+    const { payload, config } = summary.value;
+    const events = normalizeEspnEvents(payload, fixtureId);
+    const fixture = normalizeEspnSummaryFixture(payload, config, events.value);
+    const finalized =
+      fixture.value === null
+        ? { events: events.value, notes: [] as string[] }
+        : finalizeEvents(payload, fixture.value, fixtureId, events.value);
+    const guaranteed = finalized.events;
+    return ok(guaranteed, [...summary.notes, ...events.notes, ...finalized.notes], summary.fromCache);
   }
 
   // ---- endpoint helpers ---------------------------------------------------
@@ -534,16 +541,52 @@ export class EspnProvider implements FootballDataProvider {
   }
 }
 
+/**
+ * Apply the FULL_TIME guarantee (see full-time.ts) for a finished ESPN fixture. A synthetic FULL_TIME is only
+ * created when the status is an explicit final and the events add up to the header score.
+ */
+function finalizeEvents(
+  payload: EspnSummary,
+  fixture: Fixture,
+  fixtureId: FixtureId,
+  events: readonly MatchEvent[],
+): { events: readonly MatchEvent[]; notes: string[] } {
+  if (fixture.status !== 'FINISHED') return { events, notes: [] };
+  const confirmed = isEspnFinalConfirmed(payload.header.competitions[0]?.status?.type);
+  const consistent = eventsMatchFixtureScore(fixture, events);
+  const guaranteed = withGuaranteedFullTime(fixtureId, events, confirmed && consistent);
+  const hasFullTime = guaranteed.some((event) => event.type === 'FULL_TIME');
+  if (hasFullTime) {
+    return {
+      events: guaranteed,
+      notes: guaranteed.some((event) => event.id.startsWith('synthetic:'))
+        ? ['ESPN reported the match finished without a full-time play; a synthetic FULL_TIME event was added.']
+        : [],
+    };
+  }
+  return {
+    events: guaranteed,
+    notes: [
+      `ESPN fixture ${fixtureId} is finished but no FULL_TIME was synthesized: ${
+        confirmed ? 'the events do not add up to the reported score (feed still catching up)' : 'the final status is not confirmed'
+      }.`,
+    ],
+  };
+}
+
 function summaryTtl(ttl: CacheTtlConfig, now: () => number): (payload: EspnSummary) => number {
   return (payload) => {
     const type = payload.header.competitions[0]?.status?.type;
     if (type?.completed === true || type?.state === 'post') {
-      // Only cache a finished summary for hours once it is complete (has its full-time play). ESPN can flip to
-      // 'post' before the final plays are published, so an incomplete one stays on the short live TTL and late
-      // plays land on the next poll. A summary with no plays at all is not going to change: cache it normally.
-      const hasPlays = (payload.commentary?.length ?? 0) + (payload.keyEvents?.length ?? 0) > 0;
-      if (hasPlays && !hasFullTimePlay(payload)) return ttl.liveMatch;
-      return FINISHED_SUMMARY_TTL_MS;
+      // Cache for hours only when the summary is provably complete: explicit final status, a real full-time play,
+      // and events that account for the header score. Anything else (ESPN flips to 'post' before its plays
+      // catch up, a suspended match, a payload with no plays) stays on the short live TTL while the match is
+      // recent, so late plays land on the next poll, then drops to a moderate TTL so an old, permanently
+      // incomplete summary is not hammered.
+      if (isEspnSummaryComplete(payload)) return FINISHED_SUMMARY_TTL_MS;
+      const kickoffMs = Date.parse(payload.header.competitions[0]?.date ?? '');
+      const recent = Number.isNaN(kickoffMs) || now() < kickoffMs + INCOMPLETE_SUMMARY_GRACE_MS;
+      return recent ? ttl.liveMatch : INCOMPLETE_SUMMARY_TTL_MS;
     }
     if (type?.state === 'pre') return scheduledSummaryTtl(ttl, payload.header.competitions[0]?.date, now());
     return ttl.liveMatch;
