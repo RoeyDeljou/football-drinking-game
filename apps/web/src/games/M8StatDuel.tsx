@@ -203,7 +203,7 @@ export const M8StatDuel = ({ room, round, now, onSubmit }: GameScreenProps): Rea
               const won = duel.winnerId === playerId;
               return (
                 <div
-                  className={`min-w-0 max-w-full flex-1 basis-32 rounded-md border-2 px-3 py-2 ${
+                  className={`min-w-0 max-w-full flex-1 basis-[9rem] rounded-md border-2 px-3 py-2 ${
                     duel.loserId === null ? 'border-border bg-hover' : won ? 'border-up bg-up/15' : 'border-down/50 bg-down/10'
                   }`}
                 >
