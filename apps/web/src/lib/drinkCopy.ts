@@ -7,7 +7,7 @@
 
 import type { PenaltyReason, PenaltyTarget, RecordedPenalty } from '@fdg/game-core';
 
-export const sipsLabel = (sips: number): string => (sips === 1 ? '1 sip' : `${sips} sips`);
+export const sipsLabel = (sips: number): string => (sips === 1 ? '1\u00a0sip' : `${sips}\u00a0sips`);
 
 /**
  * Turns a raw applied-sip count into a varied, colloquial drinking instruction instead of always
@@ -19,15 +19,16 @@ export const sipsLabel = (sips: number): string => (sips === 1 ? '1 sip' : `${si
  */
 const DRINK_ACTION_TIERS: readonly { readonly maxSips: number; readonly label: string }[] = [
   { maxSips: 0, label: 'no drinking' },
-  { maxSips: 1, label: '1 sip' },
-  { maxSips: 2, label: '2 sips' },
+  // Non-breaking space: "1 / sip" must never split across lines.
+  { maxSips: 1, label: '1\u00a0sip' },
+  { maxSips: 2, label: '2\u00a0sips' },
   { maxSips: 4, label: 'a chug' },
   { maxSips: 7, label: 'a shot' },
-  { maxSips: Infinity, label: '2 shots' },
+  { maxSips: Infinity, label: '2\u00a0shots' },
 ];
 
 export const drinkActionLabel = (sips: number): string =>
-  DRINK_ACTION_TIERS.find((tier) => sips <= tier.maxSips)?.label ?? '2 shots';
+  DRINK_ACTION_TIERS.find((tier) => sips <= tier.maxSips)?.label ?? '2\u00a0shots';
 
 const REASON_COPY: Record<PenaltyReason, string> = {
   WRONG_ANSWER: 'wrong answer',
@@ -99,7 +100,7 @@ export const eventFiredLine = (
   const owners = ownerNames.join(' and ');
   const action = drinkActionLabel(sips);
   return drinker === 'owner'
-    ? `${kindLabel}! ${owners} drinks ${action}.`
+    ? `${kindLabel}! ${owners} ${ownerNames.length === 1 ? 'drinks' : 'drink'} ${action}.`
     : `${kindLabel}! ${owners} ${ownerNames.length === 1 ? 'is' : 'are'} safe, everyone else drinks ${action}.`;
 };
 

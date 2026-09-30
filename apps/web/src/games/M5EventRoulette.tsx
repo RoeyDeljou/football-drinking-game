@@ -213,7 +213,11 @@ export const M5EventRoulette = ({ room, round, now }: GameScreenProps): React.JS
             {mine !== null ? (
               <p className="t-score mt-1 text-accent">{eventLabel(mine.event)}</p>
             ) : (
-              <p className="t-body mt-1 text-fg-muted">You joined after the deal, so you sit this spin out.</p>
+              <p className="t-body mt-1 text-fg-muted">
+                {payload.drinker === 'owner'
+                  ? 'You joined after the deal, so you sit this spin out.'
+                  : 'You joined after the deal, so you have no event. You still drink with the table when someone else’s fires.'}
+              </p>
             )}
             <p className="t-body mt-2 font-semibold">
               {payload.drinker === 'owner' ? 'Your event, your drink.' : 'Your event, everyone else drinks.'}

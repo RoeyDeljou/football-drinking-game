@@ -9,7 +9,7 @@ import { IntermissionScreen } from '@/components/IntermissionScreen';
 import { Lobby } from '@/components/Lobby';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { RoomExitControls } from '@/components/RoomExitControls';
-import { Banner, BigButton, Spinner } from '@/components/ui';
+import { Banner, BigButton, Card, Spinner } from '@/components/ui';
 import { fetchRoomById } from '@/lib/api';
 import { markUpcomingNavigationAsReplace } from '@/lib/backNavigation';
 import { errorMessage } from '@/lib/errorCopy';
@@ -266,6 +266,24 @@ export default function RoomPage(): React.JSX.Element {
 
       {room.phase === 'loading' && room.loading !== null ? (
         <LoadingScreen loading={room.loading} isHost={isHost} onRetry={startLoading} />
+      ) : null}
+
+      {/* The engine has no way back to the lobby from loading, so when the game cannot be built (the
+          match finished, the data is gone) the host needs a clear, tappable way out, not just a
+          Start button that fails again. */}
+      {room.phase === 'loading' && loadingDone && isHost && lastError !== null && lastError.code === 'ROUND_GENERATION_FAILED' ? (
+        <div className="mx-auto w-full max-w-xl" role="alert">
+          <Card className="text-center">
+            <p className="t-d2">Can’t start this game</p>
+            <p className="t-body mt-2 text-fg-muted">{errorMessage(lastError, category)}</p>
+            <div className="mt-4 flex flex-col gap-3">
+              <BigButton onClick={hostNewRoom}>Host a new room</BigButton>
+              <BigButton variant="secondary" onClick={startSession}>
+                Try again
+              </BigButton>
+            </div>
+          </Card>
+        </div>
       ) : null}
 
       {(room.phase === 'playing' || room.phase === 'roundReveal') ? (

@@ -81,6 +81,8 @@ const dataUnavailableMessage = (detail: string | null, category: RoomCategory | 
   return REJECTION_COPY.DATA_UNAVAILABLE ?? 'Not enough match data to play that game right now.';
 };
 
+export const MATCH_FINISHED_COPY = 'This match has finished — pick a General game or another match.';
+
 type RoomCategory = 'matchday' | 'general';
 
 /** `category` is the room's, when known; it only changes copy whose meaning depends on it. */
@@ -90,5 +92,9 @@ export const errorMessage = (error: RoomErrorLike, category: RoomCategory | null
     if (submissionCopy !== undefined) return submissionCopy;
   }
   if (error.code === 'DATA_UNAVAILABLE') return dataUnavailableMessage(error.detail, category);
+  // A live game can't be built once the match is over: say so plainly, with the way forward.
+  if (error.code === 'ROUND_GENERATION_FAILED' && /WRONG_ROUND_CONTEXT|FINISHED|CANCELLED/.test(error.detail ?? '')) {
+    return MATCH_FINISHED_COPY;
+  }
   return REJECTION_COPY[error.code] ?? 'Something went wrong. Try again.';
 };

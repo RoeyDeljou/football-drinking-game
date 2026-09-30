@@ -108,7 +108,7 @@ const TeamHeading = ({ payload }: { readonly payload: PublicPayload }): React.JS
     <p className="t-d1 mt-1">{payload.team.name || 'This team'}</p>
     <p className="t-body text-fg-muted">
       vs {payload.opponent.name || 'the opposition'}
-      {payload.formation !== null ? ` · ${payload.formation}` : ''}
+      {payload.formation !== null ? <span className="whitespace-nowrap"> · {payload.formation}</span> : null}
     </p>
   </div>
 );
@@ -127,7 +127,7 @@ export const M10LineupRecall = ({ room, round, now, onSubmit }: GameScreenProps)
         <Card className="lg:p-6">
           <Eyebrow className="mb-1">
             {payload.team.name || 'The XI'}
-            {payload.formation !== null ? ` · ${payload.formation}` : ''}
+            {payload.formation !== null ? <span className="whitespace-nowrap"> · {payload.formation}</span> : null}
           </Eyebrow>
           <p className="t-body mb-3 text-fg-muted">
             {summary === null ? 'The starting XI.' : `Best table score: ${summary.bestFound} of ${summary.slots}.`}
@@ -241,7 +241,7 @@ export const M10LineupRecall = ({ room, round, now, onSubmit }: GameScreenProps)
                     onChange={(event) => setDraft(event.target.value)}
                     maxLength={60}
                     disabled={full}
-                    placeholder={full ? 'Squad full' : 'Type a name, press enter'}
+                    placeholder={full ? 'Squad full' : 'Add a name'}
                     // Free text only: no browser suggestions that could hint at (or leak) names.
                     name="lineup-guess"
                     type="text"

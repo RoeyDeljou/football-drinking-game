@@ -97,7 +97,7 @@ const BigCard = ({ card, size }: { readonly card: Card_; readonly size: number }
                 : 'border-border bg-card text-fg'
             }`}
           >
-            <span className="text-[min(0.9rem,3.6vw)] font-bold leading-tight sm:text-base lg:text-lg">{label}</span>
+            <span className="text-[min(0.9rem,5vw)] font-bold leading-tight sm:text-base lg:text-lg">{label}</span>
             <span className="tnum text-sm font-black">
               {cell.ticked ? (
                 <>

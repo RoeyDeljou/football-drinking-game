@@ -1,16 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import {
-  bingoFullHouseCall,
-  bingoLineCall,
-  drinkActionLabel,
-  drinkAnnouncement,
-  drinkLine,
-  duelLostLine,
-  eventFiredLine,
-  eventRuleLine,
-  roundDrinkTotalLine,
-  yourManLine,
-} from './drinkCopy';
+import * as rawCopy from './drinkCopy';
+
+/** The copy keeps "1 sip" together with a non-breaking space; the assertions read it as a plain space. */
+const plainSpaces = <A extends unknown[]>(fn: (...args: A) => string) => (...args: A): string => fn(...args).replace(/\u00a0/g, ' ');
+const bingoFullHouseCall = plainSpaces(rawCopy.bingoFullHouseCall);
+const bingoLineCall = plainSpaces(rawCopy.bingoLineCall);
+const drinkActionLabel = plainSpaces(rawCopy.drinkActionLabel);
+const drinkAnnouncement = plainSpaces(rawCopy.drinkAnnouncement);
+const drinkLine = plainSpaces(rawCopy.drinkLine);
+const duelLostLine = plainSpaces(rawCopy.duelLostLine);
+const eventFiredLine = plainSpaces(rawCopy.eventFiredLine);
+const eventRuleLine = plainSpaces(rawCopy.eventRuleLine);
+const roundDrinkTotalLine = plainSpaces(rawCopy.roundDrinkTotalLine);
+const yourManLine = plainSpaces(rawCopy.yourManLine);
 import type { RecordedPenalty } from '@fdg/game-core';
 
 describe('drinkActionLabel', () => {
@@ -116,5 +118,12 @@ describe('Your Man and Stat Duel copy', () => {
 
   it('words a lost duel with the stat and the drink', () => {
     expect(duelLostLine('Ana', 'Roey', 'Most shots', 2)).toBe('Ana lost to Roey on most shots and drinks 2 sips.');
+  });
+});
+
+describe('plural agreement and non-breaking sips', () => {
+  it('says "drink" for two owners and keeps the number and unit together', () => {
+    expect(eventFiredLine('Corner', ['Roey', 'Ana'], 'owner', 1)).toBe('Corner! Roey and Ana drink 1 sip.');
+    expect(rawCopy.drinkActionLabel(2)).toBe('2 sips');
   });
 });
