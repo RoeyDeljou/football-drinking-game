@@ -139,6 +139,7 @@ describe('M7 contract and generation', () => {
       minPick: null,
       maxPick: 90,
       scoreAtOpen: null,
+      clockKnownAt: null,
     });
     expect(round.solution).toEqual({ outcome: 'pending', voidReason: null, targetMinute: null, goal: null, settledAt: null });
   });
@@ -604,5 +605,55 @@ describe('M7 against the recorded PSG 6-1 Slovan Bratislava timeline (401915445)
 
     expect(activeSession(room)?.finishedAt).not.toBeNull();
     expect(activeSession(room)?.rounds).toHaveLength(6);
+  });
+});
+
+/* ------------------------ clock never known during the pick window ------------------------ */
+
+describe('M7 never charges for a pick window in which no pick was possible (release QA)', () => {
+  it('kickoff passed, feed empty all window: every pick refused, and nobody drinks for not picking', () => {
+    // Scheduled kickoff 5 min before the round opened, but the feed has no events yet (delayed start).
+    const delayed = { ...FIXTURE, status: 'SCHEDULED' as const, kickoff: new Date(T0 - 300_000).toISOString() };
+    const harness = harnessFor(delayed);
+    let room = startM7(harness);
+    expect(currentRound(room)?.liveWindow?.baselineSource).toBeNull();
+    for (const playerId of [HOST, P2, P3]) {
+      expect(pick(room, harness.deps, playerId, 30).rejection?.detail).toBe('MATCH_CLOCK_UNKNOWN');
+    }
+    harness.clock.advance(PICK_WINDOW + 1_000);
+    room = feed(room, harness.deps, [ev('ko', 'KICK_OFF', 0)]).state;
+    expect(pick(room, harness.deps, HOST, 30).rejection?.code).toBe('DEADLINE_PASSED');
+    room = feed(room, harness.deps, [ev('ko', 'KICK_OFF', 0), goal('g20', 20)]).state;
+    expect(currentRound(room)?.status).toBe('resolved');
+    expect(room.penalties.filter((entry) => entry.reason === 'NO_ANSWER')).toEqual([]);
+  });
+
+  it('counts only the part of the window after the clock became known (and after joining)', () => {
+    const run = (baselineAfterMs: number) => {
+      const harness = harnessFor(LIVE_FIXTURE);
+      let room = startM7(harness);
+      harness.clock.advance(baselineAfterMs);
+      room = feed(room, harness.deps, HISTORY).state;
+      room = picks(room, harness.deps, [[HOST, 40]]);
+      harness.clock.advance(PICK_WINDOW);
+      room = feed(room, harness.deps, [...HISTORY, goal('g44', 44)]).state;
+      return room.penalties.filter((entry) => entry.reason === 'NO_ANSWER').map((entry) => entry.recipientId);
+    };
+    // Clock known 1 s in: 59 s of real window, so the silent players drink.
+    expect(run(1_000)).toEqual([P2, P3]);
+    // Clock known 55 s into a 60 s window: 5 s is no real chance.
+    expect(run(55_000)).toEqual([]);
+  });
+
+  it('a player who joined as the pick window was closing does not drink for it', () => {
+    const harness = harnessFor(LIVE_FIXTURE);
+    let room = startM7(harness);
+    room = feed(room, harness.deps, HISTORY).state;
+    room = picks(room, harness.deps, [[HOST, 40]]);
+    harness.clock.advance(PICK_WINDOW - 5_000);
+    room = reduceRoom(room, { type: 'PLAYER_JOIN', playerId: 'late' as PlayerId, nickname: 'Late', isGuest: true }, harness.deps).state;
+    harness.clock.advance(10_000);
+    room = feed(room, harness.deps, [...HISTORY, goal('g44', 44)]).state;
+    expect(room.penalties.filter((entry) => entry.reason === 'NO_ANSWER').map((entry) => entry.recipientId)).toEqual([P2, P3]);
   });
 });

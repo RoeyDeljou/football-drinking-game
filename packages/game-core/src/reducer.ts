@@ -205,6 +205,7 @@ const toPlayerViews = (room: RoomState): readonly RoundPlayerView[] =>
     connected: player.connected,
     score: player.score,
     streak: player.streak,
+    joinedAt: player.joinedAt,
   }));
 
 const toRoundView = (round: RoundRecord): RoundView<ModuleShape> => ({
@@ -923,7 +924,10 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
         moduleId: module.id,
         category: module.category,
         config: selection.config,
-        roundsPlanned: state.settings.roundsPerSession,
+        roundsPlanned:
+          module.maxRoundsPerSession === null
+            ? state.settings.roundsPerSession
+            : Math.min(state.settings.roundsPerSession, module.maxRoundsPerSession),
         rounds: [],
         startedAt: now,
         finishedAt: null,

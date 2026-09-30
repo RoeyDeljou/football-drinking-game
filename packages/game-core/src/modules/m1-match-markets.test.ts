@@ -29,13 +29,15 @@ import type { EngineDeps } from '../reducer.js';
 import { reduceAll, reduceRoom } from '../reducer.js';
 import { DEFAULT_SCORING } from '../scoring.js';
 import type { RoomState } from '../state.js';
-import { currentRound } from '../state.js';
+import { activeSession, currentRound } from '../state.js';
 import type { M1Counters, M1Settlement } from './m1-match-markets.js';
 import {
   EMPTY_M1_COUNTERS,
   foldMatchEvents,
   M1_DEFAULT_CONFIG,
   M1_ID,
+  M1_MIN_FILING_WINDOW_MS,
+  m1ContentKey,
   m1MatchMarkets as module,
   settleMarket,
 } from './m1-match-markets.js';
@@ -130,6 +132,7 @@ const observeMaybe = (
     config: M1_DEFAULT_CONFIG,
     round,
     events,
+    history: [],
     submissions,
     players: playerViews([HOST, P2, P3]),
     now: T0,
@@ -746,15 +749,22 @@ describe('M1 live observation', () => {
 
 describe('M1 settlement scoring', () => {
   const round = asRoundView(generated);
-  const settleRound = (submissions: readonly ReturnType<typeof sub>[], events: readonly MatchEvent[]) => {
+  /** `lockedAt`: when the first live event locked the slip (default: 5 min in, a real filing window). */
+  const settleRound = (
+    submissions: readonly ReturnType<typeof sub>[],
+    events: readonly MatchEvent[],
+    lockedAt: number = T0 + 300_000,
+    players = playerViews([HOST, P2, P3]),
+  ) => {
     const observed = observe(round, events, submissions);
+    const publicPayload = { ...(observed.publicPayload as Record<string, unknown>), slipLockedAt: lockedAt };
     return module.scoreRound({
       config: M1_DEFAULT_CONFIG,
-      round: { ...round, publicPayload: observed.publicPayload, solution: observed.solution },
+      round: { ...round, publicPayload, solution: observed.solution },
       submissions,
-      players: playerViews([HOST, P2, P3]),
+      players,
       scoring: DEFAULT_SCORING,
-      now: T0,
+      now: T0 + 6_000_000,
       rng: scoreRng(),
     });
   };
@@ -801,6 +811,25 @@ describe('M1 settlement scoring', () => {
     expect(quiet.map((event) => event.sips)).toEqual(rollsForSeed(SCORE_SEED, 2));
     expect(quiet.every((event) => event.meta === ROLLED_PENALTY_META)).toBe(true);
     expect(outcome.scores.find((entry) => entry.playerId === P2)?.points).toBe(0);
+  });
+
+  it('charges nobody for a slip that locked on the first batch (round opened after kickoff)', () => {
+    const outcome = settleRound([sub(HOST, slip())], fullTime, T0 + 2_000);
+    expect(outcome.penalties.filter((event) => event.reason === 'NO_ANSWER')).toEqual([]);
+  });
+
+  it('charges only the players who were present for a full filing window', () => {
+    const late = playerViews([HOST, P2, P3]).map((player) =>
+      player.id === P3 ? { ...player, joinedAt: T0 + 290_000 } : player,
+    );
+    // Locked at 5 min: P2 had it all, P3 joined 10 s before the lock.
+    const outcome = settleRound([sub(HOST, slip())], fullTime, T0 + 300_000, late);
+    expect(outcome.penalties.filter((event) => event.reason === 'NO_ANSWER').map((event) => event.playerId)).toEqual([P2]);
+    // Exactly the threshold counts as a real window.
+    const edge = settleRound([sub(HOST, slip())], fullTime, T0 + M1_MIN_FILING_WINDOW_MS);
+    expect(edge.penalties.filter((event) => event.reason === 'NO_ANSWER')).toHaveLength(2);
+    const short = settleRound([sub(HOST, slip())], fullTime, T0 + M1_MIN_FILING_WINDOW_MS - 1);
+    expect(short.penalties.filter((event) => event.reason === 'NO_ANSWER')).toEqual([]);
   });
 
   it('keeps the worst-slip and perfect-slip penalties fixed, not rolled', () => {
@@ -1214,5 +1243,76 @@ describe('a long-running-bet round can never be manually locked', () => {
     expect(rejected.state.phase).toBe('playing');
     expect(rejected.state.penalties).toEqual([]);
     expect(rejected.state.players.every((player) => player.sips === 0)).toBe(true);
+  });
+});
+
+/* ------------------- late starts, one slip per fixture (release QA) ------------------- */
+
+describe('M1 opened after kickoff, and one slip per fixture', () => {
+  const liveFixture = { ...sampleData().fixture, status: 'LIVE', kickoff: new Date(T0 - 1_800_000).toISOString() } as NonNullable<
+    ReturnType<typeof sampleData>['fixture']
+  >;
+  const liveHarness = () => makeHarness({ data: sampleData({ fixture: liveFixture }) });
+  const startLive = (deps: EngineDeps): RoomState =>
+    reduceAll(
+      newRoom(),
+      [
+        { type: 'PLAYER_JOIN', playerId: P2, nickname: 'Bea', isGuest: true },
+        { type: 'PLAYER_JOIN', playerId: P3, nickname: 'Cal', isGuest: true },
+        { type: 'SELECT_GAME', actorId: HOST, moduleId: M1_ID, config: null },
+        { type: 'START_SESSION', actorId: HOST },
+      ],
+      deps,
+    ).state;
+
+  it('declares one round per session, whatever the room setting', () => {
+    expect(module.maxRoundsPerSession).toBe(1);
+    const { deps } = liveHarness();
+    const room = startLive(deps);
+    expect(room.settings.roundsPerSession).toBe(8);
+    expect(activeSession(room)?.roundsPlanned).toBe(1);
+  });
+
+  it('a round opened mid-match locks on its first batch and charges nobody for not filing', () => {
+    const { deps, clock } = liveHarness();
+    let room = startLive(deps);
+    clock.advance(1_000);
+    // The ingestion loop delivers the cached full list right after the round opens.
+    room = reduceRoom(room, { type: 'MATCH_EVENTS', events: [matchEvent('KICK_OFF', { id: 'ko', minute: 0 }), goal(HOME_TEAM_ID, 3, 12)] }, deps).state;
+    const round = currentRound(room);
+    expect((round?.publicPayload as { slipLockedAt: number | null }).slipLockedAt).toBe(T0 + 1_000);
+    const refused = reduceRoom(room, { type: 'SUBMIT_ANSWER', playerId: P2, roundId: round?.id ?? ('' as never), payload: slip() }, deps);
+    // Refused: the slip is locked (and here a market is already settled, which is checked first).
+    expect(['MARKET_SETTLED', 'SLIP_LOCKED']).toContain(refused.rejection?.submissionCode);
+    clock.advance(5_400_000);
+    room = reduceRoom(room, { type: 'MATCH_EVENTS', events: [matchEvent('FULL_TIME', { id: 'ft', minute: 90 })] }, deps).state;
+    expect(room.phase).toBe('roundReveal');
+    expect(room.penalties.filter((entry) => entry.reason === 'NO_ANSWER')).toEqual([]);
+  });
+
+  it('after the slip settles the session ends cleanly: no round 2, no second charge', () => {
+    const { deps, clock } = liveHarness();
+    let room = startLive(deps);
+    room = reduceRoom(room, { type: 'MATCH_EVENTS', events: [matchEvent('FULL_TIME', { id: 'ft', minute: 90 })] }, deps).state;
+    expect(room.phase).toBe('roundReveal');
+    const charged = room.penalties.length;
+    clock.advance(10_000);
+    const advanced = reduceRoom(room, { type: 'ADVANCE', actorId: HOST }, deps);
+    expect(advanced.events.map((event) => event.type)).toContain('SESSION_FINISHED');
+    expect(advanced.state.phase).toBe('intermission');
+    expect(activeSession(advanced.state)?.finishedAt).not.toBeNull();
+    const again = reduceRoom(advanced.state, { type: 'ADVANCE', actorId: HOST }, deps);
+    expect(again.rejection?.code).toBe('SESSION_FINISHED');
+    expect(again.state.penalties).toHaveLength(charged);
+    expect(activeSession(again.state)?.rounds).toHaveLength(1);
+  });
+
+  it('refuses a second slip for the same fixture, and a finished or cancelled fixture', () => {
+    const used = generateWith(module, { usedContentKeys: [m1ContentKey(liveFixture.id)] });
+    expect(used.ok ? null : used.reason).toBe('NO_UNUSED_CONTENT');
+    for (const status of ['FINISHED', 'CANCELLED'] as const) {
+      const over = generateWith(module, { data: sampleData({ fixture: { ...liveFixture, status } }) });
+      expect(over.ok ? null : over.reason).toBe('WRONG_ROUND_CONTEXT');
+    }
   });
 });

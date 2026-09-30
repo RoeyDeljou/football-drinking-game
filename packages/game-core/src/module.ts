@@ -81,6 +81,11 @@ export interface RoundPlayerView {
   readonly score: number;
   /** Consecutive correct answers *before* this round. */
   readonly streak: number;
+  /**
+   * When the player (last) joined the room, engine time. Lets a module tell whether a player was
+   * even present while an answer window was open (e.g. "no drink for a slip you never could file").
+   */
+  readonly joinedAt: number;
 }
 
 export interface TurnState {
@@ -317,6 +322,12 @@ export interface GameModuleDefinition<S extends ModuleShape> {
   readonly dataRequirementsAnyOf?: readonly (readonly DataRequirementKey[])[];
   readonly minPlayers: number;
   readonly maxPlayers: number | null;
+  /**
+   * Optional cap on rounds per session, for games with a fixed amount of content per session (M1: one
+   * slip per match). The session plans `min(room.roundsPerSession, cap)` rounds, so it ends normally
+   * (reveal → intermission, session finished) instead of failing to generate round 2. Omit for none.
+   */
+  readonly maxRoundsPerSession?: number;
   /** May a player replace an accepted submission while the round is open? (M1 slip edits.) */
   readonly allowResubmission: boolean;
   readonly defaultConfig: S['config'];
@@ -369,6 +380,8 @@ export interface EngineGameModule {
   readonly dataRequirementsAnyOf: readonly (readonly DataRequirementKey[])[];
   readonly minPlayers: number;
   readonly maxPlayers: number | null;
+  /** `null` = no cap. See `GameModuleDefinition.maxRoundsPerSession`. */
+  readonly maxRoundsPerSession: number | null;
   readonly allowResubmission: boolean;
   readonly defaultConfig: unknown;
   readonly supportsLiveEvents: boolean;
@@ -417,6 +430,10 @@ const parsePerPlayer = <T>(
 export const defineGameModule = <S extends ModuleShape>(
   definition: GameModuleDefinition<S>,
 ): EngineGameModule => {
+  const cap = definition.maxRoundsPerSession;
+  if (cap !== undefined && (!Number.isInteger(cap) || cap < 1)) {
+    throw new EngineInvariantError(`${definition.id} maxRoundsPerSession must be a positive integer, got ${String(cap)}`);
+  }
   const typedRound = (round: RoundView<ModuleShape>): RoundView<S> => ({
     id: round.id,
     index: round.index,
@@ -459,6 +476,7 @@ export const defineGameModule = <S extends ModuleShape>(
     dataRequirementsAnyOf: definition.dataRequirementsAnyOf ?? [],
     minPlayers: definition.minPlayers,
     maxPlayers: definition.maxPlayers,
+    maxRoundsPerSession: cap ?? null,
     allowResubmission: definition.allowResubmission,
     defaultConfig: definition.defaultConfig,
     supportsLiveEvents: definition.observeEvents !== undefined,

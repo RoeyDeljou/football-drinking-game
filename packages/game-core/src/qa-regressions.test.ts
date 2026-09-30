@@ -777,7 +777,8 @@ describe('N8: every Phase-1 module replays deterministically', () => {
       const second = playSession(moduleId, 2024, false);
       expect(second).toEqual(first);
       expect(JSON.stringify(second)).toBe(JSON.stringify(first));
-      expect(activeSession(first)?.rounds).toHaveLength(3);
+      // M1 is one slip per match (maxRoundsPerSession: 1); everything else plays the room's 3 rounds.
+      expect(activeSession(first)?.rounds).toHaveLength(moduleId === M1_ID ? 1 : 3);
       expect(first.players.some((player) => player.score > 0 || player.sips > 0)).toBe(true);
     });
 

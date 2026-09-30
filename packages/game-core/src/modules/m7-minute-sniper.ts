@@ -39,8 +39,10 @@
  *   the round as far as the engine can tell (see `live-window.ts`), shows up in `scoreAtOpen`, and
  *   the round waits for the next one.
  * - **Not picking** drinks a drink roll (`NO_ANSWER`, `noAnswerSips` is the on/off switch) — but
- *   only if the pick window had closed before the round settled; a goal 20 seconds after the round
- *   opened does not punish players who were still choosing.
+ *   only if the pick window had closed before the round settled (a goal 20 seconds after the round
+ *   opened does not punish players who were still choosing) **and** the player had at least
+ *   `M7_MIN_PICK_WINDOW_MS` of it with a known match clock after joining (`clockKnownAt`): nobody
+ *   drinks for a window in which every pick was refused as `MATCH_CLOCK_UNKNOWN`.
  * - **Points**: the shared scorer with accuracy `1 − distance / toleranceMinutes` (no speed bonus:
  *   picking early is not a skill here). Only an exact hit on a real goal counts as `correct`.
  *
@@ -58,7 +60,7 @@ import { clockOf, compareMatchClock, goalCreditedSide, isGoalEvent, matchClockSc
 import { defineGameModule } from '../module.js';
 import type { PenaltyEvent } from '../penalties.js';
 import { penalty } from '../penalties.js';
-import { footballPlayerIdSchema, nonSubmitters, rolledSelfPenalties, scoreChoiceRound, teamIdSchema } from './helpers.js';
+import { footballPlayerIdSchema, hadAnswerWindow, nonSubmitters, rolledSelfPenalties, scoreChoiceRound, teamIdSchema } from './helpers.js';
 
 export const M7_ID = asGameModuleId('M7');
 
@@ -95,6 +97,11 @@ const publicPayloadSchema = z
     maxPick: z.literal(M7_LAST_MINUTE),
     /** Score when the round opened (from its baseline). `null` until known. */
     scoreAtOpen: scoreSchema.nullable(),
+    /**
+     * Engine time from which picks could be placed (the round learnt the match clock): the round's
+     * start when baselined pre-kickoff, else when its baseline batch arrived. `null` = not yet.
+     */
+    clockKnownAt: z.number().nullable(),
   })
   .strict();
 
@@ -145,6 +152,17 @@ export const M7_DEFAULT_CONFIG: M7Shape['config'] = {
   furthestSips: 3,
   noAnswerSips: 2,
 };
+
+/** Least usable pick time (after the clock became known and after joining) before not picking drinks. */
+export const M7_MIN_PICK_WINDOW_MS = 10_000;
+
+/** When picks became possible: the round start if baselined pre-kickoff, else the stored baseline time. */
+const clockKnownSince = (round: {
+  readonly startedAt: number;
+  readonly liveWindow: LiveEventWindow | null;
+  readonly publicPayload: M7PublicPayload;
+}): number | null =>
+  round.liveWindow?.baselineSource === 'pre-kickoff' ? round.startedAt : round.publicPayload.clockKnownAt;
 
 const PENDING: M7Solution = { outcome: 'pending', voidReason: null, targetMinute: null, goal: null, settledAt: null };
 
@@ -236,6 +254,7 @@ export const m7MinuteSniper = defineGameModule<M7Shape>({
           minPick: null,
           maxPick: M7_LAST_MINUTE,
           scoreAtOpen: null,
+          clockKnownAt: null,
         },
         privatePayloads: {},
         solution: PENDING,
@@ -283,6 +302,7 @@ export const m7MinuteSniper = defineGameModule<M7Shape>({
       ...payload,
       ...clock,
       scoreAtOpen: baselineCall ? scoreOf(ctx.history, payload.homeTeamId, payload.awayTeamId) : payload.scoreAtOpen,
+      clockKnownAt: clockKnownSince(ctx.round) ?? ctx.now,
     };
 
     if (baselineCall) {
@@ -378,17 +398,20 @@ export const m7MinuteSniper = defineGameModule<M7Shape>({
         ? []
         : ctx.submissions.filter((_, index) => distances[index] === best).map((submission) => submission.playerId);
 
+    // Not picking drinks only if the pick window had closed before the round settled AND the player
+    // had a real chance to pick: picks are refused until the clock is known, so the usable window runs
+    // from the later of "clock known" and joining, to the deadline.
     const penalties: PenaltyEvent[] = [];
     const deadline = ctx.round.deadlineAt;
     const pickWindowClosed = deadline !== null && solution.settledAt !== null && solution.settledAt >= deadline;
-    penalties.push(
-      ...rolledSelfPenalties(
-        ctx.rng,
-        pickWindowClosed ? nonSubmitters<M7Shape>(ctx.players, ctx.submissions) : [],
-        'NO_ANSWER',
-        ctx.config.noAnswerSips > 0,
-      ),
-    );
+    const knownAt = clockKnownSince(ctx.round);
+    const silent = pickWindowClosed
+      ? nonSubmitters<M7Shape>(ctx.players, ctx.submissions).filter((playerId) => {
+          const player = ctx.players.find((entry) => entry.id === playerId);
+          return player !== undefined && hadAnswerWindow(player, knownAt, deadline, M7_MIN_PICK_WINDOW_MS);
+        })
+      : [];
+    penalties.push(...rolledSelfPenalties(ctx.rng, silent, 'NO_ANSWER', ctx.config.noAnswerSips > 0));
     if (ctx.config.furthestSips > 0 && best !== null && worst !== null && worst > best) {
       ctx.submissions.forEach((submission, index) => {
         const distance = distances[index];
@@ -432,6 +455,7 @@ export const m7MinuteSniper = defineGameModule<M7Shape>({
       scoreAtOpen:
         ctx.round.publicPayload.scoreAtOpen ??
         (ctx.round.liveWindow?.baselineSource === 'pre-kickoff' ? { home: 0, away: 0 } : null),
+      clockKnownAt: clockKnownSince(ctx.round),
     },
     privatePayload: null,
     solution: ctx.visibility === 'revealed' ? ctx.round.solution : null,
