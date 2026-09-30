@@ -325,16 +325,33 @@ describe('M1 counters', () => {
     expect(counters.firstScorerPlayerId).toBe(ALL_BUILT[3]?.player.id);
   });
 
-  it('counts an own goal for the credited team but not as anyone scoring', () => {
+  it('counts an own goal for the opponent of its teamId (the conceding team) but not as anyone scoring', () => {
+    // Provider convention: an OWN_GOAL carries the team of the player who put it into his own net.
     const counters = foldMatchEvents(
       EMPTY_M1_COUNTERS,
-      [matchEvent('OWN_GOAL', { teamId: HOME_TEAM_ID, playerId: ALL_BUILT[12]?.player.id ?? null })],
+      [matchEvent('OWN_GOAL', { teamId: AWAY_TEAM_ID, playerId: ALL_BUILT[12]?.player.id ?? null })],
       HOME_TEAM_ID,
       AWAY_TEAM_ID,
     );
     expect(counters.homeGoals).toBe(1);
+    expect(counters.awayGoals).toBe(0);
     expect(counters.firstScorerPlayerId).toBeNull();
     expect(counters.scorerPlayerIds).toEqual([]);
+  });
+
+  it('credits a home player\'s own goal to the away side, so the counters match the scoreboard', () => {
+    const counters = foldMatchEvents(
+      EMPTY_M1_COUNTERS,
+      [
+        goal(HOME_TEAM_ID, 3, 10),
+        matchEvent('OWN_GOAL', { teamId: HOME_TEAM_ID, playerId: ALL_BUILT[2]?.player.id ?? null, minute: 20 }),
+        goal(AWAY_TEAM_ID, 12, 30),
+      ],
+      HOME_TEAM_ID,
+      AWAY_TEAM_ID,
+    );
+    expect([counters.homeGoals, counters.awayGoals]).toEqual([1, 2]);
+    expect(counters.scorerPlayerIds).not.toContain(ALL_BUILT[2]?.player.id);
   });
 
   it('counts a scored penalty as the taker scoring, and a missed one as nothing', () => {
@@ -606,7 +623,7 @@ describe('M1 single-outcome settlement', () => {
     const counters = foldMatchEvents(
       EMPTY_M1_COUNTERS,
       [
-        matchEvent('OWN_GOAL', { teamId: HOME_TEAM_ID, playerId: unlistedPlayer(), minute: 3 }),
+        matchEvent('OWN_GOAL', { teamId: AWAY_TEAM_ID, playerId: unlistedPlayer(), minute: 3 }),
         goalBy(listed, 40),
       ],
       HOME_TEAM_ID,

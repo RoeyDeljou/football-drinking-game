@@ -26,14 +26,16 @@
  *
  * Goal attribution:
  *  - `GOAL` and `PENALTY_SCORED` count for the team *and* as the player scoring;
- *  - `OWN_GOAL` counts for the credited team (providers normalize `teamId` to the team credited with
- *    the goal) but **not** as anyone scoring, so it never wins a scorer pick;
+ *  - `OWN_GOAL` counts for the **opponent** of `event.teamId` — providers set an own goal's `teamId`
+ *    to the team of the player who put it into his own net, i.e. the conceding team (the convention
+ *    lives in `match-events.ts`) — and **not** as anyone scoring, so it never wins a scorer pick;
  *  - `PENALTY_MISSED` counts for nothing.
  */
 
 import type { FootballPlayerId, MatchEvent, PlayerPosition } from '@fdg/football-data';
 import { z } from 'zod';
 import { asGameModuleId } from '../ids.js';
+import { goalCreditedSide, goalScorerOf, isGoalEvent } from '../match-events.js';
 import { defineGameModule } from '../module.js';
 import type { PenaltyEvent } from '../penalties.js';
 import { penalty } from '../penalties.js';
@@ -237,8 +239,6 @@ const option = (
   awayGoals: number | null = null,
 ): M1Option => ({ id, kind, label, playerId, homeGoals, awayGoals });
 
-/** Event types that count as a *player* scoring (and as a goal for `event.teamId`). */
-const SCORING_TYPES: readonly MatchEvent['type'][] = ['GOAL', 'PENALTY_SCORED'];
 const CARD_TYPES: readonly MatchEvent['type'][] = ['YELLOW_CARD', 'SECOND_YELLOW', 'RED_CARD'];
 
 const matchClock = (event: MatchEvent): number => event.minute * 100 + (event.extraMinute ?? 0);
@@ -294,15 +294,14 @@ export const foldMatchEvents = (
 
   let next: M1Counters = counters;
   for (const event of ordered) {
-    const isHome = event.teamId === homeTeamId;
-    const isAway = event.teamId === awayTeamId;
-
-    if (SCORING_TYPES.includes(event.type) || event.type === 'OWN_GOAL') {
-      const scorer = event.type === 'OWN_GOAL' ? null : event.playerId;
+    if (isGoalEvent(event)) {
+      // Provider convention: an OWN_GOAL's `teamId` is the conceding team (see `match-events.ts`).
+      const side = goalCreditedSide(event, homeTeamId, awayTeamId);
+      const scorer = goalScorerOf(event);
       next = {
         ...next,
-        homeGoals: next.homeGoals + (isHome ? 1 : 0),
-        awayGoals: next.awayGoals + (isAway ? 1 : 0),
+        homeGoals: next.homeGoals + (side === 'home' ? 1 : 0),
+        awayGoals: next.awayGoals + (side === 'away' ? 1 : 0),
         firstScorerPlayerId: next.firstScorerPlayerId ?? scorer,
         scorerPlayerIds:
           scorer === null || next.scorerPlayerIds.includes(scorer)
