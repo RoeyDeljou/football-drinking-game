@@ -45,4 +45,14 @@ describe('planWatch', () => {
     const a = planWatch(state(), single, lookups(live))[0]?.roundKey;
     expect(a).toBe('s1:r1');
   });
+
+  it('watches stats-only modules and flags what each module consumes', () => {
+    const statsOnly = { supportsLiveEvents: false, supportsLiveStats: true } as EngineGameModule;
+    const both = { supportsLiveEvents: true, supportsLiveStats: true } as EngineGameModule;
+    expect(planWatch(state(), single, lookups(statsOnly))).toEqual([
+      { fixtureId: 'fx', roundKey: 's1:r1', events: false, stats: true },
+    ]);
+    expect(planWatch(state(), single, lookups(both))[0]).toMatchObject({ events: true, stats: true });
+    expect(planWatch(state(), single, lookups({ supportsLiveEvents: false, supportsLiveStats: false } as EngineGameModule))).toEqual([]);
+  });
 });

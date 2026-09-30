@@ -57,15 +57,23 @@ const event = (id: string, type: MatchEvent['type'] = 'GOAL', fixtureId: Fixture
 
 type Status = 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'POSTPONED' | 'CANCELLED';
 
+const playerLine = (goals: number) => ({
+  playerId: 'p1', teamId: 't1', minutesPlayed: 90, goals, assists: 0, shots: 1, shotsOnTarget: 1, passes: null,
+  passAccuracy: null, tackles: null, duelsWon: null, foulsCommitted: 0, rating: null,
+});
+
 const rec = (roomId: string): RoomRecord => ({ state: { id: roomId }, meta: {} }) as unknown as RoomRecord;
 
 const setup = (initialNeeds: Record<string, readonly string[]> = {}, opts: { reap?: boolean; nowMs?: number } = {}) => {
   const clock = createFakeScheduler();
-  const feed = { kickoff: 'not-a-date', status: 'LIVE' as Status, events: [] as MatchEvent[], fail: 0, polls: 0, throwNext: false, nullNext: false };
+  const feed = { stamp: 0, goals: 0, kickoff: 'not-a-date', status: 'LIVE' as Status, events: [] as MatchEvent[], fail: 0, polls: 0, throwNext: false, nullNext: false };
   const needs: Record<string, readonly string[]> = { ...initialNeeds };
   const delivered: Array<{ roomId: string; events: readonly MatchEvent[] }> = [];
   const changed: string[] = [];
   let nowMs = opts.nowMs ?? 0;
+  const statsRooms = new Set<string>();
+  const statsDelivered: Array<{ roomId: string; asOf: string; goals: number; afterEventBatches: number }> = [];
+  const eventsToo = new Set<string>();
   const goneRooms = new Set<string>();
   const missingRooms = new Set<string>();
   const rejectWith: { code: string | null } = { code: null };
@@ -88,8 +96,8 @@ const setup = (initialNeeds: Record<string, readonly string[]> = {}, opts: { rea
             fixture: { id, status: feed.status, kickoff: feed.kickoff },
             events: feed.events.map((e) => ({ ...e, fixtureId: id })),
             teamStats: [],
-            playerStats: [],
-            updatedAt: '',
+            playerStats: [playerLine(feed.goals)],
+            updatedAt: new Date(1_000_000 + (feed.stamp += 1) * 1000).toISOString(),
           },
         } as never;
       },
@@ -103,9 +111,23 @@ const setup = (initialNeeds: Record<string, readonly string[]> = {}, opts: { rea
         record: rec(roomId),
       } as unknown as DispatchOutcome;
     },
+    dispatchMatchStats: async (roomId, action) => {
+      statsDelivered.push({ roomId, asOf: action.asOf, goals: action.playerStats[0]?.goals ?? -1, afterEventBatches: delivered.length });
+      if (goneRooms.has(roomId)) return null;
+      return {
+        rejection: rejectWith.code === null ? null : { code: rejectWith.code, detail: null },
+        changed: true,
+        record: rec(roomId),
+      } as unknown as DispatchOutcome;
+    },
     onRoomChanged: (record) => changed.push(record.state.id),
     plan: (record) =>
-      (needs[record.state.id] ?? []).map((fixtureId) => ({ fixtureId: asFixtureId(fixtureId), roundKey: 'r1' })),
+      (needs[record.state.id] ?? []).map((fixtureId) => ({
+        fixtureId: asFixtureId(fixtureId),
+        roundKey: 'r1',
+        events: !statsRooms.has(record.state.id) || eventsToo.has(record.state.id),
+        stats: statsRooms.has(record.state.id),
+      })),
     scheduler: clock.scheduler,
     random: () => 0.5,
     now: () => nowMs,
@@ -117,7 +139,7 @@ const setup = (initialNeeds: Record<string, readonly string[]> = {}, opts: { rea
     needs[roomId] = fixtures;
     service.roomChanged(rec(roomId));
   };
-  return { clock, feed, delivered, changed, service, rejectWith, goneRooms, missingRooms, sync, setNow: (ms: number) => { nowMs = ms; } };
+  return { statsRooms, eventsToo, statsDelivered, clock, feed, delivered, changed, service, rejectWith, goneRooms, missingRooms, sync, setNow: (ms: number) => { nowMs = ms; } };
 };
 
 const ROOM_A = 'a' as RoomId;
@@ -625,6 +647,80 @@ describe('live ingestion scheduler', () => {
     expect(t.delivered).toHaveLength(3);
     await t.clock.advance(3000);
     expect(t.delivered).toHaveLength(3);
+    await t.service.close();
+  });
+
+  it('sends MATCH_STATS only to stats rooms, after that poll\'s events, and skips unchanged snapshots', async () => {
+    const t = setup();
+    t.statsRooms.add('s');
+    t.eventsToo.add('s');
+    t.sync('s', ['fx1']);
+    t.sync('e', ['fx1']); // events-only room
+    t.feed.events = [event('e1')];
+    await t.clock.advance(0);
+    expect(t.statsDelivered.map((d) => d.roomId)).toEqual(['s']);
+    expect(t.delivered.map((d) => d.roomId).sort()).toEqual(['e', 's']);
+    // events for room s were delivered before its stats
+    expect(t.statsDelivered[0]?.afterEventBatches).toBeGreaterThanOrEqual(1);
+    await t.clock.advance(3000); // three more polls, stats content identical (asOf differs every poll)
+    expect(t.feed.polls).toBe(4);
+    expect(t.statsDelivered).toHaveLength(1);
+    t.feed.goals = 2; // stats change -> delivered again
+    await t.clock.advance(1000);
+    expect(t.statsDelivered.map((d) => d.goals)).toEqual([0, 2]);
+    await t.service.close();
+  });
+
+  it('a stats-only room receives no MATCH_EVENTS', async () => {
+    const t = setup();
+    t.statsRooms.add('s');
+    t.feed.events = [event('e1')];
+    t.sync('s', ['fx1']);
+    await t.clock.advance(0);
+    expect(t.delivered).toEqual([]);
+    expect(t.statsDelivered).toHaveLength(1);
+    await t.service.close();
+  });
+
+  it('delivers a post-whistle snapshot even when the stats are identical (FULL_TIME flips the content key)', async () => {
+    const t = setup();
+    t.statsRooms.add('s');
+    t.eventsToo.add('s');
+    t.feed.events = [event('g')];
+    t.sync('s', ['fx1']);
+    await t.clock.advance(0);
+    await t.clock.advance(1000);
+    expect(t.statsDelivered).toHaveLength(1);
+    t.feed.status = 'FINISHED';
+    t.feed.events = [event('g'), event('ft', 'FULL_TIME')]; // whistle and (unchanged) final stats in the same poll
+    await t.clock.advance(1000);
+    expect(t.statsDelivered).toHaveLength(2);
+    // events of that poll were delivered before the stats
+    expect(t.delivered.at(-1)?.events.map((e) => e.id)).toEqual(['g', 'ft']);
+    expect(t.statsDelivered[1]?.afterEventBatches).toBe(t.delivered.length);
+    await t.clock.advance(1000); // the one confirming poll: unchanged, nothing new to send
+    expect(t.statsDelivered).toHaveLength(2);
+    expect(t.clock.pending()).toBe(0);
+  });
+
+  it('a stats room attaching later is served the cached snapshot; rejections are quiet and retried', async () => {
+    const t = setup();
+    t.statsRooms.add('s');
+    t.sync('x', ['fx1']);
+    await t.clock.advance(0);
+    t.sync('s', ['fx1']);
+    await t.clock.advance(0);
+    expect(t.statsDelivered.map((d) => d.roomId)).toEqual(['s']);
+    t.rejectWith.code = 'ROUND_CLOSED';
+    t.feed.goals = 5;
+    await t.clock.advance(1000);
+    t.rejectWith.code = 'INVALID_STATS';
+    await t.clock.advance(1000);
+    t.rejectWith.code = null;
+    await t.clock.advance(1000);
+    expect(t.statsDelivered.filter((d) => d.goals === 5).length).toBe(3); // retried until accepted
+    await t.clock.advance(3000);
+    expect(t.statsDelivered.filter((d) => d.goals === 5).length).toBe(3); // then no more
     await t.service.close();
   });
 });

@@ -19,8 +19,9 @@
  * simply delivers the full event list; unchanged batches are no-ops (no save, no broadcast).
  */
 
-import type { FixtureId, FootballDataProvider, MatchEvent } from '@fdg/football-data';
-import type { RoomId } from '@fdg/game-core';
+import type { FixtureId, FootballDataProvider, LiveMatchState, MatchEvent } from '@fdg/football-data';
+import type { MatchStatsAction, RoomId } from '@fdg/game-core';
+import { matchStatsActionSchema } from '@fdg/game-core';
 import type { DispatchOutcome } from '../engine/dispatch.js';
 import type { RoomRecord } from '../rooms/store.js';
 import type { LiveIngestionConfig, LiveIngestionConfigInput } from './schemas.js';
@@ -50,6 +51,8 @@ export interface LiveLogger {
 export interface LiveIngestionDeps {
   readonly provider: Pick<FootballDataProvider, 'getLiveMatchState'>;
   readonly dispatchMatchEvents: (roomId: RoomId, events: readonly MatchEvent[]) => Promise<DispatchOutcome | null>;
+  /** Sends one `MATCH_STATS` snapshot to a room (optional: without it stats are never delivered). */
+  readonly dispatchMatchStats?: (roomId: RoomId, action: MatchStatsAction) => Promise<DispatchOutcome | null>;
   readonly onRoomChanged: (record: RoomRecord) => void;
   /** Which fixtures a room needs right now (`planWatch` in production; stubbed in unit tests). */
   readonly plan: (record: RoomRecord) => readonly WatchNeed[];
@@ -75,7 +78,13 @@ export interface LiveIngestion {
   close(): Promise<void>;
 }
 
-const BENIGN_REJECTIONS = new Set(['ROUND_CLOSED', 'WRONG_PHASE', 'NO_ACTIVE_SESSION', 'ROOM_TERMINAL']);
+const BENIGN_REJECTIONS = new Set([
+  'ROUND_CLOSED',
+  'WRONG_PHASE',
+  'NO_ACTIVE_SESSION',
+  'ROOM_TERMINAL',
+  'INVALID_STATS',
+]);
 
 interface Watcher {
   readonly fixtureId: FixtureId;
@@ -92,6 +101,13 @@ interface Watcher {
   /** When a FINISHED state without a FULL_TIME event was first seen (bounds the slow wait for one). */
   finishedSeenAt: number | null;
   lastEvents: readonly MatchEvent[] | null;
+  /** Latest validated stats snapshot (for rooms attaching later) and whether FULL_TIME was in that poll. */
+  lastStats: { action: MatchStatsAction; key: string } | null;
+  /** Room -> what it consumes (events and/or stats). */
+  readonly feeds: Map<RoomId, { events: boolean; stats: boolean }>;
+  /** Room -> (roundKey, content key) of the last stats snapshot that room accepted. */
+  readonly statsSent: Map<RoomId, { roundKey: string; key: string }>;
+  statsInvalidLogged: boolean;
 }
 
 export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
@@ -181,6 +197,8 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     if (watcher === undefined) return;
     watcher.rooms.delete(roomId);
     watcher.baselined.delete(roomId);
+    watcher.feeds.delete(roomId);
+    watcher.statsSent.delete(roomId);
     if (watcher.rooms.size === 0) dropWatcher(watcher);
   };
 
@@ -204,6 +222,7 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
   const deliver = async (fixtureId: FixtureId, roomId: RoomId, events: readonly MatchEvent[]): Promise<void> => {
     const watcher = watchers.get(fixtureId);
     const roundKey = watcher?.rooms.get(roomId);
+    if (watcher?.feeds.get(roomId)?.events === false) return;
     const needsBaseline = watcher !== undefined && roundKey !== undefined && watcher.baselined.get(roomId) !== roundKey;
     if (events.length === 0 && !needsBaseline) return;
     try {
@@ -227,6 +246,41 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     }
   };
 
+  /**
+   * Sends the poll's stats snapshot to one room. Snapshots are cumulative and the reducer keeps the latest
+   * `asOf`, but providers stamp `updatedAt` per call, so an unchanged snapshot would still look "newer".
+   * We therefore skip a snapshot whose content (plus whether the whistle has been seen) equals what this
+   * room's current round already accepted: no save, no broadcast, no persist. The whistle flag is part of
+   * the key so the first snapshot after FULL_TIME is always delivered, even with identical stats.
+   */
+  const deliverStats = async (fixtureId: FixtureId, roomId: RoomId): Promise<void> => {
+    const watcher = watchers.get(fixtureId);
+    const dispatchStats = deps.dispatchMatchStats;
+    const roundKey = watcher?.rooms.get(roomId);
+    if (watcher === undefined || dispatchStats === undefined || roundKey === undefined) return;
+    if (watcher.feeds.get(roomId)?.stats !== true || watcher.lastStats === null) return;
+    const { action, key } = watcher.lastStats;
+    const sent = watcher.statsSent.get(roomId);
+    if (sent !== undefined && sent.roundKey === roundKey && sent.key === key) return;
+    try {
+      const outcome = await dispatchStats(roomId, action);
+      if (outcome === null) {
+        for (const id of [...(roomFixtures.get(roomId) ?? [])]) detach(roomId, id);
+        return;
+      }
+      if (outcome.rejection !== null) {
+        if (!BENIGN_REJECTIONS.has(outcome.rejection.code)) {
+          log.warn(`MATCH_STATS rejected for room ${roomId}: ${outcome.rejection.code}`);
+        }
+        return;
+      }
+      if (watcher.rooms.get(roomId) === roundKey) watcher.statsSent.set(roomId, { roundKey, key });
+      if (outcome.changed) deps.onRoomChanged(outcome.record);
+    } catch (error) {
+      log.warn(`MATCH_STATS dispatch failed for room ${roomId}`, error);
+    }
+  };
+
   const fail = (watcher: Watcher, reason: string, detail?: unknown): void => {
     watcher.failures += 1;
     if (watcher.failures === 1 || watcher.failures % 10 === 0) {
@@ -237,6 +291,29 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
       config.liveIntervalMs * config.backoffFactor ** (watcher.failures - 1),
     );
     armTimer(watcher, jittered(delay));
+  };
+
+  const buildStats = (
+    watcher: Watcher,
+    state: LiveMatchState,
+    events: readonly MatchEvent[],
+  ): { action: MatchStatsAction; key: string } | null => {
+    const action: MatchStatsAction = {
+      type: 'MATCH_STATS',
+      fixtureId: watcher.fixtureId,
+      asOf: state.updatedAt,
+      playerStats: state.playerStats,
+      teamStats: state.teamStats,
+    };
+    if (!matchStatsActionSchema.safeParse(action).success) {
+      if (!watcher.statsInvalidLogged) {
+        watcher.statsInvalidLogged = true;
+        log.warn(`invalid live stats snapshot for fixture ${watcher.fixtureId}; not delivering stats`);
+      }
+      return null;
+    }
+    const whistle = events.some((event) => event.type === 'FULL_TIME');
+    return { action, key: `${whistle ? 'FT' : 'live'}|${JSON.stringify([state.playerStats, state.teamStats])}` };
   };
 
   const runPoll = async (watcher: Watcher): Promise<void> => {
@@ -261,10 +338,14 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     watcher.failures = 0;
     const events = validEvents(watcher.fixtureId, state.events);
     watcher.lastEvents = events;
+    watcher.lastStats = buildStats(watcher, state, events);
     const status = fixtureStatusSchema.safeParse(state.fixture.status);
     const current = status.success ? status.data : 'LIVE';
 
-    for (const roomId of [...watcher.rooms.keys()]) await deliver(watcher.fixtureId, roomId, events);
+    for (const roomId of [...watcher.rooms.keys()]) {
+      await deliver(watcher.fixtureId, roomId, events);
+      await deliverStats(watcher.fixtureId, roomId); // always after this poll's events
+    }
     if (closed || watchers.get(watcher.fixtureId) !== watcher) return;
 
     if (current === 'FINISHED') {
@@ -338,11 +419,16 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
         done: false,
         finishedSeenAt: null,
         lastEvents: null,
+        lastStats: null,
+        feeds: new Map(),
+        statsSent: new Map(),
+        statsInvalidLogged: false,
       };
       watchers.set(need.fixtureId, watcher);
     }
     const previousKey = watcher.rooms.get(roomId);
     watcher.rooms.set(roomId, need.roundKey);
+    watcher.feeds.set(roomId, { events: need.events ?? true, stats: need.stats ?? false });
     let set = roomFixtures.get(roomId);
     if (set === undefined) {
       set = new Set();
@@ -355,7 +441,9 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
       armReap(watcher); // long-lived watchers (postponed / awaiting full time) must not outlive their rooms
     } else if (previousKey !== need.roundKey && watcher.lastEvents !== null) {
       // Room (or its round) is new to a watcher that already has events: serve them from cache now.
-      track(deliver(watcher.fixtureId, roomId, watcher.lastEvents));
+      const fixtureId = watcher.fixtureId;
+      const cached = watcher.lastEvents;
+      track(deliver(fixtureId, roomId, cached).then(() => deliverStats(fixtureId, roomId)));
     }
   };
 

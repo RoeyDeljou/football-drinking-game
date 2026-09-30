@@ -2,8 +2,8 @@
  * Which fixtures does one room need live events for *right now*? Pure function of the room record
  * plus two lookups, so it can be recomputed cheaply after every dispatch.
  *
- * A room needs events only while it is `playing`, its active session is unfinished, that session's
- * module declares `supportsLiveEvents`, and the current round is still `open` (the reducer refuses
+ * A room needs the feed only while it is `playing`, its active session is unfinished, that session's
+ * module declares `supportsLiveEvents` and/or `supportsLiveStats`, and the current round is still `open` (the reducer refuses
  * a `MATCH_EVENTS` batch for any other round status). Which fixture(s):
  *
  * - single-fixture matchday room: `meta.fixtureId`;
@@ -22,6 +22,10 @@ export interface WatchNeed {
   readonly fixtureId: FixtureId;
   /** Identity of the round the events are for; a change means the round has not seen the events yet. */
   readonly roundKey: string;
+  /** Send `MATCH_EVENTS` (module `supportsLiveEvents`). Defaults to true. */
+  readonly events?: boolean;
+  /** Send `MATCH_STATS` (module `supportsLiveStats`). Defaults to false. */
+  readonly stats?: boolean;
 }
 
 export interface WatchPlanLookups {
@@ -40,7 +44,8 @@ export const planWatch = (
   const round = session.rounds[session.rounds.length - 1];
   if (round === undefined || round.status !== 'open') return [];
   const module = lookups.moduleFor(state);
-  if (module === null || !module.supportsLiveEvents) return [];
+  if (module === null || (!module.supportsLiveEvents && !module.supportsLiveStats)) return [];
+  const feed = { events: module.supportsLiveEvents, stats: module.supportsLiveStats };
 
   const roundKey = `${session.id}:${round.id}`;
   const gamedayCompetition: CompetitionId | null = meta.gamedayCompetitionId ?? null;
@@ -51,8 +56,8 @@ export const planWatch = (
         ? null
         : lookups.gamedayPinnedFixture(state.id, sessionIndex, session.rounds.length - 1);
     // No pin -> nothing: never feed other fixtures' events into a round.
-    return pinned === null ? [] : [{ fixtureId: pinned, roundKey }];
+    return pinned === null ? [] : [{ fixtureId: pinned, roundKey, ...feed }];
   }
   if (meta.fixtureId === null) return [];
-  return [{ fixtureId: meta.fixtureId, roundKey }];
+  return [{ fixtureId: meta.fixtureId, roundKey, ...feed }];
 };
