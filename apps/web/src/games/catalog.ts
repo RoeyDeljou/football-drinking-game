@@ -64,6 +64,12 @@ export const GAME_CATALOG: readonly {
     blurb: 'Blind-pick a starter and go head to head in a bracket on live stats. Lose a duel, drink.',
   },
   {
+    id: 'M9',
+    name: 'Flash Rounds',
+    category: 'matchday',
+    blurb: 'A quick 20-second prediction about the next stretch of the match. Wrong or silent, you drink.',
+  },
+  {
     id: 'M10',
     name: 'Lineup Recall',
     category: 'matchday',

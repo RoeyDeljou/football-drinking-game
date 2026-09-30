@@ -10,6 +10,7 @@ import { G3CareerPath } from './G3CareerPath';
 import { G6TriviaRush } from './G6TriviaRush';
 import { M1MatchMarkets } from './M1MatchMarkets';
 import { M8StatDuel } from './M8StatDuel';
+import { M9FlashRounds } from './M9FlashRounds';
 import { M10LineupRecall } from './M10LineupRecall';
 import { M2WhoIsThatPlayer } from './M2WhoIsThatPlayer';
 import { M3ShirtNumber } from './M3ShirtNumber';
@@ -29,6 +30,7 @@ export const GAME_SCREENS: Record<string, ComponentType<GameScreenProps>> = {
   M6: M6MatchBingo,
   M7: M7MinuteSniper,
   M8: M8StatDuel,
+  M9: M9FlashRounds,
   M10: M10LineupRecall,
   G1: G1GuessThePlayer,
   G3: G3CareerPath,
