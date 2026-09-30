@@ -44,7 +44,7 @@ const REASON_COPY: Record<PenaltyReason, string> = {
   ASSIGNED_EVENT_FIRED: 'their event fired',
   BINGO_LINE: 'bingo line',
   BINGO_FULL_HOUSE: 'bingo full house',
-  DUEL_LOST: 'lost the duel',
+  DUEL_LOST: 'lost the stat duel',
   CHAIN_BROKEN: 'broke the chain',
   HOST_MANUAL: 'house rule from the host',
 };
@@ -118,6 +118,39 @@ export const bingoFullHouseCall = (ownerName: string, sips: number): string =>
 /** One recipient's total for a round, after caps. */
 export const roundDrinkTotalLine = (nickname: string, sips: number): string =>
   sips <= 0 ? `${nickname} gets away with it.` : `${nickname} downs ${drinkActionLabel(sips)}.`;
+
+/** Your Man: what a drafted footballer just did, and who drinks for it. `owners` are nicknames. */
+export type YourManAction = 'FOUL' | 'MISS' | 'YELLOW' | 'RED' | 'OWN_GOAL' | 'GOAL' | 'ASSIST';
+
+const YOUR_MAN_VERB: Record<YourManAction, string> = {
+  FOUL: 'fouls',
+  MISS: 'misses',
+  YELLOW: 'is booked',
+  RED: 'is sent off',
+  OWN_GOAL: 'scores an own goal',
+  GOAL: 'scores',
+  ASSIST: 'assists',
+};
+
+export const yourManLine = (
+  action: YourManAction,
+  footballer: string,
+  owners: readonly string[],
+  target: 'self' | 'others',
+  sips: number,
+): string => {
+  const what = `${footballer} ${YOUR_MAN_VERB[action]}`;
+  if (sips <= 0) return `${what} — no drinking for that one.`;
+  const amount = drinkActionLabel(sips);
+  const who = owners.join(' and ');
+  return target === 'self' ? `${what} — ${who} drinks ${amount}.` : `${what}! Everyone but ${who} drinks ${amount}.`;
+};
+
+/** A stat duel's loser, for the reveal. */
+export const duelLostLine = (loser: string, winner: string, statLabel: string, sips: number): string =>
+  sips <= 0
+    ? `${loser} lost to ${winner} on ${statLabel.toLowerCase()} and gets away with it.`
+    : `${loser} lost to ${winner} on ${statLabel.toLowerCase()} and drinks ${drinkActionLabel(sips)}.`;
 
 export const drinkTallyHeadline = (totalSips: number): string =>
   totalSips === 0 ? 'Nobody owes a single sip. Suspicious.' : `${sipsLabel(totalSips)} owed on the table.`;

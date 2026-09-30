@@ -5,9 +5,11 @@ import {
   drinkActionLabel,
   drinkAnnouncement,
   drinkLine,
+  duelLostLine,
   eventFiredLine,
   eventRuleLine,
   roundDrinkTotalLine,
+  yourManLine,
 } from './drinkCopy';
 import type { RecordedPenalty } from '@fdg/game-core';
 
@@ -93,5 +95,26 @@ describe('live pitch game copy (Event Roulette, Match Bingo)', () => {
   it('totals a recipient without ever printing "0 sips"', () => {
     expect(roundDrinkTotalLine('Ana', 0)).toBe('Ana gets away with it.');
     expect(roundDrinkTotalLine('Ana', 2)).toBe('Ana downs 2 sips.');
+  });
+});
+
+describe('Your Man and Stat Duel copy', () => {
+  it('words a bad action as the owner drinking', () => {
+    expect(yourManLine('FOUL', 'Dembélé', ['Roey'], 'self', 1)).toBe('Dembélé fouls — Roey drinks 1 sip.');
+    expect(yourManLine('RED', 'Dembélé', ['Roey'], 'self', 4)).toBe('Dembélé is sent off — Roey drinks a chug.');
+  });
+
+  it('words a good action as everyone else drinking', () => {
+    expect(yourManLine('GOAL', 'Dembélé', ['Roey'], 'others', 2)).toBe('Dembélé scores! Everyone but Roey drinks 2 sips.');
+    expect(yourManLine('ASSIST', 'Vitinha', ['Roey', 'Ana'], 'others', 1)).toBe('Vitinha assists! Everyone but Roey and Ana drinks 1 sip.');
+  });
+
+  it('never prints a zero-sip drink', () => {
+    expect(yourManLine('FOUL', 'Dembélé', ['Roey'], 'self', 0)).toBe('Dembélé fouls — no drinking for that one.');
+    expect(duelLostLine('Ana', 'Roey', 'Most shots', 0)).toContain('gets away with it');
+  });
+
+  it('words a lost duel with the stat and the drink', () => {
+    expect(duelLostLine('Ana', 'Roey', 'Most shots', 2)).toBe('Ana lost to Roey on most shots and drinks 2 sips.');
   });
 });
