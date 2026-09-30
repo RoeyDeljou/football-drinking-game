@@ -237,6 +237,7 @@ export const matchEvent = (
     readonly teamId?: TeamId | null;
     readonly playerId?: FootballPlayerId | null;
     readonly minute?: number;
+    readonly extraMinute?: number | null;
     readonly id?: string;
   } = {},
 ): MatchEvent => {
@@ -246,7 +247,7 @@ export const matchEvent = (
     fixtureId: FIXTURE_ID,
     type,
     minute: options.minute ?? 1,
-    extraMinute: null,
+    extraMinute: options.extraMinute ?? null,
     teamId: options.teamId ?? null,
     playerId: options.playerId ?? null,
     playerName: null,

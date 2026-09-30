@@ -20,6 +20,10 @@
  * monotonic (an option never changes outcome once settled), which makes live ingestion idempotent:
  * replaying events can never settle an option twice or double-charge a sip.
  *
+ * All markets are **regulation-time** markets (90 minutes + stoppage): extra time and penalty
+ * shootouts never count, and the counter snapshot is frozen at the first `FULL_TIME` observed (see
+ * `foldMatchEvents`).
+ *
  * Goal attribution:
  *  - `GOAL` and `PENALTY_SCORED` count for the team *and* as the player scoring;
  *  - `OWN_GOAL` counts for the credited team (providers normalize `teamId` to the team credited with
@@ -240,9 +244,37 @@ const CARD_TYPES: readonly MatchEvent['type'][] = ['YELLOW_CARD', 'SECOND_YELLOW
 const matchClock = (event: MatchEvent): number => event.minute * 100 + (event.extraMinute ?? 0);
 
 /**
- * Fold live events into the counter snapshot. Events in one batch are applied in match-clock order
- * (stable for ties), so a provider returning a batch out of order still gets the first scorer right.
- * The reducer guarantees each `MatchEvent.id` is folded at most once.
+ * The last minute of regulation time. Stoppage time is expressed as `minute: 90, extraMinute: n`
+ * (both providers normalize "90+4'" that way), so any event with `minute > 90` belongs to extra time
+ * or a penalty shootout.
+ */
+export const M1_REGULATION_LAST_MINUTE = 90;
+
+const isRegulationTime = (event: MatchEvent): boolean => event.minute <= M1_REGULATION_LAST_MINUTE;
+
+/**
+ * Fold live events into the counter snapshot.
+ *
+ * **Every M1 market is a regulation-time market (90 minutes + stoppage)**, as with any betting slip:
+ * extra time and penalty shootouts never count. The fold enforces that with three rules:
+ *
+ *  1. **Frozen after full time.** Once `counters.fullTime` is `true`, the snapshot never changes
+ *     again — later batches are ignored whole. That includes a late-published regulation-time event
+ *     (say a 78' goal the provider only lists after the final whistle): the `FULL_TIME` that settled
+ *     the markets also resolved the round and charged the sips, and settlement is monotonic, so a
+ *     late correction must not re-open it. Deliberate: the snapshot at the whistle is final.
+ *  2. **Cut at the first `FULL_TIME` of the batch, in batch (provider) order.** Everything listed
+ *     after it — extra-time goals, an `end-extra-time` second `FULL_TIME`, shootout kicks — is
+ *     ignored. Batch order, not clock order, decides the cut, so a 90+3' goal listed before a
+ *     `FULL_TIME` stamped plain 90' still counts.
+ *  3. **Regulation minutes only.** Among the events before the cut, any with `minute > 90` is
+ *     ignored. This covers a finished extra-time match whose list carries only the final
+ *     (end-of-extra-time) `FULL_TIME`, as the data layer's full-time guarantee produces. The
+ *     `FULL_TIME` itself still resolves the round whatever its minute.
+ *
+ * The surviving events are applied in match-clock order (stable for ties), so a provider returning
+ * a batch out of order still gets the first scorer right. The reducer guarantees each
+ * `MatchEvent.id` is folded at most once. Pure and deterministic.
  */
 export const foldMatchEvents = (
   counters: M1Counters,
@@ -250,12 +282,17 @@ export const foldMatchEvents = (
   homeTeamId: string,
   awayTeamId: string,
 ): M1Counters => {
-  let next: M1Counters = counters;
-  const ordered = events
+  if (counters.fullTime) return counters;
+
+  const fullTimeIndex = events.findIndex((event) => event.type === 'FULL_TIME');
+  const beforeWhistle = fullTimeIndex === -1 ? events : events.slice(0, fullTimeIndex);
+  const ordered = beforeWhistle
     .map((event, index) => ({ event, index }))
+    .filter((entry) => entry.event.type !== 'FULL_TIME' && isRegulationTime(entry.event))
     .sort((a, b) => matchClock(a.event) - matchClock(b.event) || a.index - b.index)
     .map((entry) => entry.event);
 
+  let next: M1Counters = counters;
   for (const event of ordered) {
     const isHome = event.teamId === homeTeamId;
     const isAway = event.teamId === awayTeamId;
@@ -294,14 +331,10 @@ export const foldMatchEvents = (
         halfTimeHomeGoals: next.homeGoals,
         halfTimeAwayGoals: next.awayGoals,
       };
-      continue;
-    }
-    if (event.type === 'FULL_TIME') {
-      next = { ...next, fullTime: true };
     }
   }
 
-  return next;
+  return fullTimeIndex === -1 ? next : { ...next, fullTime: true };
 };
 
 /** A single-outcome market: once the winning option is known, every option settles together. */

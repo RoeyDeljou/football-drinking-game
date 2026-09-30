@@ -401,6 +401,137 @@ describe('M1 counters', () => {
   });
 });
 
+describe('M1 counters are regulation-time only', () => {
+  const fold = (events: readonly MatchEvent[], from: M1Counters = EMPTY_M1_COUNTERS): M1Counters =>
+    foldMatchEvents(from, events, HOME_TEAM_ID, AWAY_TEAM_ID);
+
+  /** A finished extra-time cup tie as ESPN lists it: end-regular-time FULL_TIME at 90', then extra time. */
+  const extraTimeTie = (): readonly MatchEvent[] => [
+    goal(HOME_TEAM_ID, 0, 30),
+    goal(AWAY_TEAM_ID, 12, 70),
+    matchEvent('FULL_TIME', { minute: 90, extraMinute: 4, id: 'end-regular' }),
+    goal(HOME_TEAM_ID, 1, 97),
+    matchEvent('CORNER', { minute: 100 }),
+    matchEvent('YELLOW_CARD', { minute: 101 }),
+    matchEvent('PENALTY_AWARDED', { minute: 104 }),
+    matchEvent('PENALTY_SCORED', { teamId: HOME_TEAM_ID, playerId: ALL_BUILT[2]?.player.id ?? null, minute: 105 }),
+    matchEvent('HALF_TIME', { minute: 105, extraMinute: 1 }),
+    goal(AWAY_TEAM_ID, 13, 118),
+    matchEvent('FULL_TIME', { minute: 120, extraMinute: 2, id: 'end-extra' }),
+  ];
+
+  it('ignores extra-time events listed after the first FULL_TIME of a batch', () => {
+    const counters = fold(extraTimeTie());
+    expect(counters.fullTime).toBe(true);
+    expect(counters.homeGoals).toBe(1);
+    expect(counters.awayGoals).toBe(1);
+    expect(counters.corners).toBe(0);
+    expect(counters.cards).toBe(0);
+    expect(counters.penaltyAwarded).toBe(false);
+    expect(counters.halfTimeRecorded).toBe(false);
+    expect(counters.scorerPlayerIds).toEqual([ALL_BUILT[0]?.player.id, ALL_BUILT[12]?.player.id]);
+  });
+
+  it('treats a second FULL_TIME as harmless, in the same batch or a later one', () => {
+    const once = fold([goal(HOME_TEAM_ID, 0, 30), matchEvent('FULL_TIME', { minute: 90 })]);
+    const sameBatch = fold([
+      goal(HOME_TEAM_ID, 0, 30),
+      matchEvent('FULL_TIME', { minute: 90 }),
+      matchEvent('FULL_TIME', { minute: 120 }),
+    ]);
+    expect(sameBatch).toEqual(once);
+    const laterBatch = fold([matchEvent('FULL_TIME', { minute: 120, id: 'end-extra' })], once);
+    expect(laterBatch).toBe(once);
+  });
+
+  it('ignores penalty-shootout kicks after FULL_TIME', () => {
+    const counters = fold([
+      goal(HOME_TEAM_ID, 0, 30),
+      goal(AWAY_TEAM_ID, 12, 60),
+      matchEvent('FULL_TIME', { minute: 90 }),
+      matchEvent('PENALTY_SCORED', { teamId: HOME_TEAM_ID, playerId: ALL_BUILT[1]?.player.id ?? null, minute: 120 }),
+      matchEvent('PENALTY_MISSED', { teamId: AWAY_TEAM_ID, playerId: ALL_BUILT[13]?.player.id ?? null, minute: 120 }),
+      matchEvent('PENALTY_SCORED', { teamId: HOME_TEAM_ID, playerId: ALL_BUILT[2]?.player.id ?? null, minute: 120 }),
+    ]);
+    expect(counters.homeGoals).toBe(1);
+    expect(counters.awayGoals).toBe(1);
+    expect(counters.scorerPlayerIds).toHaveLength(2);
+  });
+
+  it('ignores extra time even when the only FULL_TIME is the end-of-extra-time whistle', () => {
+    // The data layer keeps only the final whistle of a finished fixture, so the end-regular-time
+    // marker can be gone: the minute guard must still exclude extra time.
+    const counters = fold(extraTimeTie().filter((event) => event.id !== 'end-regular'));
+    expect(counters.fullTime).toBe(true);
+    expect(counters.homeGoals).toBe(1);
+    expect(counters.awayGoals).toBe(1);
+    expect(counters.penaltyAwarded).toBe(false);
+    expect(counters.halfTimeRecorded).toBe(false);
+  });
+
+  it('ignores an extra-time event before any FULL_TIME is seen', () => {
+    const counters = fold([goal(HOME_TEAM_ID, 0, 30), goal(AWAY_TEAM_ID, 12, 95)]);
+    expect(counters.fullTime).toBe(false);
+    expect(counters.awayGoals).toBe(0);
+  });
+
+  it('counts stoppage-time goals, even when listed before a FULL_TIME stamped plain 90', () => {
+    const counters = fold([
+      matchEvent('GOAL', { teamId: AWAY_TEAM_ID, playerId: ALL_BUILT[12]?.player.id ?? null, minute: 90, extraMinute: 3 }),
+      matchEvent('FULL_TIME', { minute: 90 }),
+    ]);
+    expect(counters.awayGoals).toBe(1);
+    expect(counters.fullTime).toBe(true);
+  });
+
+  it('keeps first-scorer clock ordering for events before the whistle', () => {
+    const counters = fold([
+      goal(AWAY_TEAM_ID, 12, 60),
+      goal(HOME_TEAM_ID, 3, 15),
+      matchEvent('FULL_TIME', { minute: 90 }),
+      goal(HOME_TEAM_ID, 4, 5),
+    ]);
+    expect(counters.firstScorerPlayerId).toBe(ALL_BUILT[3]?.player.id);
+    expect(counters.homeGoals).toBe(1);
+  });
+
+  it('freezes after full time: a late-published regulation goal in a later batch does not count', () => {
+    const settledAt = fold([goal(HOME_TEAM_ID, 0, 30), matchEvent('FULL_TIME', { minute: 90 })]);
+    const late = fold([goal(AWAY_TEAM_ID, 12, 78)], settledAt);
+    expect(late).toBe(settledAt);
+    expect(late.awayGoals).toBe(0);
+  });
+
+  it('does not mutate its inputs', () => {
+    const events = extraTimeTie();
+    const snapshot = JSON.stringify(events);
+    const from = { ...EMPTY_M1_COUNTERS };
+    fold(events, from);
+    expect(JSON.stringify(events)).toBe(snapshot);
+    expect(from).toEqual(EMPTY_M1_COUNTERS);
+  });
+
+  it('settles the 90-minute markets on the regulation score of an extra-time tie', () => {
+    const round = asRoundView(generated);
+    const draw = optionFor('MATCH_RESULT', 'DRAW');
+    const home = optionFor('MATCH_RESULT', 'HOME');
+    const { result } = advance(round, extraTimeTie(), [
+      sub(HOST, slip({ [marketOf('MATCH_RESULT').id]: draw })),
+      sub(P2, slip({ [marketOf('MATCH_RESULT').id]: home })),
+    ]);
+    expect(result.resolved).toBe(true);
+    const matchResult = marketOf('MATCH_RESULT').id;
+    const won = result.solution.settlements.filter(
+      (entry) => entry.marketId === matchResult && entry.outcome === 'WON',
+    );
+    expect(won.map((entry) => entry.optionId)).toEqual([draw]);
+    const lostResult = result.penalties.filter(
+      (event) => event.reason === 'LOST_MARKET' && event.meta?.['marketId'] === matchResult,
+    );
+    expect(lostResult.map((event) => event.playerId)).toEqual([P2]);
+  });
+});
+
 describe('M1 single-outcome settlement', () => {
   it('leaves every option unsettled before anything happens', () => {
     for (const market of publicPayload.markets) {
