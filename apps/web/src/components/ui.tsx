@@ -46,7 +46,7 @@ export const OptionButton = ({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { readonly selected?: boolean }): React.JSX.Element => (
   <button
     type="button"
-    className={`tap-target pressable min-w-0 rounded-md border-2 px-4 py-3 text-left font-bold disabled:opacity-60 ${
+    className={`tap-target pressable max-w-full rounded-md border-2 px-4 py-3 text-left font-bold disabled:opacity-60 ${
       selected ? 'border-accent bg-selected text-fg' : 'border-border bg-card text-fg'
     } ${className}`}
     {...rest}

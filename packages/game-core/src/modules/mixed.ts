@@ -284,6 +284,7 @@ export const createMixedModule = (options: MixedModuleOptions): EngineGameModule
         privatePayloads: round.privatePayloads,
         solution: solution.inner,
         turn: round.turn,
+        liveWindow: round.liveWindow,
       },
     };
   };

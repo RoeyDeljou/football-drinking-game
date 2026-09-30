@@ -8,10 +8,21 @@ import plugin from 'tailwindcss/plugin';
  */
 const channel = (name: string): string => `rgb(var(--${name}-rgb) / <alpha-value>)`;
 
+/**
+ * Spacing (padding, margin, gap, and the sizes on this scale) is measured in --u, not rem: 16px until
+ * 1440px wide, then 1rem (see globals.css). Type stays in rem and scales with the OS text size, but the
+ * gutters do not, so 150-200% text on a 320px phone does not eat the whole line into padding.
+ */
+const SPACING_STEPS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 72, 80, 96];
+const spacing: Record<string, string> = Object.fromEntries(
+  SPACING_STEPS.map((step) => [String(step), `calc(var(--u) * ${step / 4})`]),
+);
+
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      spacing,
       colors: {
         bg: channel('bg'),
         'bg-raised': channel('bg-raised'),

@@ -19,6 +19,8 @@ import { g6TriviaRush } from './g6-trivia-rush.js';
 import { m1MatchMarkets } from './m1-match-markets.js';
 import { m2WhoIsThatPlayer } from './m2-who-is-that-player.js';
 import { m3ShirtNumber } from './m3-shirt-number.js';
+import { m7MinuteSniper } from './m7-minute-sniper.js';
+import { m10LineupRecall } from './m10-lineup-recall.js';
 import { createMixedModule, G_MIX_ID, M_MIX_ID } from './mixed.js';
 
 export interface ModulePlayability {
@@ -63,12 +65,17 @@ export const STANDALONE_MODULES: readonly EngineGameModule[] = [
   m1MatchMarkets,
   m2WhoIsThatPlayer,
   m3ShirtNumber,
+  m7MinuteSniper,
+  m10LineupRecall,
   g1GuessThePlayer,
   g3CareerPath,
   g6TriviaRush,
 ];
 
-/** Matchday "all games in one": rotates M2, M3 (never M1 — a whole-match bet is not one question). */
+/**
+ * Matchday "all games in one": rotates M2, M3, M10. Never M1 or M7: both are live `long-running-bet`
+ * rounds that wait on the match, not one self-contained question (`isMixable` filters them out).
+ */
 export const matchdayMixed: EngineGameModule = createMixedModule({
   id: M_MIX_ID,
   category: 'matchday',
@@ -84,13 +91,15 @@ export const generalMixed: EngineGameModule = createMixedModule({
 
 /**
  * The default playable set: each category's Mixed mode first (the main game mode), then its
- * standalone games.
+ * standalone games. (The name predates Phase 5; it now also carries the Phase-5 games shipped so far.)
  */
 export const PHASE_1_MODULES: readonly EngineGameModule[] = [
   matchdayMixed,
   m1MatchMarkets,
   m2WhoIsThatPlayer,
   m3ShirtNumber,
+  m7MinuteSniper,
+  m10LineupRecall,
   generalMixed,
   g1GuessThePlayer,
   g3CareerPath,

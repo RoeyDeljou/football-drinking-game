@@ -95,6 +95,32 @@ export {
   tallySipsForRound,
 } from './penalties.js';
 
+/* live events: match clock, goal attribution, the per-round live-event window */
+export type { GoalSide, MatchClock } from './match-events.js';
+export {
+  clockOf,
+  compareMatchClock,
+  GOAL_EVENT_TYPES,
+  goalCreditedSide,
+  goalScorerOf,
+  isGoalEvent,
+  latestClockOf,
+  laterClock,
+  matchClockSchema,
+} from './match-events.js';
+export type { LiveBaselineSource, LiveEventWindow, LiveEventWindowMode, LiveWindowStep } from './live-window.js';
+export { DEFAULT_LIVE_EVENT_WINDOW, initialLiveWindow, stepLiveWindow } from './live-window.js';
+/* free-text name matching (M10; reusable by recall games) */
+export type { GuessAssignment, GuessResult, GuessStatus, NameCandidate } from './name-matching.js';
+export {
+  assignGuesses,
+  compactName,
+  editDistance,
+  nameDistance,
+  nameKeys,
+  normalizeName,
+  typoAllowance,
+} from './name-matching.js';
 /* module contract */
 export type {
   AfterSubmissionContext,
@@ -285,6 +311,24 @@ export {
 } from './modules/m2-who-is-that-player.js';
 
 export { M3_DEFAULT_CONFIG, M3_ID, m3ShirtNumber } from './modules/m3-shirt-number.js';
+export type { M7Outcome, M7PublicPayload, M7Solution, M7Submission } from './modules/m7-minute-sniper.js';
+export {
+  M7_DEFAULT_CONFIG,
+  M7_ID,
+  M7_LAST_MINUTE,
+  m7MinPick,
+  m7MinuteSniper,
+  m7SettlingEvent,
+} from './modules/m7-minute-sniper.js';
+export type { M10PublicPayload, M10Solution, M10Submission } from './modules/m10-lineup-recall.js';
+export {
+  gradeLineupGuesses,
+  M10_DEFAULT_CONFIG,
+  M10_ID,
+  M10_MAX_GUESS_LENGTH,
+  m10ContentKey,
+  m10LineupRecall,
+} from './modules/m10-lineup-recall.js';
 
 export type { G1Clue, G1ClueKind } from './modules/g1-guess-the-player.js';
 export {

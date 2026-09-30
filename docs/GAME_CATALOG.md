@@ -22,10 +22,10 @@ land in Phases 5 and 6. Changes to this list after those phases start cost real 
 | `M4` | **Your Man (draft)** | Every player is randomly drafted a starter and lives with them all match. | Lineups + live events per player | Your man fouls/misses/booked = you drink; scores/assists = everyone else drinks |
 | `M5` | **Event Roulette** | Each player is dealt a live match event (corner, offside, throw-in, VAR check, substitution, goal kick). | Live event feed | The event fires = the owner drinks, or everyone else (host toggle) |
 | `M6` | **Match Bingo** | A 5×5 card of match events per player, auto-ticked from the live feed. | Live event feed | Line = everyone drinks; full house = table downs |
-| `M7` | **Minute Sniper** | Pick the exact minute of the next goal. | Live goal events with minutes | Closest wins, furthest from it drinks |
+| `M7` | **Minute Sniper** | Pick the exact minute of the next goal. Rounds open any time; picks (a minute after the current match minute, up to 90) close after a pick window, and the round settles on the next regulation goal — own goals and scored penalties included — after it opened. Stoppage goals count as 45 / 90. No goal before full time settles against 90; a round opened after full time is void. | Live goal events with minutes | Closest wins, furthest from it drinks (non-pickers drink a roll once the pick window has closed) |
 | `M8` | **Stat Duel** | Each player picks a pitch player; head-to-head on shots / passes / tackles / duels at full time. | Live per-player match stats | Loser of each duel drinks; bracket to a final |
 | `M9` | **Flash Rounds** | 20-second questions pushed at live moments: "will this corner produce a shot on target?", "will this free kick hit the target?" | Live events with low latency | Wrong or too slow = drink |
-| `M10` | **Lineup Recall** | Before kickoff, name the starting XI from memory, against the clock. | Lineups | One sip per player missed |
+| `M10` | **Lineup Recall** | Before kickoff, name the starting XI from memory, against the clock. One round per team (home and away XIs are two rounds); names are typed free text, matched forgivingly (accents, surnames, small typos), at most one name per starter. | Lineups (confirmed) | One sip per player missed (not answering misses all eleven) |
 
 ## General games
 

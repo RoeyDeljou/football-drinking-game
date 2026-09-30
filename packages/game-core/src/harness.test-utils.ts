@@ -336,6 +336,7 @@ export const asRoundView = (generated: GeneratedRound<ModuleShape>, now = T0): R
   privatePayloads: generated.privatePayloads,
   solution: generated.solution,
   turn: generated.turnOrder === null ? null : { order: generated.turnOrder, activeIndex: 0, eliminated: [] },
+  liveWindow: null,
 });
 
 /** The seed direct `scoreRound` tests use unless they pass their own RNG. */

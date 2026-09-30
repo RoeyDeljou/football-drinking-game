@@ -27,7 +27,7 @@ export const RoundShell = ({
     <div className="flex flex-col gap-4">
       <NowPlayingBanner currentFixture={room.currentFixture} />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="t-d1 min-w-0 flex-1 basis-40">{title}</h1>
+        <h1 className="t-d1 max-w-full flex-1 basis-40">{title}</h1>
         <span className="shrink-0 rounded-full border border-border px-3 py-1 text-xs font-bold text-fg-muted">
           Round {round.index + 1} · {room.session?.roundsPlanned ?? '?'} planned
         </span>
@@ -36,7 +36,7 @@ export const RoundShell = ({
       <div
         className={
           split
-            ? 'flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 land:grid land:grid-cols-2 land:items-start'
+            ? 'split-cols gap-4 lg:items-start lg:gap-6 land:items-start'
             : 'flex flex-col gap-4 lg:gap-6'
         }
       >

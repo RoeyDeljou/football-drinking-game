@@ -242,7 +242,7 @@ export default function RoomPage(): React.JSX.Element {
         <div role="alert" className="mx-auto w-full max-w-3xl">
           <Banner tone="error">
             <span className="flex items-center justify-between gap-3">
-              <span className="min-w-0">{errorMessage(lastError, category)}</span>
+              <span className="max-w-full">{errorMessage(lastError, category)}</span>
               <button type="button" onClick={clearError} className="tap-target shrink-0 px-2 underline">
                 dismiss
               </button>

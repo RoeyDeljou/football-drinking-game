@@ -105,7 +105,7 @@ describe('registry playability', () => {
 
   it('splits the catalog by category', () => {
     const registry = createDefaultRegistry();
-    expect(registry.listByCategory('matchday').map((module) => module.id)).toEqual(['M-MIX', 'M1', 'M2', 'M3']);
+    expect(registry.listByCategory('matchday').map((module) => module.id)).toEqual(['M-MIX', 'M1', 'M2', 'M3', 'M7', 'M10']);
     expect(registry.listByCategory('general').map((module) => module.id)).toEqual(['G-MIX', 'G1', 'G3', 'G6']);
   });
 });

@@ -153,7 +153,7 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
               const option = market.options.find((candidate) => candidate.id === pickedOptionId);
               return (
                 <li key={market.id} className="flex min-h-12 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-md bg-hover px-4 py-3 text-sm">
-                  <span className="min-w-0 flex-1 basis-32">
+                  <span className="max-w-full flex-1 basis-32">
                     {marketTitle(market.kind, market.line)}: {option === undefined ? '—' : optionLabel(market, option)}
                   </span>
                   <span
@@ -177,11 +177,11 @@ export const M1MatchMarkets = ({ room, round, onSubmit }: GameScreenProps): Reac
   return (
     <RoundShell title="Match Markets" round={round} room={room} now={Date.now()}>
       {!canEdit ? <Card><p className="text-sm font-semibold text-warn">Kick-off happened — the slip is locked.</p></Card> : null}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
+      <div className="split-cols gap-3 [--split-min:20rem] lg:gap-4">
         {payload.markets.map((market) => (
           <Card key={market.id}>
             <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="t-h3 min-w-0">{marketTitle(market.kind, market.line)}</p>
+              <p className="t-h3 max-w-full">{marketTitle(market.kind, market.line)}</p>
               {picks[market.id] === undefined ? (
                 <span className="shrink-0 rounded-full bg-warn/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn">
                   Pick one

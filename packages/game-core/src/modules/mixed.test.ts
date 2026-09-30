@@ -51,6 +51,8 @@ import { ROLLED_PENALTY_META } from './helpers.js';
 import { M1_ID, m1MatchMarkets } from './m1-match-markets.js';
 import { M2_ID, m2WhoIsThatPlayer } from './m2-who-is-that-player.js';
 import { M3_ID, m3ShirtNumber } from './m3-shirt-number.js';
+import { M7_ID, m7MinuteSniper } from './m7-minute-sniper.js';
+import { M10_ID, m10LineupRecall } from './m10-lineup-recall.js';
 import {
   createMixedModule,
   G_MIX_ID,
@@ -90,13 +92,22 @@ const SUBS: Readonly<Record<string, EngineGameModule>> = {
   G6: g6TriviaRush,
   M2: m2WhoIsThatPlayer,
   M3: m3ShirtNumber,
+  M10: m10LineupRecall,
 };
+
+/**
+ * The M2+M3 rotation, pinned explicitly. The default M-MIX rotation also contains M10 (see the
+ * registry test); the shirt-number and strict-alternation suites below are about how M2 and M3
+ * interact, so they configure exactly those two, as a host can.
+ */
+const M2_M3 = { modules: [M2_ID, M3_ID] } as const;
 const INNER_KIND: Readonly<Record<string, string>> = {
   G1: 'GUESS_PLAYER',
   G3: 'CAREER_PATH',
   G6: 'TRIVIA',
   M2: 'WHO_IS_IT',
   M3: 'SHIRT_NUMBER',
+  M10: 'LINEUP_RECALL',
 };
 const subOf = (moduleId: GameModuleId): EngineGameModule => {
   const found = SUBS[moduleId];
@@ -299,8 +310,11 @@ describe('Mixed modules: construction and registry', { timeout: 60_000 }, () => 
     expect(generalMixed.id).toBe(G_MIX_ID);
     expect(matchdayMixed.id).toBe(M_MIX_ID);
     expect(generalMixed.defaultConfig).toEqual({ modules: [G1_ID, G3_ID, G6_ID] });
-    expect(matchdayMixed.defaultConfig).toEqual({ modules: [M2_ID, M3_ID] });
+    expect(matchdayMixed.defaultConfig).toEqual({ modules: [M2_ID, M3_ID, M10_ID] });
     expect(isMixable(m1MatchMarkets, 'matchday')).toBe(false);
+    // M7 waits on live goals (long-running-bet + live events); M10 is one self-contained question.
+    expect(isMixable(m7MinuteSniper, 'matchday')).toBe(false);
+    expect(isMixable(m10LineupRecall, 'matchday')).toBe(true);
     expect(isMixable(m2WhoIsThatPlayer, 'matchday')).toBe(true);
     expect(isMixable(m2WhoIsThatPlayer, 'general')).toBe(false);
   });
@@ -323,6 +337,7 @@ describe('Mixed modules: construction and registry', { timeout: 60_000 }, () => 
     expect(matchdayMixed.dataRequirementsAnyOf).toEqual([
       ['hasLineups', 'hasPlayerSeasonStats'],
       ['hasLineups', 'hasShirtNumbers'],
+      ['hasLineups'],
     ]);
     expect(generalMixed.dataRequirements).toEqual([]);
     expect(generalMixed.dataRequirementsAnyOf).toEqual([['hasCareerHistory'], ['hasCareerHistory'], ['hasPlayerSeasonStats']]);
@@ -574,7 +589,7 @@ describe('orderMixedCandidates (shuffle-bag rotation)', () => {
 describe('Mixed generation', { timeout: 60_000 }, () => {
   const cases = [
     { label: 'general', module: generalMixed, data: GENERAL, subs: [G1_ID, G3_ID, G6_ID] },
-    { label: 'matchday', module: matchdayMixed, data: MATCHDAY, subs: [M2_ID, M3_ID] },
+    { label: 'matchday', module: matchdayMixed, data: MATCHDAY, subs: [M2_ID, M3_ID, M10_ID] },
   ] as const;
 
   for (const { label, module, data, subs } of cases) {
@@ -626,7 +641,7 @@ describe('Mixed generation', { timeout: 60_000 }, () => {
   it('delegates exactly: restricted to one sub-game it is that sub-game, same RNG and all', () => {
     const cases = [
       { module: generalMixed, data: GENERAL, ids: [G1_ID, G3_ID, G6_ID] },
-      { module: matchdayMixed, data: MATCHDAY, ids: [M2_ID, M3_ID] },
+      { module: matchdayMixed, data: MATCHDAY, ids: [M2_ID, M3_ID, M10_ID] },
     ];
     for (const { module, data, ids } of cases) {
       for (const moduleId of ids) {
@@ -671,7 +686,7 @@ describe('Mixed generation', { timeout: 60_000 }, () => {
         defaultAnswerWindowMs: 20_000,
       };
       const rngMixed = createSeededRng(seed);
-      const mixed = matchdayMixed.generateRound({ ...base, config: matchdayMixed.defaultConfig, rng: rngMixed });
+      const mixed = matchdayMixed.generateRound({ ...base, config: M2_M3, rng: rngMixed });
       if (!mixed.ok) throw new Error('generation failed');
       if (envelopeOf(mixed.round).moduleId !== M2_ID) continue;
       // Replay the same RNG draws: Mixed's candidate shuffle, then M2's own generation.
@@ -711,8 +726,9 @@ describe('Mixed excludes sub-games the data cannot serve, per round, without fai
     for (const seed of SEEDS) {
       expect(pickFor(generalMixed, { ...GENERAL, quality: quality({ hasCareerHistory: false }) }, seed)).toBe(G6_ID);
       expect(pickFor(generalMixed, { ...GENERAL, quality: quality({ hasPlayerSeasonStats: false }) }, seed)).not.toBe(G6_ID);
-      expect(pickFor(matchdayMixed, { ...MATCHDAY, quality: quality({ hasShirtNumbers: false }) }, seed)).toBe(M2_ID);
-      expect(pickFor(matchdayMixed, { ...MATCHDAY, quality: quality({ hasPlayerSeasonStats: false }) }, seed)).toBe(M3_ID);
+      expect(pickFor(matchdayMixed, { ...MATCHDAY, quality: quality({ hasShirtNumbers: false }) }, seed)).not.toBe(M3_ID);
+      expect(pickFor(matchdayMixed, { ...MATCHDAY, quality: quality({ hasPlayerSeasonStats: false }) }, seed)).not.toBe(M2_ID);
+      expect(pickFor(matchdayMixed, { ...MATCHDAY, quality: quality({ hasShirtNumbers: false, hasPlayerSeasonStats: false }) }, seed)).toBe(M10_ID);
     }
   });
 
@@ -764,7 +780,7 @@ describe('Mixed excludes sub-games the data cannot serve, per round, without fai
               },
             },
     };
-    for (const seed of SEEDS) expect(pickFor(matchdayMixed, noShirts, seed)).toBe(M2_ID);
+    for (const seed of SEEDS) expect(pickFor(matchdayMixed, noShirts, seed)).not.toBe(M3_ID);
   });
 
   it('reports NO_UNUSED_CONTENT only when every candidate is used up, else INSUFFICIENT_DATA', () => {
@@ -852,20 +868,31 @@ describe('Mixed sessions rotate and never repeat content', { timeout: 60_000 }, 
   it('matchday: alternates M2 and M3, starting on either', () => {
     const starts = new Set<string>();
     for (const seed of SEEDS.slice(0, 150)) {
-      const ids = generateSession(matchdayMixed, seed, 6, MATCHDAY).map((round) => envelopeOf(round).moduleId);
+      const ids = generateSession(matchdayMixed, seed, 6, MATCHDAY, M2_M3).map((round) => envelopeOf(round).moduleId);
       for (let index = 1; index < ids.length; index += 1) expect(ids[index]).not.toBe(ids[index - 1]);
       starts.add(ids[0] ?? '');
     }
     expect(starts).toEqual(new Set([M2_ID, M3_ID]));
   });
 
-  it('never selects M1 in a matchday rotation, across many seeds and long sessions, even with live data', () => {
+  it('never selects M1 or M7 in a matchday rotation, across many seeds and long sessions, even with live data', () => {
     const live = { ...MATCHDAY, quality: FULL_QUALITY };
     for (const seed of SEEDS) {
       for (const round of generateSession(matchdayMixed, seed, 8, live)) {
-        expect([M2_ID, M3_ID]).toContain(envelopeOf(round).moduleId);
+        expect([M2_ID, M3_ID, M10_ID]).toContain(envelopeOf(round).moduleId);
         expect(envelopeOf(round).moduleId).not.toBe(M1_ID);
+        expect(envelopeOf(round).moduleId).not.toBe(M7_ID);
       }
+    }
+  });
+
+  it('matchday default rotation: M10 plays both XIs early, then M2 and M3 carry on without it', () => {
+    for (const seed of SEEDS.slice(0, 100)) {
+      const ids = generateSession(matchdayMixed, seed, 10, MATCHDAY).map((round) => envelopeOf(round).moduleId);
+      for (let index = 1; index < ids.length; index += 1) expect(ids[index]).not.toBe(ids[index - 1]);
+      expect(ids.filter((id) => id === M10_ID)).toHaveLength(2);
+      // Shuffle-bag: every game plays once in the first three rounds.
+      expect([...ids.slice(0, 3)].sort()).toEqual([M10_ID, M2_ID, M3_ID].sort());
     }
   });
 
@@ -1095,14 +1122,20 @@ describe('Mixed nextContentChangeAt delegates to the picked sub-game', () => {
 
 const join = (playerId: PlayerId, nickname: string): RoomAction => ({ type: 'PLAYER_JOIN', playerId, nickname, isGuest: true });
 
-const startMixed = (moduleId: GameModuleId, harness: Harness, seed: number, rounds = 3): RoomState => {
+const startMixed = (
+  moduleId: GameModuleId,
+  harness: Harness,
+  seed: number,
+  rounds = 3,
+  config: unknown = null,
+): RoomState => {
   const result = reduceAll(
     newRoom(T0, seed),
     [
       join(P2, 'Bea'),
       join(P3, 'Cal'),
       { type: 'UPDATE_SETTINGS', actorId: HOST, patch: { roundsPerSession: rounds } },
-      { type: 'SELECT_GAME', actorId: HOST, moduleId, config: null },
+      { type: 'SELECT_GAME', actorId: HOST, moduleId, config },
       { type: 'START_SESSION', actorId: HOST },
     ],
     harness.deps,
@@ -1224,6 +1257,10 @@ const scriptedAnswer = (round: NonNullable<ReturnType<typeof currentRound>>, ind
       const right = solution['optionId'] as string;
       return { optionId: index === 0 ? right : (options.find((option) => option.id !== right)?.id ?? right) };
     }
+    case M10_ID: {
+      const starters = solution['starters'] as readonly { name: string }[];
+      return { guesses: index === 0 ? starters.map((starter) => starter.name) : ['Nobody Atall'] };
+    }
     default: {
       const right = solution['playerId'] as string;
       return { playerId: index === 0 ? right : (options.find((option) => option.playerId !== right)?.playerId ?? right) };
@@ -1231,9 +1268,16 @@ const scriptedAnswer = (round: NonNullable<ReturnType<typeof currentRound>>, ind
   }
 };
 
-const playMixedSession = (mixedId: GameModuleId, data: RoundDataContext, seed: number, rounds: number, roundTrip: boolean) => {
+const playMixedSession = (
+  mixedId: GameModuleId,
+  data: RoundDataContext,
+  seed: number,
+  rounds: number,
+  roundTrip: boolean,
+  config: unknown = null,
+) => {
   const harness = makeHarness({ data });
-  let room = startMixed(mixedId, harness, seed, rounds);
+  let room = startMixed(mixedId, harness, seed, rounds, config);
   const dispatch = (action: RoomAction): void => {
     const result = reduceRoom(room, action, harness.deps);
     expect(result.rejection).toBeNull();
@@ -1265,7 +1309,7 @@ const playMixedSession = (mixedId: GameModuleId, data: RoundDataContext, seed: n
 describe('Mixed full sessions through the reducer', { timeout: 60_000 }, () => {
   const sessions = [
     { mixedId: G_MIX_ID, data: GENERAL, rounds: 9, subs: [G1_ID, G3_ID, G6_ID] },
-    { mixedId: M_MIX_ID, data: MATCHDAY, rounds: 6, subs: [M2_ID, M3_ID] },
+    { mixedId: M_MIX_ID, data: MATCHDAY, rounds: 6, subs: [M2_ID, M3_ID, M10_ID] },
   ] as const;
 
   for (const { mixedId, data, rounds, subs } of sessions) {
@@ -1444,7 +1488,7 @@ describe('M-MIX never shows a shirt number M3 could ask, and never starves M3', 
 
   it('regression: the seeds that used to leak are clean, through real reducer dispatch', () => {
     for (const seed of KNOWN_LEAKY_SEEDS) {
-      const rounds = activeSession(playMixedSession(M_MIX_ID, MATCHDAY, seed, 6, false))?.rounds ?? [];
+      const rounds = activeSession(playMixedSession(M_MIX_ID, MATCHDAY, seed, 6, false, M2_M3))?.rounds ?? [];
       expect(rounds).toHaveLength(6);
       expect(rounds.some((round) => (round.publicPayload as Envelope).moduleId === M3_ID)).toBe(true);
       expect(shirtNumberLeaks(rounds)).toEqual([]);
@@ -1454,7 +1498,7 @@ describe('M-MIX never shows a shirt number M3 could ask, and never starves M3', 
   it('every M2 round of an M2+M3 rotation shows no shirt number on any surface, pre-reveal or revealed', () => {
     let m2Rounds = 0;
     for (const seed of SEEDS.slice(0, 40)) {
-      const rounds = activeSession(playMixedSession(M_MIX_ID, MATCHDAY, seed, 8, false))?.rounds ?? [];
+      const rounds = activeSession(playMixedSession(M_MIX_ID, MATCHDAY, seed, 8, false, M2_M3))?.rounds ?? [];
       expect(rounds).toHaveLength(8);
       for (const round of rounds) {
         if ((round.publicPayload as Envelope).moduleId !== M2_ID) continue;
@@ -1473,7 +1517,7 @@ describe('M-MIX never shows a shirt number M3 could ask, and never starves M3', 
     let worstStreak = 0;
     for (const length of SWEEP_LENGTHS) {
       for (const seed of SWEEP_SEEDS) {
-        const rounds = generateSession(matchdayMixed, seed, length, MATCHDAY);
+        const rounds = generateSession(matchdayMixed, seed, length, MATCHDAY, M2_M3);
         const ids = idsOf(rounds);
         worstStreak = Math.max(worstStreak, longestStreak(ids));
         // M2 never shows a number; M3 never asks one it (or an earlier M3 reveal) showed.
@@ -1496,7 +1540,7 @@ describe('M-MIX never shows a shirt number M3 could ask, and never starves M3', 
 
   it('the same sweep through real reducer dispatch at 30 rounds: alternating, M3 last seen in round 29 or 30', () => {
     for (const seed of SWEEP_SEEDS.slice(0, 40)) {
-      const rounds = activeSession(playMixedSession(M_MIX_ID, MATCHDAY, seed, 30, false))?.rounds ?? [];
+      const rounds = activeSession(playMixedSession(M_MIX_ID, MATCHDAY, seed, 30, false, M2_M3))?.rounds ?? [];
       expect(rounds).toHaveLength(30);
       const ids = idsOf(rounds);
       expect(longestStreak(ids)).toBe(1);
@@ -1509,7 +1553,7 @@ describe('M-MIX never shows a shirt number M3 could ask, and never starves M3', 
     const pitch = MATCHDAY.lineups === null ? [] : [...MATCHDAY.lineups.home.startingXI, ...MATCHDAY.lineups.away.startingXI];
     expect(pitch).toHaveLength(22);
     for (const seed of SEEDS.slice(0, 20)) {
-      const rounds = generateSession(matchdayMixed, seed, 44, MATCHDAY);
+      const rounds = generateSession(matchdayMixed, seed, 44, MATCHDAY, M2_M3);
       expect(longestStreak(idsOf(rounds))).toBe(1);
       const asked = rounds
         .filter((round) => envelopeOf(round).moduleId === M3_ID)
@@ -1598,6 +1642,7 @@ const roundViewOf = (round: NonNullable<ReturnType<typeof currentRound>>): Round
   privatePayloads: round.privatePayloads,
   solution: round.solution,
   turn: round.turn,
+  liveWindow: round.liveWindow,
 });
 
 describe('Mixed registration does not disturb the rest of the catalog', () => {

@@ -65,7 +65,7 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
                     isCorrect ? 'border-up bg-up/15 text-fg' : 'border-transparent bg-hover text-fg-muted'
                   }`}
                 >
-                  <span className="min-w-0 flex-1 basis-32">
+                  <span className="max-w-full flex-1 basis-32">
                     {option.name}
                     {isCorrect ? ' ✓' : ''}
                   </span>
@@ -87,7 +87,7 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
   return (
     <RoundShell title="Who's That Player?" round={round} room={room} now={Date.now()}>
       <Card className="lg:p-8">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-8 land:grid-cols-2 land:items-start">
+        <div className="split-cols gap-4 lg:items-start lg:gap-8 land:items-start">
         <div>
         <p className="t-d2 mb-4 lg:text-4xl">{factText(payload.fact.kind, payload.fact.value)}</p>
         <p className="t-eyebrow">
@@ -95,7 +95,7 @@ export const M2WhoIsThatPlayer = ({ room, round, onSubmit }: GameScreenProps): R
         </p>
         </div>
         <div>
-        <div className="grid grid-cols-1 gap-3 min-[340px]:grid-cols-2">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-3">
           {payload.options.map((option) => (
             <OptionButton
               key={option.playerId}

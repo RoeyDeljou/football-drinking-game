@@ -311,7 +311,7 @@ function HostPageContent(): React.JSX.Element {
 
       {/* Phones: one column in reading order. 1024+: what to play on the left, how to play (game mode,
           rounds, nickname, Create) on the right, with the right column pinned so Create stays in reach. */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start lg:gap-8 land:grid-cols-2 land:items-start land:gap-4">
+      <div className="split-cols gap-5 [--split-min:20rem] lg:items-start lg:gap-8 land:items-start land:gap-4">
       <div className="flex min-w-0 flex-col gap-5">
       {matchdayVisible ? (
         <Card>
@@ -424,8 +424,8 @@ function HostPageContent(): React.JSX.Element {
                       onClick={chooseGameday}
                       className="flex flex-col gap-1"
                     >
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="min-w-0">Play the whole live gameday</span>
+                      <span className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                        <span className="max-w-full">Play the whole live gameday</span>
                         <span className="shrink-0 whitespace-nowrap rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">LIVE</span>
                       </span>
                       <span className="t-xs font-normal text-fg-muted">
@@ -447,8 +447,8 @@ function HostPageContent(): React.JSX.Element {
                           onClick={() => chooseFixture(fixture)}
                           className="flex shrink-0 flex-col gap-1"
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="min-w-0">
+                          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                            <span className="max-w-full text-[min(1rem,5.5vw)] sm:text-base">
                               {fixture.homeTeam.name} vs {fixture.awayTeam.name}
                             </span>
                             {live ? (
@@ -545,7 +545,7 @@ function HostPageContent(): React.JSX.Element {
               aria-label="Fewer rounds"
               disabled={rounds <= 1}
               onClick={() => setRounds((current) => Math.max(1, current - 1))}
-              className="tap-target pressable w-16 shrink-0 rounded-md border-2 border-border-strong text-2xl font-bold disabled:opacity-40"
+              className="tap-target pressable min-w-[44px] flex-[0_1_4rem] rounded-md border-2 border-border-strong text-2xl font-bold disabled:opacity-40"
             >
               −
             </button>
@@ -557,7 +557,7 @@ function HostPageContent(): React.JSX.Element {
               aria-label="More rounds"
               disabled={rounds >= 50}
               onClick={() => setRounds((current) => Math.min(50, current + 1))}
-              className="tap-target pressable w-16 shrink-0 rounded-md border-2 border-border-strong text-2xl font-bold disabled:opacity-40"
+              className="tap-target pressable min-w-[44px] flex-[0_1_4rem] rounded-md border-2 border-border-strong text-2xl font-bold disabled:opacity-40"
             >
               +
             </button>

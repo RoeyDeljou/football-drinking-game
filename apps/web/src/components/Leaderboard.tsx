@@ -18,9 +18,9 @@ export const Leaderboard = ({
             row.playerId === viewerId ? 'border-2 border-accent bg-selected' : 'border-2 border-transparent bg-hover'
           }`}
         >
-          <span className="flex min-w-0 flex-1 basis-32 items-baseline gap-3 font-semibold">
+          <span className="flex max-w-full flex-1 basis-32 flex-wrap items-baseline gap-x-3 font-semibold">
             <span className="w-6 shrink-0 text-center text-fg-muted">{row.rank}</span>
-            <span className="min-w-0">{row.nickname}</span>
+            <span className="max-w-full">{row.nickname}</span>
           </span>
           <span className="tnum ml-auto shrink-0 whitespace-nowrap font-black">{row.score} pts</span>
         </li>

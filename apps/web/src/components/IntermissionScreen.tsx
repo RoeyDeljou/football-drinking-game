@@ -31,7 +31,7 @@ export const IntermissionScreen = ({
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 lg:max-w-5xl lg:gap-6">
       <h1 className="t-d1 text-center lg:text-[clamp(2.5rem,4vw,3.5rem)]">{sessionFinished ? 'Game over' : 'Leaderboard'}</h1>
       <NowPlayingBanner currentFixture={room.currentFixture} />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start lg:gap-6 land:grid-cols-2">
+      <div className="split-cols gap-4 lg:items-start lg:gap-6 land:items-start">
         <Leaderboard rows={room.leaderboard} viewerId={room.viewerId} />
         <DrinkTally rows={room.drinkTally} viewerId={room.viewerId} />
       </div>

@@ -180,7 +180,7 @@ export const GamePicker = ({
       <div className="flex flex-col gap-4">
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0 flex-1 basis-40">
+            <div className="max-w-full flex-1 basis-40">
               <Eyebrow>
                 {category === null
                   ? 'Your setup'

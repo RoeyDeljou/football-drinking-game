@@ -31,7 +31,7 @@ export const FinalResultsScreen = ({
         <Banner tone="warn">{ABORT_COPY[room.abortReason] ?? 'The room was closed.'}</Banner>
       </div>
     ) : null}
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start lg:gap-6 land:grid-cols-2">
+    <div className="split-cols gap-4 lg:items-start lg:gap-6 land:items-start">
       <Leaderboard rows={room.leaderboard} viewerId={room.viewerId} />
       <DrinkTally rows={room.drinkTally} viewerId={room.viewerId} />
     </div>

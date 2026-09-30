@@ -96,6 +96,9 @@ const bingoModule = defineGameModule<BingoShape>({
     };
   },
   validateSubmission: () => ({ ok: true, payload: {} }),
+  // These tests exercise card mechanics with bare event batches, not the baseline rule
+  // (covered in live-window.test.ts), so the stand-in sees every event.
+  liveEventWindow: 'whole-match',
   observeEvents: (ctx) => {
     const seen = new Set(ctx.events.map((event) => String(event.type)));
     const next: Record<string, BingoShape['privatePayload']> = {};
@@ -561,6 +564,7 @@ describe('module erasure', () => {
           privatePayloads: {},
           solution: {},
           turn: null,
+          liveWindow: null,
         },
         submissions: [],
         players: playerViews([HOST]),
@@ -587,8 +591,10 @@ describe('module erasure', () => {
           privatePayloads: {},
           solution: {},
           turn: null,
+          liveWindow: null,
         },
         events: [],
+        history: [],
         submissions: [],
         players: [],
         now: T0,

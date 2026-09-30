@@ -36,7 +36,7 @@ export const LoadingScreen = ({
         <ul className="flex flex-col gap-3">
           {loading.steps.map((step) => (
             <li key={step.key} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md bg-hover px-4 py-3">
-              <span className="min-w-0 text-base font-bold">{STEP_LABEL[step.key] ?? step.key}</span>
+              <span className="max-w-full text-base font-bold">{STEP_LABEL[step.key] ?? step.key}</span>
               <span
                 className={`shrink-0 whitespace-nowrap text-sm font-bold ${
                   step.status === 'done'

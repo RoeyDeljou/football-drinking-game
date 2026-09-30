@@ -77,7 +77,7 @@ export const G1GuessThePlayer = ({ room, round, onSubmit }: GameScreenProps): Re
   return (
     <RoundShell title="Guess the Player" round={round} room={room} now={Date.now()}>
       <Card className="lg:p-8">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-8 land:grid-cols-2 land:items-start">
+        <div className="split-cols gap-4 lg:items-start lg:gap-8 land:items-start">
         <div>
         <Eyebrow className="mb-2">Clues unlocked ({payload.clues.length})</Eyebrow>
         <ul className="t-h3 flex flex-col gap-1 lg:text-2xl">
@@ -87,7 +87,7 @@ export const G1GuessThePlayer = ({ room, round, onSubmit }: GameScreenProps): Re
         </ul>
         </div>
         <div>
-        <div className="grid grid-cols-1 gap-3 min-[340px]:grid-cols-2">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-3">
           {payload.options.map((option) => (
             <OptionButton
               key={option.playerId}

@@ -10,7 +10,7 @@ export const PlayerList = ({
 }): React.JSX.Element => (
   <Card>
     <Eyebrow className="mb-3">Players ({players.filter((p) => !p.hasLeft).length})</Eyebrow>
-    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-2 land:!grid-cols-1">
+    <ul className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-2">
       {players
         .filter((player) => !player.hasLeft)
         .map((player) => (
@@ -18,12 +18,12 @@ export const PlayerList = ({
             key={player.id}
             className="flex min-h-12 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-md bg-hover px-4 py-3 text-base"
           >
-            <span className="flex min-w-0 flex-1 basis-32 items-center gap-2 font-semibold">
+            <span className="flex max-w-full flex-1 basis-32 items-center gap-2 font-semibold">
               <span
                 className={`h-2.5 w-2.5 shrink-0 rounded-full ${player.connected ? 'bg-up' : 'bg-fg-subtle'}`}
                 aria-hidden
               />
-              <span className="min-w-0">
+              <span className="max-w-full">
                 {player.nickname}
                 {player.id === viewerId ? ' (you)' : ''}
               </span>

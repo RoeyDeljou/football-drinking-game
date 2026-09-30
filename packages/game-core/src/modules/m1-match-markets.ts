@@ -508,6 +508,8 @@ export const m1MatchMarkets = defineGameModule<M1Shape>({
   maxPlayers: null,
   // The slip can be edited until it locks — that is the whole point of a pre-kickoff slip.
   allowResubmission: true,
+  // The slip settles on the whole match: a round opened mid-match must still count earlier goals.
+  liveEventWindow: 'whole-match',
   defaultConfig: M1_DEFAULT_CONFIG,
   configSchema,
   publicPayloadSchema,

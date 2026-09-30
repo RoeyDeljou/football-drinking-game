@@ -44,7 +44,7 @@ export const M3ShirtNumber = ({ room, round, onSubmit }: GameScreenProps): React
               )
               .map((submission) => (
                 <li key={submission.playerId} className="flex min-h-12 flex-wrap justify-between gap-x-2 gap-y-1 rounded-md bg-hover px-4 py-3 text-base">
-                  <span className="min-w-0 flex-1 basis-32">{nicknameOf(room, submission.playerId)}</span>
+                  <span className="max-w-full flex-1 basis-32">{nicknameOf(room, submission.playerId)}</span>
                   <span className="ml-auto shrink-0 whitespace-nowrap font-bold">#{(submission.payload as { guess: number }).guess}</span>
                 </li>
               ))}
@@ -59,7 +59,7 @@ export const M3ShirtNumber = ({ room, round, onSubmit }: GameScreenProps): React
   return (
     <RoundShell title="Shirt Number" round={round} room={room} now={Date.now()}>
       <Card className="lg:p-8">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-center lg:gap-8 land:grid-cols-2 land:items-center">
+        <div className="split-cols gap-4 lg:items-center lg:gap-8 land:items-center">
         <div>
         <p className="t-d2 lg:text-4xl">{payload.target.name}</p>
         <p className="t-sm mb-4 text-fg-muted lg:mb-0">

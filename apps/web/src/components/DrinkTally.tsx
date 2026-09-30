@@ -22,7 +22,7 @@ export const DrinkTally = ({
               row.playerId === viewerId && row.sips > 0 ? 'border-accent bg-selected' : 'border-transparent bg-hover'
             }`}
           >
-            <span className="min-w-0 flex-1 basis-32 font-semibold">{row.nickname}</span>
+            <span className="max-w-full flex-1 basis-32 font-semibold">{row.nickname}</span>
             <span className={`tnum ml-auto shrink-0 whitespace-nowrap font-black ${row.sips > 0 ? 'text-accent' : 'text-fg-subtle'}`}>
               {sipsLabel(row.sips)}
             </span>

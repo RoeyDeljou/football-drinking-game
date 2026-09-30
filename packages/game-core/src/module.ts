@@ -10,11 +10,29 @@
  *
  * | kind                  | catalog examples                         | what makes it different            |
  * |-----------------------|------------------------------------------|------------------------------------|
- * | `simultaneous-answer` | M2, M3, M7, M9, M10, G1, G2, G6, G9      | one prompt, everyone answers at once |
+ * | `simultaneous-answer` | M2, M3, M9, M10, G1, G2, G6, G9          | one prompt, everyone answers at once |
  * | `private-card`        | M4 Your Man, M5 Event Roulette, M6 Bingo | per-player private assignment, ticked off by live events |
- * | `long-running-bet`    | M1 Match Markets                         | a multi-market slip resolved incrementally as events arrive |
+ * | `long-running-bet`    | M1 Match Markets, M7 Minute Sniper       | picks close at the answer deadline; the round stays open until live events resolve it |
  * | `pairing`             | M8 Stat Duel                             | head-to-head pairings inside one round |
  * | `turn-based`          | G8 Teammate Chain                        | one active player at a time, elimination |
+ *
+ * ## Live events
+ *
+ * A module that declares `observeEvents` receives the fixture's live `MatchEvent`s while its round is
+ * `open` (the transport re-sends the full, id-stable list every poll; the engine de-duplicates by id).
+ * **Which** events a round sees is decided by the engine, per the module's `liveEventWindow`:
+ *
+ * - `since-round-open` (the default): only events that happened after the round opened. The first
+ *   batch a round receives is its *baseline* (the match as it stood at open), handed to the module
+ *   once as `history` and never as live events; later events earlier on the match clock than the
+ *   baseline are dropped as back-filled history. A round built before the fixture's scheduled
+ *   kickoff starts with an empty baseline. Full rule and rationale: `live-window.ts`.
+ * - `whole-match`: every event of the match, including those before the round opened (M1, whose
+ *   slip settles on the whole match).
+ *
+ * Reading events — match clock ordering and **goal attribution** (an `OWN_GOAL`'s `teamId` is the
+ * *conceding* team; the goal counts for its opponent) — goes through `match-events.ts`, never
+ * re-derived per module.
  */
 
 import type { MatchEvent } from '@fdg/football-data';
@@ -23,6 +41,8 @@ import type { DataRequirementKey, RoundDataContext } from './data.js';
 import { EngineInvariantError } from './errors.js';
 import type { GameModuleId, PlayerId, RoundId, SessionId } from './ids.js';
 import { asPlayerId } from './ids.js';
+import type { LiveEventWindow, LiveEventWindowMode } from './live-window.js';
+import { DEFAULT_LIVE_EVENT_WINDOW } from './live-window.js';
 import type { PenaltyEvent } from './penalties.js';
 import type { Rng } from './ports.js';
 import type { RoundScore, ScoringConfig } from './scoring.js';
@@ -122,6 +142,12 @@ export interface RoundView<S extends ModuleShape> {
   readonly privatePayloads: PerPlayer<S['privatePayload']>;
   readonly solution: S['solution'];
   readonly turn: TurnState | null;
+  /**
+   * The engine's live-event window for this round (`since-round-open` modules only; `null` for
+   * `whole-match` modules and modules without live events). `latest` is the best "current match
+   * minute" the feed gives; `baselineSource === null` means the round has not seen the match yet.
+   */
+  readonly liveWindow: LiveEventWindow | null;
 }
 
 export type SubmissionRejectionCode =
@@ -243,9 +269,21 @@ export interface ContentScheduleContext<S extends ModuleShape> {
 
 export interface ObserveEventsContext<S extends ModuleShape> {
   readonly config: S['config'];
+  /** Includes the *updated* `liveWindow` (this batch already folded into `latest`). */
   readonly round: RoundView<S>;
-  /** Only events the engine has not shown this round before — de-duplicated by `MatchEvent.id`. */
+  /**
+   * Events to react to: never shown to this round before (de-duplicated by `MatchEvent.id`) and, for
+   * `since-round-open` modules, inside the live-event window. In provider order. Non-empty on every
+   * call except the single baseline call described under `history`.
+   */
   readonly events: readonly MatchEvent[];
+  /**
+   * `since-round-open` only: on the **one** call that establishes the round's baseline from a batch,
+   * the pre-round events (with `events` empty). Context only — the current score, "the match is
+   * already over" — never something to settle on. Always `[]` otherwise, and always `[]` for
+   * `whole-match` modules. A round baselined pre-kickoff gets no baseline call.
+   */
+  readonly history: readonly MatchEvent[];
   readonly submissions: readonly TypedSubmission<S>[];
   readonly players: readonly RoundPlayerView[];
   readonly now: number;
@@ -292,6 +330,11 @@ export interface GameModuleDefinition<S extends ModuleShape> {
   scoreRound(ctx: ScoreRoundContext<S>): RoundOutcome;
   projectRound(ctx: ProjectRoundContext<S>): RoundProjection<S>;
   observeEvents?: (ctx: ObserveEventsContext<S>) => ObserveEventsResult<S>;
+  /**
+   * Which live events `observeEvents` sees (see "Live events" above). Omit for the default,
+   * `since-round-open`. Ignored for modules without `observeEvents`.
+   */
+  readonly liveEventWindow?: LiveEventWindowMode;
   afterSubmission?: (ctx: AfterSubmissionContext<S>) => AfterSubmissionResult;
   /**
    * **Required if and only if `projectRound` reads `ctx.now`** for a pre-reveal round (time-unlocked
@@ -329,6 +372,8 @@ export interface EngineGameModule {
   readonly allowResubmission: boolean;
   readonly defaultConfig: unknown;
   readonly supportsLiveEvents: boolean;
+  /** Resolved `liveEventWindow` (default applied). Meaningful only when `supportsLiveEvents`. */
+  readonly liveEventWindow: LiveEventWindowMode;
   /** `true` when the module declares `nextContentChangeAt`, i.e. its projection changes with time. */
   readonly hasTimedContent: boolean;
   parseConfig(input: unknown): ConfigParseResult;
@@ -390,6 +435,7 @@ export const defineGameModule = <S extends ModuleShape>(
     ),
     solution: parseWith(definition.solutionSchema, round.solution, `${definition.id} solution`),
     turn: round.turn,
+    liveWindow: round.liveWindow,
   });
 
   const typedConfig = (config: unknown): S['config'] =>
@@ -416,6 +462,7 @@ export const defineGameModule = <S extends ModuleShape>(
     allowResubmission: definition.allowResubmission,
     defaultConfig: definition.defaultConfig,
     supportsLiveEvents: definition.observeEvents !== undefined,
+    liveEventWindow: definition.liveEventWindow ?? DEFAULT_LIVE_EVENT_WINDOW,
     hasTimedContent: definition.nextContentChangeAt !== undefined,
 
     parseConfig: (input: unknown): ConfigParseResult => {
@@ -481,6 +528,7 @@ export const defineGameModule = <S extends ModuleShape>(
         config: typedConfig(ctx.config),
         round: typedRound(ctx.round),
         events: ctx.events,
+        history: ctx.history,
         submissions: typedSubmissions(ctx.submissions),
         players: ctx.players,
         now: ctx.now,

@@ -233,13 +233,19 @@ const rolledFor = (room: RoomState): readonly RecordedPenalty[] => {
 
 const REVEAL: RoomAction = { type: 'REVEAL_ROUND', actorId: HOST };
 const MODULES_WITH_ROLLS: readonly GameModuleId[] = [G1_ID, G3_ID, G6_ID, M1_ID, M2_ID, M3_ID, G_MIX_ID, M_MIX_ID];
+/**
+ * M-MIX pinned to its rolling sub-games: its default rotation also holds M10, which charges silence
+ * a fixed "every starter missed" count instead of a roll (see m10-lineup-recall.ts), so a seed that
+ * opens on M10 would test M10's rule, not the roll.
+ */
+const ROLL_CONFIG: Readonly<Partial<Record<string, unknown>>> = { [M_MIX_ID]: { modules: [M2_ID, M3_ID] } };
 
 describe('reducer: scoreRound draws from the committed RNG state and commits the advance', () => {
   it('rolls every silent player from the pre-reveal rngState and commits exactly those draws', () => {
     for (const moduleId of MODULES_WITH_ROLLS) {
       for (let seed = 1; seed <= 25; seed += 1) {
         const { deps } = makeHarness();
-        const room = started(moduleId, deps, seed);
+        const room = started(moduleId, deps, seed, ROLL_CONFIG[moduleId] ?? null);
         const before = room.rngState;
         const revealed = reduceRoom(room, REVEAL, deps);
         expect(revealed.rejection).toBeNull();

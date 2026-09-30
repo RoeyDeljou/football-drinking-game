@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import type { GameModuleId, PlayerId, RoomId, RoundId, SessionId } from './ids.js';
 import type { GameCategory, RoundKind, RoundOutcome, TurnState } from './module.js';
+import type { LiveEventWindow } from './live-window.js';
 import type { PenaltyCaps, RecordedPenalty } from './penalties.js';
 import { DEFAULT_PENALTY_CAPS, penaltyCapsSchema } from './penalties.js';
 import type { RankablePlayer, ScoringConfig } from './scoring.js';
@@ -142,8 +143,16 @@ export interface RoundRecord {
   readonly solution: unknown;
   readonly submissions: readonly SubmissionRecord[];
   readonly outcome: RoundOutcome | null;
-  /** `MatchEvent.id`s already folded in, which makes live-event ingestion idempotent. */
+  /**
+   * `MatchEvent.id`s this round has already seen — folded in, or (for `since-round-open` rounds)
+   * recorded as pre-round baseline history. Makes live-event ingestion idempotent.
+   */
   readonly observedEventIds: readonly string[];
+  /**
+   * The live-event window (`live-window.ts`) for `since-round-open` live modules; `null` for every
+   * other round. Set at build time and advanced by `MATCH_EVENTS`.
+   */
+  readonly liveWindow: LiveEventWindow | null;
   readonly turn: TurnState | null;
   /**
    * When this round's pre-reveal projection next changes purely because time passed (G1's next clue
