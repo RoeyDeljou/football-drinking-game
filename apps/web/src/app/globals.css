@@ -399,6 +399,26 @@
   }
 }
 
+@keyframes call-pop {
+  0% {
+    transform: scale(0.94);
+    box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.7);
+  }
+  60% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 14px rgb(var(--accent-rgb) / 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0);
+  }
+}
+/* A line / full-house call. The global reduced-motion rule collapses the animation to nothing, so the
+   banner still appears, it just doesn't pulse. */
+.call-pop {
+  animation: call-pop 900ms var(--ease-out) 1;
+}
+
 @keyframes skeleton-sweep {
   to {
     transform: translateX(100%);

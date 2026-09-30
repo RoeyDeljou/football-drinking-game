@@ -23,7 +23,8 @@ export const PlayerList = ({
                 className={`h-2.5 w-2.5 shrink-0 rounded-full ${player.connected ? 'bg-up' : 'bg-fg-subtle'}`}
                 aria-hidden
               />
-              <span className="max-w-full">
+              {/* min-w-0 lets a long unbreakable nickname wrap inside the row instead of pushing the crown out. */}
+              <span className="min-w-0 flex-1">
                 {player.nickname}
                 {player.id === viewerId ? ' (you)' : ''}
               </span>

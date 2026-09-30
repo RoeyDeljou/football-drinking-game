@@ -34,6 +34,18 @@ export const GAME_CATALOG: readonly {
     blurb: "See a real starter, guess their shirt number — closest guess wins.",
   },
   {
+    id: 'M5',
+    name: 'Event Roulette',
+    category: 'matchday',
+    blurb: 'Everyone is dealt a match event. When yours happens on the pitch, you drink.',
+  },
+  {
+    id: 'M6',
+    name: 'Match Bingo',
+    category: 'matchday',
+    blurb: 'A bingo card of match events that ticks itself. Lines and full houses make the table drink.',
+  },
+  {
     id: 'M7',
     name: 'Minute Sniper',
     category: 'matchday',

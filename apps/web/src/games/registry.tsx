@@ -12,6 +12,8 @@ import { M1MatchMarkets } from './M1MatchMarkets';
 import { M10LineupRecall } from './M10LineupRecall';
 import { M2WhoIsThatPlayer } from './M2WhoIsThatPlayer';
 import { M3ShirtNumber } from './M3ShirtNumber';
+import { M5EventRoulette } from './M5EventRoulette';
+import { M6MatchBingo } from './M6MatchBingo';
 import { M7MinuteSniper } from './M7MinuteSniper';
 import { MixedGameScreen } from './MixedGameScreen';
 import type { GameScreenProps } from './types';
@@ -20,6 +22,8 @@ export const GAME_SCREENS: Record<string, ComponentType<GameScreenProps>> = {
   M1: M1MatchMarkets,
   M2: M2WhoIsThatPlayer,
   M3: M3ShirtNumber,
+  M5: M5EventRoulette,
+  M6: M6MatchBingo,
   M7: M7MinuteSniper,
   M10: M10LineupRecall,
   G1: G1GuessThePlayer,

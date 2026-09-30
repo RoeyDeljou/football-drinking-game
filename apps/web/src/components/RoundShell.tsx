@@ -11,6 +11,7 @@ export const RoundShell = ({
   children,
   split = false,
   countdown = true,
+  showAnswered = true,
 }: {
   readonly title: string;
   readonly round: ProjectedRound;
@@ -21,6 +22,8 @@ export const RoundShell = ({
   readonly split?: boolean;
   /** Set false when the game shows its own clock state (M7 after the pick window closes). */
   readonly countdown?: boolean;
+  /** Set false for games with nothing to submit (Event Roulette, Match Bingo). */
+  readonly showAnswered?: boolean;
 }): React.JSX.Element => {
   const answeredCount = round.submissionStatus.filter((entry) => entry.submitted).length;
   const total = round.submissionStatus.length;
@@ -45,7 +48,7 @@ export const RoundShell = ({
       >
         {children}
       </div>
-      {round.visibility === 'pre-reveal' ? (
+      {round.visibility === 'pre-reveal' && showAnswered ? (
         <p className="tnum text-center text-sm text-fg-muted" aria-live="polite">
           {answeredCount}/{total} answered
         </p>
