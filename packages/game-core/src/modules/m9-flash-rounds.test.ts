@@ -330,6 +330,7 @@ describe('M9 through the reducer', () => {
       for (let round = 0; round < 6; round += 1) {
         room = feed(room, harness.deps, feedList).state;
         types.push(payloadOf(room).questionType);
+        if (room.phase !== 'playing') break; // no window left before 90'
         const end = questionOf(room).endMinute;
         feedList = [...feedList, ev(`end${round}`, 'FOUL', end)];
         room = feed(room, harness.deps, feedList).state;
@@ -339,6 +340,7 @@ describe('M9 through the reducer', () => {
       return { room, types };
     };
     const first = play();
+    expect(first.types.length).toBeGreaterThanOrEqual(3);
     for (let index = 1; index < first.types.length; index += 1) expect(first.types[index]).not.toBe(first.types[index - 1]);
     expect(JSON.stringify(play().room)).toBe(JSON.stringify(first.room));
   });
