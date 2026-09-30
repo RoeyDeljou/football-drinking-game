@@ -57,7 +57,7 @@ export const G6TriviaRush = ({ room, round, onSubmit }: GameScreenProps): React.
               return (
                 <div
                   key={option.id}
-                  className={`rounded-md border-2 px-4 py-3 font-semibold ${
+                  className={`rounded-md border-2 px-3 py-3 font-semibold sm:px-4 ${
                     isCorrect ? 'border-up bg-up/15 text-fg' : 'border-transparent bg-hover text-fg-muted'
                   }`}
                 >
@@ -80,7 +80,7 @@ export const G6TriviaRush = ({ room, round, onSubmit }: GameScreenProps): React.
         <div className="split-cols gap-4 lg:items-start lg:gap-8 land:items-start">
         <p className="t-d2 lg:text-4xl">{questionText(payload.question.kind, payload.question.subjectName)}</p>
         <div>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-3">
           {payload.options.map((option) => (
             <OptionButton
               key={option.id}

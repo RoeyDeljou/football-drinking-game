@@ -16,7 +16,9 @@
     -webkit-text-size-adjust: 100%;
     /* Everything is sized in rem, so stepping the root up scales the whole UI for a laptop on the
        pub table or a TV across the room, while still honouring the OS text-size setting. */
-    font-size: 100%;
+    /* Follows the OS / browser text size, but never past 8vw: on a 320px phone that stops 200% text
+       from leaving ~11 characters per line (a 15-letter club name could not fit at all). */
+    font-size: min(100%, 8vw);
   }
   @media (min-width: 1440px) {
     :root {
@@ -155,6 +157,11 @@
      cramping words. */
   .split-cols {
     display: grid;
+  }
+  /* Grid items may shrink below their longest unbreakable run (a "(2018/19–2019/20)" span) rather than
+     push the page wider. */
+  .split-cols > * {
+    min-width: 0;
   }
   @media (min-width: 1024px), (orientation: landscape) and (max-height: 500px) {
     .split-cols {
@@ -323,7 +330,7 @@
   }
   .t-eyebrow {
     font: var(--t-micro);
-    letter-spacing: var(--track-caps);
+    letter-spacing: min(var(--track-caps), 0.9vw);
     text-transform: uppercase;
     color: rgb(var(--fg-subtle-rgb));
   }
