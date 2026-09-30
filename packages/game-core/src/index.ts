@@ -312,6 +312,33 @@ export {
 } from './modules/m2-who-is-that-player.js';
 
 export { M3_DEFAULT_CONFIG, M3_ID, m3ShirtNumber } from './modules/m3-shirt-number.js';
+export type { LiveEventKind, FiredEvent } from './modules/live-event-kinds.js';
+export {
+  LIVE_EVENT_KINDS,
+  liveEventKindOf,
+  liveEventSideOf,
+  orderLiveBatch,
+} from './modules/live-event-kinds.js';
+export type { M5Fire, M5PublicPayload, M5Solution } from './modules/m5-event-roulette.js';
+export {
+  dealEventKinds,
+  M5_DEFAULT_CONFIG,
+  M5_DEFAULT_EVENT_KINDS,
+  M5_ID,
+  m5EventRoulette,
+} from './modules/m5-event-roulette.js';
+export type { BingoCellSpec, BingoTick, M6Card, M6Cell, M6PublicPayload, M6Solution } from './modules/m6-match-bingo.js';
+export {
+  bingoCellId,
+  bingoLines,
+  dealBingoCards,
+  M6_CARD_MIX,
+  M6_CELL_TIERS,
+  M6_DEFAULT_CONFIG,
+  M6_ID,
+  m6MatchBingo,
+  tickBingoCards,
+} from './modules/m6-match-bingo.js';
 export type { M7Outcome, M7PublicPayload, M7Solution, M7Submission } from './modules/m7-minute-sniper.js';
 export {
   M7_DEFAULT_CONFIG,
