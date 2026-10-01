@@ -216,6 +216,7 @@ export default function RoomPage(): React.JSX.Element {
 
   const isHost = room.you?.isHost ?? false;
 
+  const startFailed = lastError !== null && lastError.code === 'ROUND_GENERATION_FAILED';
   const loadingDone =
     room.phase === 'loading' && room.loading !== null && room.loading.steps.every((step) => step.status === 'done');
 
@@ -271,7 +272,7 @@ export default function RoomPage(): React.JSX.Element {
       {/* The engine has no way back to the lobby from loading, so when the game cannot be built (the
           match finished, the data is gone) the host needs a clear, tappable way out, not just a
           Start button that fails again. */}
-      {room.phase === 'loading' && loadingDone && isHost && lastError !== null && lastError.code === 'ROUND_GENERATION_FAILED' ? (
+      {room.phase === 'loading' && loadingDone && isHost && startFailed ? (
         <div className="mx-auto w-full max-w-xl" role="alert">
           <Card className="text-center">
             <p className="t-d2">Can’t start this game</p>
@@ -317,7 +318,7 @@ export default function RoomPage(): React.JSX.Element {
 
       {/* Last in the flow and sticky to the bottom edge: it can never cover content or the exit link (the
           page simply scrolls past it), and it clears the home indicator. Guests see nothing here. */}
-      {loadingDone && isHost ? (
+      {loadingDone && isHost && !startFailed ? (
         <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-bg from-70% to-transparent px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-6 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
           <div className="mx-auto w-full max-w-md">
             <BigButton onClick={startSession}>Start playing</BigButton>
