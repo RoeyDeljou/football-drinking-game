@@ -122,11 +122,11 @@ export const M9FlashRounds = ({ room, round, now, onSubmit }: GameScreenProps): 
     return (
       <RoundShell title="Flash Round" round={round} room={room} now={now} split>
         <Card className="lg:p-6">
-          {question !== null ? <p className="t-d2 mb-3">{questionText(question, teams)}</p> : null}
+          {question !== null ? <p className="t-d2 mb-3 text-[min(1.375rem,6.5vw)] sm:text-[1.375rem]">{questionText(question, teams)}</p> : null}
           {solution.outcome === 'settled' && solution.answer !== null ? (
             <>
               <Eyebrow>The answer</Eyebrow>
-              <p className="t-score mt-1 max-w-full text-accent">{answerLabel(solution.answer, teams)}</p>
+              <p className="t-d1 mt-1 max-w-full text-accent">{answerLabel(solution.answer, teams)}</p>
               <p className="t-body mt-2 text-fg-muted">
                 {SETTLED_COPY[solution.settledBy ?? 'WINDOW_END']}
                 {question !== null && question.type === 'CORNERS_OVER' ? ` ${payload.windowCount} counted.` : ''}
@@ -202,13 +202,13 @@ export const M9FlashRounds = ({ room, round, now, onSubmit }: GameScreenProps): 
   return (
     <RoundShell title="Flash Round" round={round} room={room} now={now} countdown={false}>
       <Card className="lg:p-6">
-        <p className="t-d2 max-w-full lg:text-4xl">{questionText(question, teams)}</p>
+        <p className="t-d2 max-w-full text-[min(1.375rem,6.5vw)] sm:text-[1.375rem] lg:text-4xl">{questionText(question, teams)}</p>
         {open ? (
           <div className="mt-3">
             <CountdownBar deadlineAt={payload.answersCloseAt} now={now} totalMs={payload.answersCloseAt - payload.questionAt} />
           </div>
         ) : null}
-        <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-3" role="group" aria-label="Your answer">
+        <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-3" role="group" aria-label="Your answer">
           {question.options.map((option) => (
             <OptionButton
               key={option}
@@ -219,7 +219,7 @@ export const M9FlashRounds = ({ room, round, now, onSubmit }: GameScreenProps): 
                 setPending(option);
                 onSubmit({ answer: option });
               }}
-              className="min-h-20 text-center text-lg lg:min-h-24 lg:text-2xl"
+              className="min-h-20 text-center text-[min(1.125rem,5.5vw)] sm:text-lg lg:min-h-24 lg:text-xl"
             >
               {shown === option ? <span aria-hidden>✓ </span> : null}
               {answerLabel(option, teams)}

@@ -89,7 +89,7 @@ const BigCard = ({ card, size }: { readonly card: Card_; readonly size: number }
         return (
           <li
             key={`${cell.id}-${index}`}
-            className={`flex min-h-24 flex-col justify-between gap-1 rounded-md border-2 p-2 text-center sm:p-3 lg:min-h-32 ${
+            className={`flex min-h-24 flex-col justify-between gap-1 rounded-md border-2 p-1.5 text-center sm:p-3 lg:min-h-32 ${
               cell.ticked
                 ? lit.has(index)
                   ? 'border-accent bg-accent text-accent-fg'
@@ -97,7 +97,7 @@ const BigCard = ({ card, size }: { readonly card: Card_; readonly size: number }
                 : 'border-border bg-card text-fg'
             }`}
           >
-            <span className="text-[min(0.9rem,5vw)] font-bold leading-tight sm:text-base lg:text-lg">{label}</span>
+            <span className="text-[min(0.9rem,4.6vw)] font-bold leading-tight sm:text-base lg:text-lg">{label}</span>
             <span className="tnum text-sm font-black">
               {cell.ticked ? (
                 <>
