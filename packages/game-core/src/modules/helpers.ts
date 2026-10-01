@@ -100,6 +100,31 @@ export const hadAnswerWindow = (
 };
 
 /**
+ * Least time a late joiner must have had, of a timed answer window, before not answering counts
+ * against them — capped at half the window for short quiz windows.
+ */
+export const LATE_JOIN_MIN_ANSWER_MS = 20_000;
+
+/**
+ * `nonSubmitters`, minus players who never had a fair share of the answer window: someone who joined
+ * with less than `min(LATE_JOIN_MIN_ANSWER_MS, window / 2)` left before the deadline is not charged
+ * for silence. Rounds without a deadline keep every non-submitter. The one rule for every quiz-style
+ * `NO_ANSWER` (M2, M3, M10, G1, G3, G6); live games use `hadAnswerWindow` with their own windows.
+ */
+export const fairNonSubmitters = <S extends ModuleShape>(
+  players: readonly RoundPlayerView[],
+  submissions: readonly TypedSubmission<S>[],
+  round: { readonly startedAt: number; readonly deadlineAt: number | null },
+): readonly PlayerId[] =>
+  nonSubmitters<S>(players, submissions).filter((playerId) => {
+    const player = players.find((entry) => entry.id === playerId);
+    if (player === undefined) return false;
+    if (round.deadlineAt === null) return true;
+    const minMs = Math.min(LATE_JOIN_MIN_ANSWER_MS, (round.deadlineAt - round.startedAt) / 2);
+    return hadAnswerWindow(player, round.startedAt, round.deadlineAt, minMs);
+  });
+
+/**
  * One `self` penalty per player in `playerIds`, all with the same fixed magnitude. For deliberate
  * "everyone in this bucket drinks exactly N" mechanics; misses use `rolledSelfPenalties` instead.
  */

@@ -115,3 +115,11 @@ Provider live events reach the engine through one loop, `createLiveIngestion` (`
   room detaches -> timer cleared. `close()` (called from `buildApp().close()`) clears every timer and awaits in-flight
   polls. Timers are injectable (`LiveScheduler`) for deterministic tests.
 - Events are re-validated with Zod (`live/schemas.ts`); malformed or foreign-fixture events are dropped and logged.
+
+**Live stats.** For rooms whose module `supportsLiveStats` (M8 Stat Duel), each poll also sends a `MATCH_STATS`
+snapshot (`asOf` = the provider's `updatedAt`, full cumulative player/team stats) after that poll's `MATCH_EVENTS`,
+validated with game-core's `matchStatsActionSchema`. Providers re-stamp `updatedAt` on every call, so the loop skips a
+snapshot whose content (plus "FULL_TIME seen") equals what the room's round already accepted: unchanged snapshots cause
+no save, broadcast or persist, while the first snapshot after the whistle is always delivered (it settles M8). Stats-only
+modules are watched too (`WatchNeed.events`/`stats` say what each room consumes); clients can never originate
+`MATCH_STATS` (system action, absent from `clientActionSchema`).

@@ -10,12 +10,14 @@ import type { MatchEvent } from '@fdg/football-data';
 import type { RoomAction } from './actions.js';
 import type { RoundDataContext } from './data.js';
 import { checkModulePlayable } from './data.js';
+import { matchStatsActionSchema } from './live-stats.js';
 import { initialLiveWindow, stepLiveWindow } from './live-window.js';
 import type { GameModuleId, PlayerId, RoundId, SessionId } from './ids.js';
 import { asRoundId, asSessionId } from './ids.js';
 import type {
   EngineGameModule,
   ModuleShape,
+  ObserveEventsResult,
   RoundKind,
   RoundOutcome,
   RoundPlayerView,
@@ -93,6 +95,8 @@ export type RejectionCode =
   | 'NOT_YOUR_TURN'
   | 'PLAYER_ELIMINATED'
   | 'UNKNOWN_LOADING_STEP'
+  /** A `MATCH_STATS` action failed `matchStatsActionSchema`. */
+  | 'INVALID_STATS'
   /** A `long-running-bet` round self-locks (slip lock, then full time); a manual lock has no meaning. */
   | 'ROUND_NOT_LOCKABLE';
 
@@ -356,6 +360,7 @@ const buildRound = (
     submissions: [],
     outcome: null,
     observedEventIds: [],
+    statsAsOf: null,
     liveWindow: module.supportsLiveEvents
       ? initialLiveWindow(module.liveEventWindow, deps.data.fixture, now)
       : null,
@@ -506,6 +511,73 @@ const revealRound = (state: RoomState, deps: EngineDeps, rng: ResumableRng): Red
   return accept(next, events);
 };
 
+/**
+ * Commits a live observation (`observeEvents` / `observeStats`): the module's new payloads, capped
+ * mid-round penalties and score deltas, then the reveal when the module reports the round resolved.
+ * `base` is the round with the engine's own bookkeeping (seen ids, window, stats time) already applied.
+ */
+const applyObservation = (
+  state: RoomState,
+  slice: ActiveSlice,
+  base: RoundRecord,
+  observation: ObserveEventsResult<ModuleShape>,
+  deps: EngineDeps,
+  rng: ResumableRng,
+  now: number,
+): Reduction => {
+  const penaltyResult = applyPenalties({
+    events: observation.penalties,
+    participantIds: activePlayers(state).map((player) => player.id),
+    caps: state.settings.penaltyCaps,
+    sessionId: slice.session.id,
+    roundId: slice.round.id,
+    sessionSipsByPlayer: slice.session.sipsByPlayer,
+    roundSipsByPlayer: tallySipsForRound(state.penalties, slice.round.id),
+  });
+
+  const updatedRound: RoundRecord = {
+    ...base,
+    publicPayload: observation.publicPayload,
+    privatePayloads: observation.privatePayloads,
+    solution: observation.solution,
+  };
+
+  const deltas: readonly RoundScore[] = observation.scoreDeltas;
+  const players = state.players.map((player) => {
+    const delta = deltas.find((entry) => entry.playerId === player.id);
+    const sips = penaltyResult.sipsByPlayer[player.id] ?? 0;
+    if (delta === undefined && sips === 0) return player;
+    return {
+      ...player,
+      score: player.score + (delta?.points ?? 0),
+      sips: player.sips + sips,
+    };
+  });
+
+  const events: EngineEvent[] = [{ type: 'ROUND_UPDATED', roundId: updatedRound.id }];
+  if (penaltyResult.recorded.length > 0) {
+    events.push({ type: 'PENALTIES_APPLIED', penalties: penaltyResult.recorded });
+  }
+
+  const progressed = accept(
+    commit(
+      state,
+      {
+        players,
+        sessions: writeRound(state, slice, updatedRound, {
+          sipsByPlayer: mergeSips(slice.session.sipsByPlayer, penaltyResult.sipsByPlayer),
+        }),
+        penalties: [...state.penalties, ...penaltyResult.recorded],
+      },
+      now,
+    ),
+    events,
+  );
+
+  if (!observation.resolved) return progressed;
+  return then(progressed, revealRound(progressed.state, deps, rng));
+};
+
 const lockRound = (state: RoomState, deps: EngineDeps): Reduction => {
   if (state.phase !== 'playing') return reject(state, 'WRONG_PHASE', state.phase);
   const slice = readActiveSlice(state, deps);
@@ -612,6 +684,7 @@ const hostActorOf = (action: RoomAction): PlayerId | null => {
     case 'SYSTEM_REVEAL_ROUND':
     case 'SYSTEM_ABORT_ROOM':
     case 'MATCH_EVENTS':
+    case 'MATCH_STATS':
     case 'TICK':
       return null;
     default: {
@@ -924,10 +997,14 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
         moduleId: module.id,
         category: module.category,
         config: selection.config,
-        roundsPlanned:
-          module.maxRoundsPerSession === null
-            ? state.settings.roundsPerSession
-            : Math.min(state.settings.roundsPerSession, module.maxRoundsPerSession),
+        roundsPlanned: Math.max(
+          1,
+          Math.min(
+            state.settings.roundsPerSession,
+            module.maxRoundsPerSession ?? Number.POSITIVE_INFINITY,
+            module.plannedRounds({ config: selection.config, data: deps.data }) ?? Number.POSITIVE_INFINITY,
+          ),
+        ),
         rounds: [],
         startedAt: now,
         finishedAt: null,
@@ -1117,63 +1194,53 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
         now,
       });
       if (observation === null) return unchanged(state);
-
-      const penaltyResult = applyPenalties({
-        events: observation.penalties,
-        participantIds: activePlayers(state).map((player) => player.id),
-        caps: state.settings.penaltyCaps,
-        sessionId: slice.session.id,
-        roundId: slice.round.id,
-        sessionSipsByPlayer: slice.session.sipsByPlayer,
-        roundSipsByPlayer: tallySipsForRound(state.penalties, slice.round.id),
-      });
-
-      const updatedRound: RoundRecord = {
-        ...windowedRound,
-        publicPayload: observation.publicPayload,
-        privatePayloads: observation.privatePayloads,
-        solution: observation.solution,
-        observedEventIds: [
-          ...slice.round.observedEventIds,
-          ...history.map((event) => event.id),
-          ...fresh.map((event) => event.id),
-        ],
-      };
-
-      const deltas: readonly RoundScore[] = observation.scoreDeltas;
-      const players = state.players.map((player) => {
-        const delta = deltas.find((entry) => entry.playerId === player.id);
-        const sips = penaltyResult.sipsByPlayer[player.id] ?? 0;
-        if (delta === undefined && sips === 0) return player;
-        return {
-          ...player,
-          score: player.score + (delta?.points ?? 0),
-          sips: player.sips + sips,
-        };
-      });
-
-      const events: EngineEvent[] = [{ type: 'ROUND_UPDATED', roundId: updatedRound.id }];
-      if (penaltyResult.recorded.length > 0) {
-        events.push({ type: 'PENALTIES_APPLIED', penalties: penaltyResult.recorded });
-      }
-
-      const progressed = accept(
-        commit(
-          state,
-          {
-            players,
-            sessions: writeRound(state, slice, updatedRound, {
-              sipsByPlayer: mergeSips(slice.session.sipsByPlayer, penaltyResult.sipsByPlayer),
-            }),
-            penalties: [...state.penalties, ...penaltyResult.recorded],
-          },
-          now,
-        ),
-        events,
+      return applyObservation(
+        state,
+        slice,
+        {
+          ...windowedRound,
+          observedEventIds: [
+            ...slice.round.observedEventIds,
+            ...history.map((event) => event.id),
+            ...fresh.map((event) => event.id),
+          ],
+        },
+        observation,
+        deps,
+        rng,
+        now,
       );
+    }
 
-      if (!observation.resolved) return progressed;
-      return then(progressed, revealRound(progressed.state, deps, rng));
+    case 'MATCH_STATS': {
+      if (state.phase !== 'playing') return reject(state, 'WRONG_PHASE', state.phase);
+      const parsed = matchStatsActionSchema.safeParse(action);
+      if (!parsed.success) return reject(state, 'INVALID_STATS', parsed.error.issues[0]?.message ?? 'invalid');
+      const slice = readActiveSlice(state, deps);
+      if (slice === null) return reject(state, 'NO_ACTIVE_SESSION');
+      if (!slice.module.supportsLiveStats) return unchanged(state);
+      if (slice.round.status !== 'open') return reject(state, 'ROUND_CLOSED', slice.round.status);
+      const asOf = Date.parse(parsed.data.asOf);
+      // Latest snapshot wins: a re-send or an older snapshot changes nothing.
+      const previous = slice.round.statsAsOf ?? null;
+      if (previous !== null && asOf <= previous) return unchanged(state);
+
+      const round: RoundRecord = { ...slice.round, statsAsOf: asOf };
+      const observation = slice.module.observeStats({
+        config: slice.session.config,
+        round: toRoundView(round),
+        snapshot: {
+          fixtureId: parsed.data.fixtureId,
+          asOf,
+          playerStats: parsed.data.playerStats,
+          teamStats: parsed.data.teamStats,
+        },
+        submissions: toTypedSubmissions(slice.round),
+        players: toPlayerViews(state),
+        now,
+      });
+      if (observation === null) return unchanged(state);
+      return applyObservation(state, slice, round, observation, deps, rng, now);
     }
 
     case 'TICK': {

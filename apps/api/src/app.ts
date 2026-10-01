@@ -88,6 +88,7 @@ export const buildApp = async (options: BuildAppOptions = {}): Promise<BuiltApp>
     : createLiveIngestion({
         provider: footballData,
         dispatchMatchEvents: (roomId, events) => dispatchAction(ctx, roomId, { type: 'MATCH_EVENTS', events }),
+        dispatchMatchStats: (roomId, action) => dispatchAction(ctx, roomId, action),
         onRoomChanged: (record) => broadcastRecord(record),
         loadRoom: (roomId) => ctx.roomStore.load(roomId),
         plan: (record) =>

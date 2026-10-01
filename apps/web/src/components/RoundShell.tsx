@@ -10,6 +10,9 @@ export const RoundShell = ({
   now,
   children,
   split = false,
+  countdown = true,
+  showAnswered = true,
+  splitMin,
 }: {
   readonly title: string;
   readonly round: ProjectedRound;
@@ -18,6 +21,12 @@ export const RoundShell = ({
   readonly children: React.ReactNode;
   /** Reveal screens: lay two blocks side by side from 1024px / on a landscape phone. */
   readonly split?: boolean;
+  /** Set false when the game shows its own clock state (M7 after the pick window closes). */
+  readonly countdown?: boolean;
+  /** Set false for games with nothing to submit (Event Roulette, Match Bingo). */
+  readonly showAnswered?: boolean;
+  /** Minimum width of each split column before they stack (CSS length, default 18rem). */
+  readonly splitMin?: string;
 }): React.JSX.Element => {
   const answeredCount = round.submissionStatus.filter((entry) => entry.submitted).length;
   const total = round.submissionStatus.length;
@@ -32,8 +41,9 @@ export const RoundShell = ({
           Round {round.index + 1} · {room.session?.roundsPlanned ?? '?'} planned
         </span>
       </div>
-      {round.visibility === 'pre-reveal' ? <CountdownBar deadlineAt={round.deadlineAt} now={now} totalMs={totalMs} /> : null}
+      {round.visibility === 'pre-reveal' && countdown ? <CountdownBar deadlineAt={round.deadlineAt} now={now} totalMs={totalMs} /> : null}
       <div
+        style={split && splitMin !== undefined ? ({ '--split-min': splitMin } as React.CSSProperties) : undefined}
         className={
           split
             ? 'split-cols gap-4 lg:items-start lg:gap-6 land:items-start'
@@ -42,7 +52,7 @@ export const RoundShell = ({
       >
         {children}
       </div>
-      {round.visibility === 'pre-reveal' ? (
+      {round.visibility === 'pre-reveal' && showAnswered ? (
         <p className="tnum text-center text-sm text-fg-muted" aria-live="polite">
           {answeredCount}/{total} answered
         </p>

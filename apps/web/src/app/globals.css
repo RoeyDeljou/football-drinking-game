@@ -340,6 +340,45 @@
     font-feature-settings: 'tnum';
   }
 
+  /* A slider you can hit with a thumb: 44px-tall hit area, 32px chalk-gold handle, thick track. */
+  .range-big {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 2.75rem;
+    min-height: 44px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .range-big::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 999px;
+    background: rgb(var(--bg-sunken-rgb));
+    box-shadow: var(--edge-hairline);
+  }
+  .range-big::-moz-range-track {
+    height: 10px;
+    border-radius: 999px;
+    background: rgb(var(--bg-sunken-rgb));
+    box-shadow: var(--edge-hairline);
+  }
+  .range-big::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 32px;
+    height: 32px;
+    margin-top: -11px;
+    border-radius: 50%;
+    border: 3px solid rgb(var(--bg-rgb));
+    background: rgb(var(--accent-rgb));
+  }
+  .range-big::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 3px solid rgb(var(--bg-rgb));
+    background: rgb(var(--accent-rgb));
+  }
+
   /* Text inputs: 56px, chalk outline, gold on focus. */
   .field-input {
     min-height: 3.5rem;
@@ -358,6 +397,26 @@
   .field-input:focus {
     border-color: rgb(var(--accent-rgb));
   }
+}
+
+@keyframes call-pop {
+  0% {
+    transform: scale(0.94);
+    box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.7);
+  }
+  60% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 14px rgb(var(--accent-rgb) / 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0);
+  }
+}
+/* A line / full-house call. The global reduced-motion rule collapses the animation to nothing, so the
+   banner still appears, it just doesn't pulse. */
+.call-pop {
+  animation: call-pop 900ms var(--ease-out) 1;
 }
 
 @keyframes skeleton-sweep {

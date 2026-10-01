@@ -24,7 +24,7 @@ import type { PitchPlayer } from './helpers.js';
 import {
   footballPlayerIdSchema,
   lastCorrectPlayer,
-  nonSubmitters,
+  fairNonSubmitters,
   pitchPlayerSchema,
   pitchPlayers,
   rolledSelfPenalties,
@@ -283,7 +283,7 @@ export const m2WhoIsThatPlayer = defineGameModule<M2Shape>({
       ),
       ...rolledSelfPenalties(
         ctx.rng,
-        nonSubmitters<M2Shape>(ctx.players, ctx.submissions),
+        fairNonSubmitters<M2Shape>(ctx.players, ctx.submissions, ctx.round),
         'NO_ANSWER',
         ctx.config.noAnswerSips > 0,
       ),

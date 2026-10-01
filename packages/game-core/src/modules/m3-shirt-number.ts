@@ -22,7 +22,7 @@ import type { PenaltyEvent } from '../penalties.js';
 import { penalty } from '../penalties.js';
 import {
   footballPlayerIdSchema,
-  nonSubmitters,
+  fairNonSubmitters,
   pitchPlayers,
   positionSchema,
   rolledSelfPenalties,
@@ -182,7 +182,7 @@ export const m3ShirtNumber = defineGameModule<M3Shape>({
     const penalties: PenaltyEvent[] = [
       ...rolledSelfPenalties(
         ctx.rng,
-        nonSubmitters<M3Shape>(ctx.players, ctx.submissions),
+        fairNonSubmitters<M3Shape>(ctx.players, ctx.submissions, ctx.round),
         'NO_ANSWER',
         ctx.config.noAnswerSips > 0,
       ),

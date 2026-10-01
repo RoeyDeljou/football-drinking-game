@@ -75,7 +75,7 @@ export const M3ShirtNumber = ({ room, round, onSubmit }: GameScreenProps): React
           value={guess}
           disabled={alreadySubmitted}
           onChange={(event) => setGuess(Number(event.target.value))}
-          className="tap-target w-full accent-accent"
+          className="range-big w-full"
           aria-label="Shirt number guess"
         />
         <BigButton

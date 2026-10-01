@@ -41,9 +41,9 @@ const REASON_COPY: Record<PenaltyReason, string> = {
   LOWEST_SCORE: 'lowest score',
   ROUND_WON: 'someone else won the round',
   PERFECT_ROUND: 'perfect round',
-  ASSIGNED_EVENT_FIRED: 'their assigned event fired',
+  ASSIGNED_EVENT_FIRED: 'their event fired',
   BINGO_LINE: 'bingo line',
-  BINGO_FULL_HOUSE: 'full house',
+  BINGO_FULL_HOUSE: 'bingo full house',
   DUEL_LOST: 'lost the duel',
   CHAIN_BROKEN: 'broke the chain',
   HOST_MANUAL: 'house rule from the host',
@@ -82,6 +82,42 @@ export const drinkAnnouncement = (penalty: RecordedPenalty, subjectNickname: str
     penalty.reason,
   )}.`;
 };
+
+/**
+ * Live pitch games (Event Roulette, Match Bingo) drink mid-round, so their copy is built from the
+ * public payload's own numbers (sips per fire / line / full house) as events land. Same drink
+ * wording as everywhere else (`drinkActionLabel`), one file.
+ *
+ * `kindLabel` is the dealt event's display name ("Corner"); `owner` is the holder's nickname.
+ */
+export const eventFiredLine = (
+  kindLabel: string,
+  ownerNames: readonly string[],
+  drinker: 'owner' | 'others',
+  sips: number,
+): string => {
+  const owners = ownerNames.join(' and ');
+  const action = drinkActionLabel(sips);
+  return drinker === 'owner'
+    ? `${kindLabel}! ${owners} drinks ${action}.`
+    : `${kindLabel}! ${owners} ${ownerNames.length === 1 ? 'is' : 'are'} safe, everyone else drinks ${action}.`;
+};
+
+/** What the deal means for a viewer, in one glanceable line. */
+export const eventRuleLine = (drinker: 'owner' | 'others', sips: number): string =>
+  drinker === 'owner'
+    ? `When your event fires, you drink ${drinkActionLabel(sips)}.`
+    : `When your event fires, everyone else drinks ${drinkActionLabel(sips)}.`;
+
+export const bingoLineCall = (ownerName: string, sips: number): string =>
+  `Line! Everyone but ${ownerName} drinks ${drinkActionLabel(sips)}.`;
+
+export const bingoFullHouseCall = (ownerName: string, sips: number): string =>
+  `Full house! ${ownerName} is done, everyone else downs ${drinkActionLabel(sips)}.`;
+
+/** One recipient's total for a round, after caps. */
+export const roundDrinkTotalLine = (nickname: string, sips: number): string =>
+  sips <= 0 ? `${nickname} gets away with it.` : `${nickname} downs ${drinkActionLabel(sips)}.`;
 
 export const drinkTallyHeadline = (totalSips: number): string =>
   totalSips === 0 ? 'Nobody owes a single sip. Suspicious.' : `${sipsLabel(totalSips)} owed on the table.`;

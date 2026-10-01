@@ -19,8 +19,13 @@ import { g6TriviaRush } from './g6-trivia-rush.js';
 import { m1MatchMarkets } from './m1-match-markets.js';
 import { m2WhoIsThatPlayer } from './m2-who-is-that-player.js';
 import { m3ShirtNumber } from './m3-shirt-number.js';
+import { m4YourMan } from './m4-your-man.js';
+import { m5EventRoulette } from './m5-event-roulette.js';
+import { m6MatchBingo } from './m6-match-bingo.js';
 import { m7MinuteSniper } from './m7-minute-sniper.js';
-import { M10_ID, m10LineupRecall } from './m10-lineup-recall.js';
+import { m8StatDuel } from './m8-stat-duel.js';
+import { m9FlashRounds } from './m9-flash-rounds.js';
+import { m10LineupRecall } from './m10-lineup-recall.js';
 import { createMixedModule, G_MIX_ID, M_MIX_ID } from './mixed.js';
 
 export interface ModulePlayability {
@@ -65,7 +70,12 @@ export const STANDALONE_MODULES: readonly EngineGameModule[] = [
   m1MatchMarkets,
   m2WhoIsThatPlayer,
   m3ShirtNumber,
+  m4YourMan,
+  m5EventRoulette,
+  m6MatchBingo,
   m7MinuteSniper,
+  m8StatDuel,
+  m9FlashRounds,
   m10LineupRecall,
   g1GuessThePlayer,
   g3CareerPath,
@@ -75,15 +85,15 @@ export const STANDALONE_MODULES: readonly EngineGameModule[] = [
 /**
  * Mixable games kept OUT of the default Mixed rotation until their web screen ships (a Mixed round
  * whose sub-game has no `GAME_SCREENS` entry cannot be rendered). They stay registered and remain
- * selectable via an explicit `config.modules`. **UI agent: remove M10 from this list when
- * `GAME_SCREENS['M10']` lands** — nothing else needs to change.
+ * selectable via an explicit `config.modules`. Empty now that every mixable game has a screen
+ * (M10 joined when `GAME_SCREENS['M10']` landed); add an id here to hold a future game back.
  */
-export const MIXED_ROTATION_EXCLUDED: readonly GameModuleId[] = [M10_ID];
+export const MIXED_ROTATION_EXCLUDED: readonly GameModuleId[] = [];
 
 /**
- * Matchday "all games in one": by default rotates M2, M3 (M10 is mixable but excluded above for
- * now). Never M1 or M7: both are live `long-running-bet` rounds that wait on the match, not one
- * self-contained question (`isMixable` filters them out).
+ * Matchday "all games in one": by default rotates M2, M3 and M10 (M10 skips itself per round when the
+ * lineups are unconfirmed, and has two XIs per fixture). Never M1, M4-M9: live
+ * rounds that wait on the match, not one self-contained question (`isMixable` filters them out).
  */
 export const matchdayMixed: EngineGameModule = createMixedModule({
   id: M_MIX_ID,
@@ -109,7 +119,12 @@ export const PHASE_1_MODULES: readonly EngineGameModule[] = [
   m1MatchMarkets,
   m2WhoIsThatPlayer,
   m3ShirtNumber,
+  m4YourMan,
+  m5EventRoulette,
+  m6MatchBingo,
   m7MinuteSniper,
+  m8StatDuel,
+  m9FlashRounds,
   m10LineupRecall,
   generalMixed,
   g1GuessThePlayer,

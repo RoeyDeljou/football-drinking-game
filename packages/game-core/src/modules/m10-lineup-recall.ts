@@ -42,7 +42,7 @@ import type { NameCandidate } from '../name-matching.js';
 import { assignGuesses } from '../name-matching.js';
 import type { PenaltyEvent } from '../penalties.js';
 import { penalty } from '../penalties.js';
-import { footballPlayerIdSchema, nonSubmitters, positionSchema, scoreChoiceRound, teamIdSchema } from './helpers.js';
+import { footballPlayerIdSchema, fairNonSubmitters, positionSchema, scoreChoiceRound, teamIdSchema } from './helpers.js';
 
 export const M10_ID = asGameModuleId('M10');
 
@@ -143,6 +143,15 @@ const usableStarters = (lineup: TeamLineup): boolean =>
   lineup.startingXI.length <= 11 &&
   lineup.startingXI.every((entry) => entry.name.trim().length > 0);
 
+/** The sides whose XI can be played with this config (none without lineups or an allowed XI). */
+const usableSides = (
+  lineups: FixtureLineups | null,
+  config: M10Shape['config'],
+): readonly ('home' | 'away')[] =>
+  lineups === null || (!lineups.confirmed && !config.allowProjectedLineups)
+    ? []
+    : (['home', 'away'] as const).filter((side) => usableStarters(lineups[side]));
+
 /** Per-submission grading, shared by scoring and the reveal summary. */
 export const gradeLineupGuesses = (
   guesses: readonly string[],
@@ -161,6 +170,10 @@ export const m10LineupRecall = defineGameModule<M10Shape>({
   minPlayers: 1,
   maxPlayers: null,
   allowResubmission: false,
+  // Two starting XIs per fixture: the session ends after them instead of failing to deal a third…
+  maxRoundsPerSession: 2,
+  // …or after one, when only one XI is usable (projected lineups, a side with no XI).
+  plannedRounds: (ctx) => usableSides(ctx.data.lineups, ctx.config).length,
   defaultConfig: M10_DEFAULT_CONFIG,
   configSchema,
   publicPayloadSchema,
@@ -175,7 +188,7 @@ export const m10LineupRecall = defineGameModule<M10Shape>({
       return { ok: false, reason: 'INSUFFICIENT_DATA', detail: 'lineups not confirmed' };
     }
 
-    const sides = (['home', 'away'] as const).filter((side) => usableStarters(lineups[side]));
+    const sides = usableSides(lineups, ctx.config);
     if (sides.length === 0) return { ok: false, reason: 'INSUFFICIENT_DATA', detail: 'no usable starting XI' };
     const unused = sides.filter(
       (side) => !ctx.usedContentKeys.includes(m10ContentKey(lineups.fixtureId, lineups[side].teamId)),
@@ -281,7 +294,7 @@ export const m10LineupRecall = defineGameModule<M10Shape>({
           );
         }
       }
-      for (const playerId of nonSubmitters<M10Shape>(ctx.players, ctx.submissions)) {
+      for (const playerId of fairNonSubmitters<M10Shape>(ctx.players, ctx.submissions, ctx.round)) {
         penalties.push(penalty(playerId, 'self', slots * ctx.config.sipsPerMiss, 'NO_ANSWER', { missed: slots }));
       }
     }

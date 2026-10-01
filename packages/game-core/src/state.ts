@@ -153,6 +153,11 @@ export interface RoundRecord {
    * other round. Set at build time and advanced by `MATCH_EVENTS`.
    */
   readonly liveWindow: LiveEventWindow | null;
+  /**
+   * `asOf` (epoch ms) of the last `MATCH_STATS` snapshot this round accepted; `null` before any. Older
+   * or equal snapshots are ignored, which makes stats ingestion idempotent.
+   */
+  readonly statsAsOf: number | null;
   readonly turn: TurnState | null;
   /**
    * When this round's pre-reveal projection next changes purely because time passed (G1's next clue

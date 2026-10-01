@@ -13,7 +13,7 @@
  * `playerId`/`actorId` is the player authenticated on that socket.
  */
 
-import type { MatchEvent } from '@fdg/football-data';
+import type { FixtureId, MatchEvent, PlayerMatchStats, TeamMatchStats } from '@fdg/football-data';
 import { z } from 'zod';
 import type { GameModuleId, PlayerId, RoundId } from './ids.js';
 import { asGameModuleId, asPlayerId, asRoundId } from './ids.js';
@@ -156,6 +156,19 @@ export interface MatchEventsAction {
   readonly events: readonly MatchEvent[];
 }
 
+/**
+ * Live stats snapshot (cumulative, latest `asOf` wins). Validated in the reducer with
+ * `matchStatsActionSchema`; full contract in `live-stats.ts`.
+ */
+export interface MatchStatsAction {
+  readonly type: 'MATCH_STATS';
+  readonly fixtureId: FixtureId;
+  /** ISO 8601 time of the provider snapshot (`LiveMatchState.updatedAt`). */
+  readonly asOf: string;
+  readonly playerStats: readonly PlayerMatchStats[];
+  readonly teamStats: readonly TeamMatchStats[];
+}
+
 /** Lets the engine close an expired answer window without the host touching anything. */
 export interface TickAction {
   readonly type: 'TICK';
@@ -185,6 +198,7 @@ export type RoomAction =
   | SystemRevealRoundAction
   | SystemAbortRoomAction
   | MatchEventsAction
+  | MatchStatsAction
   | TickAction;
 
 export type RoomActionType = RoomAction['type'];
@@ -215,6 +229,7 @@ export const SYSTEM_ACTION_TYPES: readonly RoomActionType[] = [
   'LOADING_PROGRESS',
   'LOADING_FAILED',
   'MATCH_EVENTS',
+  'MATCH_STATS',
   'TICK',
   'SYSTEM_LOCK_ROUND',
   'SYSTEM_REVEAL_ROUND',
