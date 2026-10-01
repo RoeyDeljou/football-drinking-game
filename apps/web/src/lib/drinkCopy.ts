@@ -7,7 +7,7 @@
 
 import type { PenaltyReason, PenaltyTarget, RecordedPenalty } from '@fdg/game-core';
 
-export const sipsLabel = (sips: number): string => (sips === 1 ? '1 sip' : `${sips} sips`);
+export const sipsLabel = (sips: number): string => (sips === 1 ? '1\u00a0sip' : `${sips}\u00a0sips`);
 
 /**
  * Turns a raw applied-sip count into a varied, colloquial drinking instruction instead of always
@@ -19,15 +19,16 @@ export const sipsLabel = (sips: number): string => (sips === 1 ? '1 sip' : `${si
  */
 const DRINK_ACTION_TIERS: readonly { readonly maxSips: number; readonly label: string }[] = [
   { maxSips: 0, label: 'no drinking' },
-  { maxSips: 1, label: '1 sip' },
-  { maxSips: 2, label: '2 sips' },
+  // Non-breaking space: "1 / sip" must never split across lines.
+  { maxSips: 1, label: '1\u00a0sip' },
+  { maxSips: 2, label: '2\u00a0sips' },
   { maxSips: 4, label: 'a chug' },
   { maxSips: 7, label: 'a shot' },
-  { maxSips: Infinity, label: '2 shots' },
+  { maxSips: Infinity, label: '2\u00a0shots' },
 ];
 
 export const drinkActionLabel = (sips: number): string =>
-  DRINK_ACTION_TIERS.find((tier) => sips <= tier.maxSips)?.label ?? '2 shots';
+  DRINK_ACTION_TIERS.find((tier) => sips <= tier.maxSips)?.label ?? '2\u00a0shots';
 
 const REASON_COPY: Record<PenaltyReason, string> = {
   WRONG_ANSWER: 'wrong answer',
@@ -44,7 +45,7 @@ const REASON_COPY: Record<PenaltyReason, string> = {
   ASSIGNED_EVENT_FIRED: 'their event fired',
   BINGO_LINE: 'bingo line',
   BINGO_FULL_HOUSE: 'bingo full house',
-  DUEL_LOST: 'lost the duel',
+  DUEL_LOST: 'lost the stat duel',
   CHAIN_BROKEN: 'broke the chain',
   HOST_MANUAL: 'house rule from the host',
 };
@@ -99,7 +100,7 @@ export const eventFiredLine = (
   const owners = ownerNames.join(' and ');
   const action = drinkActionLabel(sips);
   return drinker === 'owner'
-    ? `${kindLabel}! ${owners} drinks ${action}.`
+    ? `${kindLabel}! ${owners} ${ownerNames.length === 1 ? 'drinks' : 'drink'} ${action}.`
     : `${kindLabel}! ${owners} ${ownerNames.length === 1 ? 'is' : 'are'} safe, everyone else drinks ${action}.`;
 };
 
@@ -118,6 +119,39 @@ export const bingoFullHouseCall = (ownerName: string, sips: number): string =>
 /** One recipient's total for a round, after caps. */
 export const roundDrinkTotalLine = (nickname: string, sips: number): string =>
   sips <= 0 ? `${nickname} gets away with it.` : `${nickname} downs ${drinkActionLabel(sips)}.`;
+
+/** Your Man: what a drafted footballer just did, and who drinks for it. `owners` are nicknames. */
+export type YourManAction = 'FOUL' | 'MISS' | 'YELLOW' | 'RED' | 'OWN_GOAL' | 'GOAL' | 'ASSIST';
+
+const YOUR_MAN_VERB: Record<YourManAction, string> = {
+  FOUL: 'fouls',
+  MISS: 'misses',
+  YELLOW: 'is booked',
+  RED: 'is sent off',
+  OWN_GOAL: 'scores an own goal',
+  GOAL: 'scores',
+  ASSIST: 'assists',
+};
+
+export const yourManLine = (
+  action: YourManAction,
+  footballer: string,
+  owners: readonly string[],
+  target: 'self' | 'others',
+  sips: number,
+): string => {
+  const what = `${footballer} ${YOUR_MAN_VERB[action]}`;
+  if (sips <= 0) return `${what} — no drinking for that one.`;
+  const amount = drinkActionLabel(sips);
+  const who = owners.join(' and ');
+  return target === 'self' ? `${what} — ${who} drinks ${amount}.` : `${what}! Everyone but ${who} drinks ${amount}.`;
+};
+
+/** A stat duel's loser, for the reveal. */
+export const duelLostLine = (loser: string, winner: string, statLabel: string, sips: number): string =>
+  sips <= 0
+    ? `${loser} lost to ${winner} on ${statLabel.toLowerCase()} and gets away with it.`
+    : `${loser} lost to ${winner} on ${statLabel.toLowerCase()} and drinks ${drinkActionLabel(sips)}.`;
 
 export const drinkTallyHeadline = (totalSips: number): string =>
   totalSips === 0 ? 'Nobody owes a single sip. Suspicious.' : `${sipsLabel(totalSips)} owed on the table.`;

@@ -47,3 +47,15 @@ describe('errorMessage', () => {
     expect(message).toMatch(/not enough match data/i);
   });
 });
+
+describe('errorMessage: a finished match', () => {
+  it('explains that the match is over when a live round cannot be built', () => {
+    for (const detail of ['WRONG_ROUND_CONTEXT: fixture FINISHED', 'fixture FINISHED', 'WRONG_ROUND_CONTEXT']) {
+      expect(errorMessage({ code: 'ROUND_GENERATION_FAILED', detail })).toMatch(/match has finished/i);
+    }
+  });
+
+  it('keeps the generic copy for other generation failures', () => {
+    expect(errorMessage({ code: 'ROUND_GENERATION_FAILED', detail: 'INSUFFICIENT_DATA' })).toMatch(/couldn’t build/i);
+  });
+});

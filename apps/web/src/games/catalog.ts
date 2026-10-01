@@ -34,6 +34,12 @@ export const GAME_CATALOG: readonly {
     blurb: "See a real starter, guess their shirt number — closest guess wins.",
   },
   {
+    id: 'M4',
+    name: 'Your Man',
+    category: 'matchday',
+    blurb: 'You are drafted a starter for the whole match. His fouls and misses are your drinks; his goals make everyone else drink.',
+  },
+  {
     id: 'M5',
     name: 'Event Roulette',
     category: 'matchday',
@@ -50,6 +56,18 @@ export const GAME_CATALOG: readonly {
     name: 'Minute Sniper',
     category: 'matchday',
     blurb: 'Pick the minute of the next goal — closest wins, furthest drinks.',
+  },
+  {
+    id: 'M8',
+    name: 'Stat Duel',
+    category: 'matchday',
+    blurb: 'Blind-pick a starter and go head to head in a bracket on live stats. Lose a duel, drink.',
+  },
+  {
+    id: 'M9',
+    name: 'Flash Rounds',
+    category: 'matchday',
+    blurb: 'A quick 20-second prediction about the next stretch of the match. Wrong or silent, you drink.',
   },
   {
     id: 'M10',
