@@ -169,6 +169,33 @@
     }
   }
 
+  /* Host-written bingo cell text: the font shrinks to the cell's width for the label's longest word (--w,
+     in characters) so a word is never split; `hyphens` is the last resort for words past the floor. */
+  .bingo-cell {
+    container-type: inline-size;
+  }
+  /* The editor's sample card only renders where its cells can hold text (a container query, so it follows
+     the card's real width, not the screen). */
+  .sample-wrap {
+    container-type: inline-size;
+  }
+  .sample-grid {
+    display: none;
+  }
+  @container (min-width: 20rem) {
+    .sample-grid {
+      display: grid;
+    }
+    .sample-hint {
+      display: none;
+    }
+  }
+  .bingo-label {
+    font-size: clamp(8px, calc((100cqw - 4px) / (var(--w, 8) * 0.6)), 0.9rem);
+    hyphens: auto;
+    overflow-wrap: break-word;
+  }
+
   /* The PIN: six tiles that always share the row exactly. Container-relative sizing means the same
      component fits a 320px phone, the lobby's left column and a TV. --pin-max caps the tile. */
   .pin-row {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { labelFitWarning, longestWord } from '@/lib/cellFit';
 import { BINGO_VOCABULARY, type GameConfigSpec } from '@/lib/gameConfigSpecs';
 import { valueOf, withEdit, type SettingsState } from '@/lib/gameSettings';
 import { bingoCellLabel, eventLabel, type LiveEventKind } from '@/lib/liveEventCopy';
@@ -123,6 +124,11 @@ export const BingoEditor = ({
                       setPool(pool.map((cell, position) => (position === index ? { event: cell.event, side: cell.side, count: cell.count, ...(text.trim().length === 0 ? {} : { label: text }) } : cell)));
                     }}
                   />
+                  {entry.label !== undefined && labelFitWarning(entry.label) !== null ? (
+                    <span className="t-xs text-warn" role="status">
+                      {labelFitWarning(entry.label)}
+                    </span>
+                  ) : null}
                 </label>
                 <button
                   type="button"
@@ -191,7 +197,10 @@ export const BingoEditor = ({
         <ul className="flex flex-col gap-2" aria-label="House cells">
           {house.map((text, index) => (
             <li key={text} className="flex items-center gap-2 rounded-md border-2 border-dashed border-accent/60 bg-card pl-3">
-              <span className="max-w-full flex-1 py-2 font-semibold">{text}</span>
+              <span className="max-w-full flex-1 py-2 font-semibold">
+                {text}
+                {labelFitWarning(text) !== null ? <span className="t-xs block font-normal text-warn">{labelFitWarning(text)}</span> : null}
+              </span>
               <button
                 type="button"
                 aria-label={`Remove ${text}`}
@@ -203,6 +212,11 @@ export const BingoEditor = ({
             </li>
           ))}
         </ul>
+        {labelFitWarning(houseDraft) !== null ? (
+          <p className="t-xs text-warn" role="status">
+            {labelFitWarning(houseDraft)}
+          </p>
+        ) : null}
         <form
           className="flex flex-wrap gap-2"
           onSubmit={(submitEvent) => {
@@ -245,18 +259,21 @@ export const BingoEditor = ({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="sample-wrap flex flex-col gap-2">
         <p className="t-h3">Sample card</p>
-        <ol className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }} aria-label="Sample card">
+        <p className="sample-hint t-sm text-fg-muted">The sample card needs a wider screen to show properly.</p>
+        <ol className="sample-grid gap-1.5" style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }} aria-label="Sample card">
           {sample.map((cell, index) => (
             <li
               key={`${cell.text}-${index}`}
-              className={`flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-md border-2 p-1 text-center text-[min(0.75rem,3.2vw)] font-bold leading-tight ${
+              className={`bingo-cell flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-md border-2 p-1 text-center font-bold leading-tight ${
                 cell.house ? 'border-dashed border-accent/70 bg-accent/10' : 'border-border bg-card'
               }`}
             >
               {cell.house ? <span aria-label="House rule" role="img" className="text-accent">★</span> : null}
-              <span className="max-w-full">{cell.text}</span>
+              <span className="bingo-label max-w-full" style={{ ['--w' as string]: Math.max(longestWord(cell.text), 4) } as React.CSSProperties}>
+                {cell.text}
+              </span>
             </li>
           ))}
         </ol>
