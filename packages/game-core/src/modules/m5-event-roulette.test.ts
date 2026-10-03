@@ -355,3 +355,31 @@ describe('M5 against the recorded PSG 6-1 Slovan Bratislava timeline (401915445)
     expect(payloadOf(ended).fires.filter((fire) => fire.kind === 'GOAL').map((fire) => fire.side)).toEqual(['home', 'away']);
   });
 });
+
+describe('M5 label overrides', () => {
+  it('validates labels: known kinds only, trimmed, 1..40 chars, optional', () => {
+    expect(module.parseConfig(M5_DEFAULT_CONFIG)).toEqual({ ok: true, config: M5_DEFAULT_CONFIG });
+    const parsed = module.parseConfig({ ...M5_DEFAULT_CONFIG, labels: { CORNER: '  Flag kick ', FOUL: 'Hack' } });
+    expect(parsed).toEqual({ ok: true, config: { ...M5_DEFAULT_CONFIG, labels: { CORNER: 'Flag kick', FOUL: 'Hack' } } });
+    const issues = (labels: unknown): string => {
+      const result = module.parseConfig({ ...M5_DEFAULT_CONFIG, labels });
+      return result.ok ? '' : result.issues.join('; ');
+    };
+    expect(issues({ THROW_IN: 'x' })).toContain('labels.THROW_IN');
+    expect(issues({ CORNER: '   ' })).toContain('labels.CORNER');
+    expect(issues({ CORNER: 'x'.repeat(41) })).toContain('labels.CORNER');
+    expect(issues({ CORNER: 3 })).toContain('labels.CORNER');
+  });
+
+  it('copies the labels into the public payload ({} by default), visible to every viewer', () => {
+    const harness = makeHarness({ data: sampleData({ fixture: LIVE_FIXTURE }) });
+    expect(payloadOf(start(harness)).labels).toEqual({});
+    const room = start(harness, { config: { ...M5_DEFAULT_CONFIG, labels: { CARD: 'Booking!' } } });
+    expect(payloadOf(room).labels).toEqual({ CARD: 'Booking!' });
+    for (const viewer of [HOST, P2, null]) {
+      const view = projectFor(room, viewer, harness.deps).round;
+      expect((view?.publicPayload as M5PublicPayload).labels).toEqual({ CARD: 'Booking!' });
+      expect(view?.solution ?? null).toBeNull();
+    }
+  });
+});
