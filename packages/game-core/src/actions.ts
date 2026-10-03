@@ -74,6 +74,17 @@ export interface StartLoadingAction {
   readonly stepKeys: readonly string[];
 }
 
+/**
+ * The host leaves the loading screen (in progress or failed) to pick another game. Host-only.
+ * Returns to `lobby`, or to `intermission` when the room already played a session; clears the
+ * selection and the loading state. Later `LOADING_PROGRESS`/`LOADING_FAILED` from the abandoned
+ * pipeline are rejected `WRONG_PHASE`.
+ */
+export interface CancelLoadingAction {
+  readonly type: 'CANCEL_LOADING';
+  readonly actorId: PlayerId;
+}
+
 export interface LoadingProgressAction {
   readonly type: 'LOADING_PROGRESS';
   readonly stepKey: string;
@@ -109,6 +120,17 @@ export interface LockRoundAction {
 export interface RevealRoundAction {
   readonly type: 'REVEAL_ROUND';
   readonly actorId: PlayerId;
+}
+
+/**
+ * The host ticks something the live feed cannot see (M6 house cells) in the open round. Host-only.
+ * `key` is module-defined (M6: a house cell's `id` from the public payload).
+ */
+export interface HostMarkAction {
+  readonly type: 'HOST_MARK';
+  readonly actorId: PlayerId;
+  readonly roundId: RoundId;
+  readonly key: string;
 }
 
 /** Server-only: close answers because a server-side timer decided so. */
@@ -184,12 +206,14 @@ export type RoomAction =
   | UpdateSettingsAction
   | SelectGameAction
   | StartLoadingAction
+  | CancelLoadingAction
   | LoadingProgressAction
   | LoadingFailedAction
   | StartSessionAction
   | SubmitAnswerAction
   | LockRoundAction
   | RevealRoundAction
+  | HostMarkAction
   | AdvanceAction
   | EndSessionAction
   | FinishRoomAction
@@ -210,12 +234,14 @@ export const HOST_ONLY_ACTIONS: readonly RoomActionType[] = [
   'UPDATE_SETTINGS',
   'SELECT_GAME',
   'START_LOADING',
+  'CANCEL_LOADING',
   'START_SESSION',
   'ADVANCE',
   'END_SESSION',
   'FINISH_ROOM',
   'LOCK_ROUND',
   'REVEAL_ROUND',
+  'HOST_MARK',
   'ABORT_ROOM',
 ];
 
@@ -297,6 +323,7 @@ export const clientActionSchema = z.discriminatedUnion('type', [
       stepKeys: z.array(z.string().min(1).max(64)).max(16),
     })
     .strict(),
+  z.object({ type: z.literal('CANCEL_LOADING'), actorId: playerId }).strict(),
   z.object({ type: z.literal('START_SESSION'), actorId: playerId }).strict(),
   z
     .object({
@@ -308,6 +335,14 @@ export const clientActionSchema = z.discriminatedUnion('type', [
     .strict(),
   z.object({ type: z.literal('LOCK_ROUND'), actorId: playerId }).strict(),
   z.object({ type: z.literal('REVEAL_ROUND'), actorId: playerId }).strict(),
+  z
+    .object({
+      type: z.literal('HOST_MARK'),
+      actorId: playerId,
+      roundId: z.string().min(1).max(64).transform(asRoundId),
+      key: z.string().min(1).max(64),
+    })
+    .strict(),
   z.object({ type: z.literal('ADVANCE'), actorId: playerId }).strict(),
   z.object({ type: z.literal('END_SESSION'), actorId: playerId }).strict(),
   z.object({ type: z.literal('FINISH_ROOM'), actorId: playerId }).strict(),

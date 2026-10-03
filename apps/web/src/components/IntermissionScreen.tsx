@@ -19,7 +19,7 @@ export const IntermissionScreen = ({
   readonly category: 'matchday' | 'general' | null;
   readonly isHost: boolean;
   readonly onNextRound: () => void;
-  readonly onSelectGame: (moduleId: string) => boolean;
+  readonly onSelectGame: (moduleId: string, config: Record<string, unknown> | null) => boolean;
   /** Starts a brand-new session from `intermission` (`SELECT_GAME` already dispatched, then
    * `START_SESSION` — never `START_LOADING`, which the engine only accepts from `'lobby'`). */
   readonly onPlayAgain: () => void;
@@ -45,6 +45,7 @@ export const IntermissionScreen = ({
             room={room}
             category={category}
             onSelectGame={onSelectGame}
+            fixtureStatus={room.fixtureStatus ?? null}
             onStart={onPlayAgain}
             startLabel={room.selection === null ? 'Play again' : `Play ${choiceLabel(room.selection.moduleId)}`}
           />

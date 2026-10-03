@@ -74,6 +74,24 @@ describe('client action validation', () => {
     expect(isHostOnlyAction('START_SESSION')).toBe(true);
     expect(isHostOnlyAction('SUBMIT_ANSWER')).toBe(false);
     expect(HOST_ONLY_ACTIONS).toContain('KICK_PLAYER');
+    expect(isHostOnlyAction('CANCEL_LOADING')).toBe(true);
+    expect(isHostOnlyAction('HOST_MARK')).toBe(true);
+  });
+
+  it('accepts CANCEL_LOADING and HOST_MARK from a client, strictly', () => {
+    const cancel = parseClientAction({ type: 'CANCEL_LOADING', actorId: 'host' });
+    expect(cancel).toEqual({ ok: true, action: { type: 'CANCEL_LOADING', actorId: 'host' } });
+    expect(parseClientAction({ type: 'CANCEL_LOADING', actorId: 'host', moduleId: 'M6' }).ok).toBe(false);
+    expect(parseClientAction({ type: 'CANCEL_LOADING' }).ok).toBe(false);
+
+    const mark = parseClientAction({ type: 'HOST_MARK', actorId: 'host', roundId: 'room:s1:r1', key: 'house:2' });
+    expect(mark).toEqual({
+      ok: true,
+      action: { type: 'HOST_MARK', actorId: 'host', roundId: 'room:s1:r1', key: 'house:2' },
+    });
+    expect(parseClientAction({ type: 'HOST_MARK', actorId: 'host', roundId: 'r', key: '' }).ok).toBe(false);
+    expect(parseClientAction({ type: 'HOST_MARK', actorId: 'host', roundId: 'r' }).ok).toBe(false);
+    expect(parseClientAction({ type: 'HOST_MARK', actorId: 'host', roundId: 'r', key: 'x'.repeat(65) }).ok).toBe(false);
   });
 });
 

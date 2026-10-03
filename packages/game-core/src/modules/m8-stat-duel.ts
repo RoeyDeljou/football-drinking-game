@@ -156,6 +156,9 @@ export type M8Solution = M8Shape['solution'];
 export type M8StatRow = z.infer<typeof statRowSchema>;
 type Snapshot = z.infer<typeof snapshotSchema>;
 
+/** The M8 config schema, for the host's editor and boundary checks. */
+export const M8_CONFIG_SCHEMA = configSchema;
+
 export const M8_DEFAULT_CONFIG: M8Shape['config'] = {
   pickWindowMs: 90_000,
   duelSips: 2,

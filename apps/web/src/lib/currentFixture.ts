@@ -25,7 +25,11 @@ export interface CurrentFixtureSummary {
 
 /** The room shape every client screen actually receives over the socket: the engine's pure
  * `ProjectedRoom` plus the API layer's `currentFixture` annotation. */
-export type ClientRoom = ProjectedRoom & { readonly currentFixture: CurrentFixtureSummary | null };
+export type ClientRoom = ProjectedRoom & {
+  readonly currentFixture: CurrentFixtureSummary | null;
+  /** The matchday fixture's provider status (SCHEDULED, LIVE, FINISHED, ...); `null` for a general room. */
+  readonly fixtureStatus?: string | null;
+};
 
 export interface NowPlayingLabel {
   readonly primary: string;

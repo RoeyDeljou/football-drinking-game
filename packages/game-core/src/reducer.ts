@@ -98,7 +98,11 @@ export type RejectionCode =
   /** A `MATCH_STATS` action failed `matchStatsActionSchema`. */
   | 'INVALID_STATS'
   /** A `long-running-bet` round self-locks (slip lock, then full time); a manual lock has no meaning. */
-  | 'ROUND_NOT_LOCKABLE';
+  | 'ROUND_NOT_LOCKABLE'
+  /** `HOST_MARK` for a module without `hostMark`. */
+  | 'HOST_MARK_UNSUPPORTED'
+  /** The module refused a `HOST_MARK` (unknown key, already marked); `detail` says why. */
+  | 'INVALID_HOST_MARK';
 
 export interface EngineRejection {
   readonly code: RejectionCode;
@@ -123,6 +127,7 @@ export type EngineEvent =
   | { readonly type: 'GAME_SELECTED'; readonly moduleId: GameModuleId }
   | { readonly type: 'LOADING_UPDATED' }
   | { readonly type: 'LOADING_FAILED'; readonly reason: string }
+  | { readonly type: 'LOADING_CANCELLED' }
   | {
       readonly type: 'SESSION_STARTED';
       readonly sessionId: SessionId;
@@ -665,12 +670,14 @@ const hostActorOf = (action: RoomAction): PlayerId | null => {
     case 'UPDATE_SETTINGS':
     case 'SELECT_GAME':
     case 'START_LOADING':
+    case 'CANCEL_LOADING':
     case 'START_SESSION':
     case 'ADVANCE':
     case 'END_SESSION':
     case 'FINISH_ROOM':
     case 'LOCK_ROUND':
     case 'REVEAL_ROUND':
+    case 'HOST_MARK':
     case 'ABORT_ROOM':
       return action.actorId;
     case 'PLAYER_JOIN':
@@ -930,6 +937,17 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
       );
     }
 
+    case 'CANCEL_LOADING': {
+      if (state.phase !== 'loading') return reject(state, 'WRONG_PHASE', state.phase);
+      // Loading is only ever entered from the lobby today, but a room that already played a session
+      // must never fall back to the lobby (its sessions and scores live on in intermission).
+      const to: RoomPhase = state.sessions.length > 0 ? 'intermission' : 'lobby';
+      return accept(commit(state, { phase: to, loading: null, selection: null }, now), [
+        { type: 'LOADING_CANCELLED' },
+        ...phaseChange(state.phase, to),
+      ]);
+    }
+
     case 'LOADING_PROGRESS': {
       if (state.phase !== 'loading' || state.loading === null) {
         return reject(state, 'WRONG_PHASE', state.phase);
@@ -1160,6 +1178,26 @@ const reduceWith = (state: RoomState, action: RoomAction, deps: EngineDeps, rng:
     case 'SYSTEM_REVEAL_ROUND': {
       if (state.phase !== 'playing') return reject(state, 'WRONG_PHASE', state.phase);
       return revealRound(state, deps, rng);
+    }
+
+    case 'HOST_MARK': {
+      if (state.phase !== 'playing') return reject(state, 'WRONG_PHASE', state.phase);
+      const slice = readActiveSlice(state, deps);
+      if (slice === null) return reject(state, 'NO_ACTIVE_SESSION');
+      if (slice.round.id !== action.roundId) return reject(state, 'ROUND_NOT_FOUND', action.roundId);
+      if (slice.round.status !== 'open') return reject(state, 'ROUND_CLOSED', slice.round.status);
+      if (!slice.module.supportsHostMark) return reject(state, 'HOST_MARK_UNSUPPORTED', slice.module.id);
+      const marked = slice.module.hostMark({
+        config: slice.session.config,
+        round: toRoundView(slice.round),
+        key: action.key,
+        submissions: toTypedSubmissions(slice.round),
+        players: toPlayerViews(state),
+        now,
+      });
+      if (marked === null) return reject(state, 'HOST_MARK_UNSUPPORTED', slice.module.id);
+      if (!marked.ok) return reject(state, 'INVALID_HOST_MARK', marked.detail);
+      return applyObservation(state, slice, slice.round, marked.observation, deps, rng, now);
     }
 
     case 'MATCH_EVENTS': {

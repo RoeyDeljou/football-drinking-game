@@ -11,8 +11,9 @@ import type { Server, Socket } from 'socket.io';
 import type { AppContext } from '../context.js';
 import type { DispatchOutcome } from '../engine/dispatch.js';
 import { dispatchAction, projectRoom } from '../engine/dispatch.js';
+import { syncFixtureStatus } from '../engine/fixture-status.js';
 import type { RoomRecord } from '../rooms/store.js';
-import { runLoadingPipeline } from './loading.js';
+import { invalidateLoadingRun, runLoadingPipeline } from './loading.js';
 import { signRoomToken, verifyRoomToken } from './room-token.js';
 import { GATEWAY_RESERVED_ACTION_TYPES, socketAuthSchema } from './schemas.js';
 
@@ -47,6 +48,8 @@ const actorOf = (action: RoomAction): PlayerId | null => {
     case 'LOCK_ROUND':
     case 'REVEAL_ROUND':
     case 'ABORT_ROOM':
+    case 'CANCEL_LOADING':
+    case 'HOST_MARK':
       return action.actorId;
     case 'SUBMIT_ANSWER':
       return action.playerId;
@@ -162,7 +165,7 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
   };
 
   const broadcastFromRecord = (record: RoomRecord): void => {
-    const { projections } = projectRoom(record);
+    const { projections } = projectRoom(record, syncFixtureStatus(ctx, record.state.id, record.meta));
     const byPlayer = presence.get(record.state.id);
     if (byPlayer === undefined) return;
     for (const [playerId, socketIds] of byPlayer.entries()) {
@@ -370,6 +373,9 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
           });
           return;
         }
+        // Abandon the running loading pipeline before anything is broadcast, so the host cannot start loading
+        // again (and a stale run apply progress to it) before the run is invalidated.
+        if (parsed.action.type === 'CANCEL_LOADING') invalidateLoadingRun(current.roomId);
         broadcastFromRecord(outcome.record);
 
         if (parsed.action.type === 'START_LOADING') {

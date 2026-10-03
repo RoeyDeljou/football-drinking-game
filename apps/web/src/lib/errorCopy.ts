@@ -5,6 +5,8 @@
  * reach a player directly. This is the one place that translation happens.
  */
 
+import { invalidConfigMessage } from './gameSettings';
+
 export interface RoomErrorLike {
   readonly code: string;
   readonly detail: string | null;
@@ -92,6 +94,7 @@ export const errorMessage = (error: RoomErrorLike, category: RoomCategory | null
     if (submissionCopy !== undefined) return submissionCopy;
   }
   if (error.code === 'DATA_UNAVAILABLE') return dataUnavailableMessage(error.detail, category);
+  if (error.code === 'INVALID_CONFIG') return invalidConfigMessage(error.detail);
   // A live game can't be built once the match is over: say so plainly, with the way forward.
   if (error.code === 'ROUND_GENERATION_FAILED' && /WRONG_ROUND_CONTEXT|FINISHED|CANCELLED/.test(error.detail ?? '')) {
     return MATCH_FINISHED_COPY;

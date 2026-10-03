@@ -123,3 +123,11 @@ snapshot whose content (plus "FULL_TIME seen") equals what the room's round alre
 no save, broadcast or persist, while the first snapshot after the whistle is always delivered (it settles M8). Stats-only
 modules are watched too (`WatchNeed.events`/`stats` say what each room consumes); clients can never originate
 `MATCH_STATS` (system action, absent from `clientActionSchema`).
+
+**Fixture status for clients (`fixtureStatus`).** Single-fixture matchday rooms expose the fixture's status
+(`SCHEDULED | LIVE | HALF_TIME | EXTRA_TIME | PENALTIES | FINISHED | POSTPONED | CANCELLED`, else `null`) in two places:
+the room summary of `POST /rooms`, `GET /rooms/:id` and `GET /rooms/pin/:pin` (`fixtureStatus`; fresh ingestion
+observation, else one provider `getFixture` lookup with a 15s coalescing memo and a 1.5s timeout -> `null`), and the
+per-recipient socket `room:state` payload (`fixtureStatus` next to `currentFixture`; cache-only: ingestion's latest
+observation, else the prefetched bundle's status; re-broadcast whenever a watched fixture's status changes). General and
+gameday rooms are always `null` (gameday has no single room status; see `currentFixture`). Code: `engine/fixture-status.ts`.

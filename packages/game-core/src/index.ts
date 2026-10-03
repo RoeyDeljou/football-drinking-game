@@ -134,6 +134,8 @@ export type {
   GameModuleDefinition,
   GeneratedRound,
   GenerateRoundResult,
+  HostMarkContext,
+  HostMarkResult,
   ModuleShape,
   ObserveEventsContext,
   ObserveEventsResult,
@@ -197,8 +199,10 @@ export type {
   AbortRoomAction,
   AdvanceAction,
   ClientAction,
+  CancelLoadingAction,
   EndSessionAction,
   FinishRoomAction,
+  HostMarkAction,
   KickPlayerAction,
   LoadingFailedAction,
   LoadingProgressAction,
@@ -299,6 +303,7 @@ export type {
 export {
   EMPTY_M1_COUNTERS,
   foldMatchEvents,
+  M1_CONFIG_SCHEMA,
   M1_DEFAULT_CONFIG,
   M1_ID,
   m1MatchMarkets,
@@ -324,9 +329,10 @@ export {
   orderLiveBatch,
 } from './modules/live-event-kinds.js';
 export type { M4Action, M4DraftEntry, M4LogEntry, M4PublicPayload, M4Solution } from './modules/m4-your-man.js';
-export { draftStarters, M4_ACTIONS, M4_DEFAULT_CONFIG, M4_ID, m4ActionsOf, m4YourMan } from './modules/m4-your-man.js';
+export { draftStarters, M4_ACTIONS, M4_CONFIG_SCHEMA, M4_DEFAULT_CONFIG, M4_ID, m4ActionsOf, m4YourMan } from './modules/m4-your-man.js';
 export type { M8Bracket, M8Duel, M8PublicPayload, M8Solution, M8Stat, M8StatRow } from './modules/m8-stat-duel.js';
 export {
+  M8_CONFIG_SCHEMA,
   M8_DEFAULT_CONFIG,
   M8_ID,
   M8_STATS,
@@ -339,6 +345,7 @@ export type { M9Answer, M9PublicPayload, M9Question, M9QuestionType, M9Settlemen
 export {
   ANSWERS as M9_ANSWERS,
   buildM9Question,
+  M9_CONFIG_SCHEMA,
   M9_DEFAULT_CONFIG,
   M9_ID,
   M9_LAST_MINUTE,
@@ -352,25 +359,50 @@ export {
 export type { M5Fire, M5PublicPayload, M5Solution } from './modules/m5-event-roulette.js';
 export {
   dealEventKinds,
+  M5_CONFIG_SCHEMA,
+  M5_LABEL_MAX_LENGTH,
   M5_DEFAULT_CONFIG,
   M5_DEFAULT_EVENT_KINDS,
   M5_ID,
   m5EventRoulette,
 } from './modules/m5-event-roulette.js';
-export type { BingoCellSpec, BingoTick, M6Card, M6Cell, M6PublicPayload, M6Solution } from './modules/m6-match-bingo.js';
+export type {
+  BingoCellSpec,
+  BingoDealOptions,
+  BingoTick,
+  M6Card,
+  M6Cell,
+  M6Config,
+  M6PoolCell,
+  M6PublicPayload,
+  M6Solution,
+} from './modules/m6-match-bingo.js';
 export {
   bingoCellId,
   bingoLines,
   dealBingoCards,
+  dealOptionsOf as m6DealOptionsOf,
+  defaultHousePerCard as m6DefaultHousePerCard,
+  houseCellId,
+  housePerCardOf as m6HousePerCardOf,
+  isHouseCellId,
+  M6_BINGO_VOCABULARY,
   M6_CARD_MIX,
   M6_CELL_TIERS,
+  M6_CONFIG_SCHEMA,
   M6_DEFAULT_CONFIG,
   M6_ID,
+  M6_LABEL_MAX_LENGTH,
+  M6_MAX_CUSTOM_COUNT,
+  M6_MAX_HOUSE_CELLS,
+  M6_MAX_POOL_CELLS,
   m6MatchBingo,
+  markHouseCell,
   tickBingoCards,
 } from './modules/m6-match-bingo.js';
 export type { M7Outcome, M7PublicPayload, M7Solution, M7Submission } from './modules/m7-minute-sniper.js';
 export {
+  M7_CONFIG_SCHEMA,
   M7_DEFAULT_CONFIG,
   M7_ID,
   M7_LAST_MINUTE,
@@ -407,6 +439,10 @@ export {
 
 export type { G6QuestionKind } from './modules/g6-trivia-rush.js';
 export { G6_DEFAULT_CONFIG, G6_ID, g6TriviaRush } from './modules/g6-trivia-rush.js';
+
+/* host-editable game settings */
+export type { ConfigFieldSpec, ConfigUnit, GameConfigSpec } from './modules/config-specs.js';
+export { GAME_CONFIG_SPECS, gameConfigSpecFor } from './modules/config-specs.js';
 
 /* module authoring helpers */
 export type { ChoiceScoringInput, PitchPlayer } from './modules/helpers.js';

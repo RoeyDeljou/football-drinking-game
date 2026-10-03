@@ -18,6 +18,8 @@ interface Fire {
 interface PublicPayload {
   readonly kind: 'EVENT_ROULETTE';
   readonly drinker: 'owner' | 'others';
+  /** Host's own names for events (by kind); absent kinds use the default name. */
+  readonly labels?: Partial<Record<LiveEventKind, string>>;
   readonly sipsPerFire: number;
   readonly windowMinutes: number;
   readonly startMinute: number | null;
@@ -32,6 +34,9 @@ interface Solution {
   readonly status: 'running' | 'ended' | 'void';
   readonly endedBy: 'WINDOW_END' | 'FULL_TIME' | 'MATCH_OVER' | null;
 }
+
+const kindName = (payload: { readonly labels?: Partial<Record<LiveEventKind, string>> }, kind: LiveEventKind): string =>
+  payload.labels?.[kind] ?? eventLabel(kind);
 
 const ENDED_COPY: Record<string, string> = {
   WINDOW_END: 'The spin ran its full window.',
@@ -66,7 +71,7 @@ const FireFeed = ({
             <li key={fire.eventId} className="rounded-md border-2 border-accent/50 bg-selected px-3 py-3">
               <p className="t-h3 max-w-full">
                 {eventFiredLine(
-                  eventLabel(fire.kind),
+                  kindName(payload, fire.kind),
                   fire.ownerIds.map((id) => nicknameOf(room, id)),
                   payload.drinker,
                   payload.sipsPerFire,
@@ -118,7 +123,7 @@ const DealList = ({
               </span>
               <span className="ml-auto flex flex-wrap items-center justify-end gap-2">
                 <span className="whitespace-nowrap rounded-full border-2 border-accent px-3 py-0.5 font-bold text-accent">
-                  {eventLabel(entry.event)}
+                  {kindName(payload, entry.event)}
                 </span>
                 {showFires ? (
                   <span className="tnum whitespace-nowrap font-black" aria-label={`${fired} fires`}>
@@ -211,7 +216,7 @@ export const M5EventRoulette = ({ room, round, now }: GameScreenProps): React.JS
           <div className="text-center">
             <Eyebrow>{mine !== null ? 'Your event' : 'You have no event'}</Eyebrow>
             {mine !== null ? (
-              <p className="t-score mt-1 text-accent">{eventLabel(mine.event)}</p>
+              <p className="t-score mt-1 text-accent">{kindName(payload, mine.event)}</p>
             ) : (
               <p className="t-body mt-1 text-fg-muted">
                 {payload.drinker === 'owner'

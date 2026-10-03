@@ -145,6 +145,9 @@ export type M4Solution = M4Shape['solution'];
 export type M4DraftEntry = z.infer<typeof draftEntrySchema>;
 export type M4LogEntry = z.infer<typeof logEntrySchema>;
 
+/** The M4 config schema, for the host's editor and boundary checks. */
+export const M4_CONFIG_SCHEMA = configSchema;
+
 export const M4_DEFAULT_CONFIG: M4Shape['config'] = {
   foulSips: 1,
   missSips: 1,

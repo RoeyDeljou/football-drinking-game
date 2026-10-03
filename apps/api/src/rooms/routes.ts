@@ -4,8 +4,9 @@ import { asPlayerId, asRoomId, createRoom, MULBERRY32 } from '@fdg/game-core';
 import type { CreateRoomInput, RoomState } from '@fdg/game-core';
 import { optionalAuth } from '../auth/plugin.js';
 import type { AppContext } from '../context.js';
-import type { CompetitionId } from '@fdg/football-data';
+import type { CompetitionId, FixtureStatus } from '@fdg/football-data';
 import { asCompetitionId, asFixtureId, competitionConfigById } from '@fdg/football-data';
+import { resolveFixtureStatus } from '../engine/fixture-status.js';
 import { runGamedayPrefetch, runMatchdayPrefetch } from '../engine/data-context.js';
 import { signRoomToken } from '../realtime/room-token.js';
 import { generatePin } from './pin.js';
@@ -21,7 +22,7 @@ import type { RoomMeta, RoomRecord, RoomStore } from './store.js';
  * every other player learns who the host is only through `isHost` on the per-recipient socket
  * projection (`ProjectedPlayer.isHost`), never a raw id.
  */
-const summarize = (state: RoomState, meta: RoomMeta) => ({
+const summarize = (state: RoomState, meta: RoomMeta, fixtureStatus: FixtureStatus | null) => ({
   roomId: state.id,
   pin: state.pin,
   phase: state.phase,
@@ -29,6 +30,12 @@ const summarize = (state: RoomState, meta: RoomMeta) => ({
   hostNickname: state.players.find((player) => player.id === state.hostPlayerId)?.nickname ?? null,
   category: state.selection === null ? null : state.selection.moduleId,
   fixtureId: meta.fixtureId,
+  /**
+   * The room's fixture status (`SCHEDULED`/`LIVE`/`HALF_TIME`/`EXTRA_TIME`/`PENALTIES`/`FINISHED`/`POSTPONED`/
+   * `CANCELLED`) for a single-fixture matchday room; `null` for general and gameday rooms, and whenever it could not be
+   * determined within ~1.5s. See `engine/fixture-status.ts`.
+   */
+  fixtureStatus,
   /** Set only for a gameday room (see `RoomMeta`); `null` otherwise. */
   gamedayCompetitionId: meta.gamedayCompetitionId ?? null,
   /** Set only for a competition-scoped general room (see `RoomMeta`); `null` otherwise. */
@@ -179,7 +186,7 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
       pin,
       hostPlayerId,
       roomToken,
-      room: summarize(state, record.meta),
+      room: summarize(state, record.meta, await resolveFixtureStatus(ctx, record.meta)),
     });
   });
 
@@ -192,7 +199,7 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
     if (record === null) {
       return reply.code(404).send({ error: { code: 'ROOM_NOT_FOUND', message: 'No room with that PIN.' } });
     }
-    return reply.send(summarize(record.state, record.meta));
+    return reply.send(summarize(record.state, record.meta, await resolveFixtureStatus(ctx, record.meta)));
   });
 
   app.get('/rooms/:roomId', async (request, reply) => {
@@ -204,6 +211,6 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
     if (record === null) {
       return reply.code(404).send({ error: { code: 'ROOM_NOT_FOUND', message: 'No such room.' } });
     }
-    return reply.send(summarize(record.state, record.meta));
+    return reply.send(summarize(record.state, record.meta, await resolveFixtureStatus(ctx, record.meta)));
   });
 };

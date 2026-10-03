@@ -64,6 +64,8 @@ export interface RoomSummary {
   /** Set only for a gameday room (rounds rotating across a competition's live fixtures); `null`
    * otherwise, including for single-fixture matchday rooms. */
   readonly gamedayCompetitionId: string | null;
+  /** The matchday fixture's status (SCHEDULED, LIVE, FINISHED, POSTPONED ...); `null` for general rooms. */
+  readonly fixtureStatus?: string | null;
 }
 
 export const createRoom = (input: {

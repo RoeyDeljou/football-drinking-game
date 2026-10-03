@@ -159,6 +159,9 @@ export type M9PublicPayload = M9Shape['publicPayload'];
 export type M9Solution = M9Shape['solution'];
 export type M9Question = z.infer<typeof questionSchema>;
 
+/** The M9 config schema, for the host's editor and boundary checks. */
+export const M9_CONFIG_SCHEMA = configSchema;
+
 export const M9_DEFAULT_CONFIG: M9Shape['config'] = {
   answerWindowMs: 20_000,
   leadMinutes: 2,

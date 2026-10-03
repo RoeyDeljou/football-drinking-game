@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { AgeGateGuard } from '@/components/AgeGateGuard';
 import { BackButton } from '@/components/BackButton';
 import { GameModePicker } from '@/components/GameModePicker';
+import { GameSettingsEditor } from '@/components/GameSettingsEditor';
+import { configFor, DEFAULT_SETTINGS, type SettingsState } from '@/lib/gameSettings';
 import { Banner, BigButton, Card, Eyebrow, Field, OptionButton } from '@/components/ui';
 import type { ApiResult, Competition, FixtureSummary } from '@/lib/api';
 import { createRoom, listCompetitionFixtures, listCompetitions } from '@/lib/api';
@@ -69,6 +71,9 @@ function HostPageContent(): React.JSX.Element {
 
   /** Shuffle game (default) vs Select Mini Game + the picked mini game. Reset on a category change. */
   const [modeChoice, setModeChoice] = useState<ModeChoice>(DEFAULT_CHOICE);
+
+  /** Custom settings for the picked mini game (Default rules send no config). */
+  const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
 
   const [rounds, setRounds] = useState(8);
   const [hostNickname, setHostNickname] = useState('');
@@ -136,6 +141,7 @@ function HostPageContent(): React.JSX.Element {
   const switchCategory = (next: Category): void => {
     if (next === category) return;
     setCategory(next);
+    setSettings(DEFAULT_SETTINGS);
     setError(null);
     setModeChoice(choiceAfterCategoryChange());
   };
@@ -260,7 +266,7 @@ function HostPageContent(): React.JSX.Element {
       return;
     }
     // Carry the chosen game to the room: its page dispatches SELECT_GAME once connected.
-    savePendingSelection(result.value.roomId, moduleId);
+    savePendingSelection(result.value.roomId, moduleId, configFor(moduleId, settings));
     saveRoomSetup({
       roomId: result.value.roomId,
       category,
@@ -523,10 +529,22 @@ function HostPageContent(): React.JSX.Element {
         <Eyebrow className="mb-3">Game</Eyebrow>
         <GameModePicker category={category} value={modeChoice}
           onChange={(next) => {
+            // Settings belong to one game: another pick starts on Default rules.
+            if (resolveModuleId(category, next) !== resolveModuleId(category, modeChoice)) setSettings(DEFAULT_SETTINGS);
             setModeChoice(next);
             setError(null);
           }}
         />
+        {modeChoice.mode === 'select' && resolveModuleId(category, modeChoice) !== null ? (
+          <div className="mt-4">
+            <GameSettingsEditor
+              moduleId={resolveModuleId(category, modeChoice) ?? ''}
+              state={settings}
+              onChange={setSettings}
+              teams={{ home: selectedFixture?.homeTeam.name ?? 'Home', away: selectedFixture?.awayTeam.name ?? 'Away' }}
+            />
+          </div>
+        ) : null}
         {modeChoice.mode === 'select' && resolveModuleId(category, modeChoice) === null ? (
           <p className="t-sm mt-3 font-semibold text-warn" role="status">
             {NO_MINI_GAME_MESSAGE}

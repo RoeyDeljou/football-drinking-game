@@ -11,7 +11,7 @@
  * With `collapsible`, a confirmed selection collapses to a summary + "Change".
  */
 
-import type { ProjectedRoom } from '@fdg/game-core';
+import type { ClientRoom } from '@/lib/currentFixture';
 import { useEffect, useRef, useState } from 'react';
 import { GAME_CATALOG } from '@/games/catalog';
 import { choiceFromModuleId, choiceLabel, resolveModuleId, type GameCategory, type ModeChoice } from '@/lib/gameMode';
@@ -26,7 +26,10 @@ import {
   type PendingState,
 } from '@/lib/selectionPending';
 import { useNow } from '@/lib/useNow';
+import { configFor, DEFAULT_SETTINGS, settingsSummary, type SettingsState } from '@/lib/gameSettings';
+import { gameConfigSpecFor } from '@/lib/gameConfigSpecs';
 import { GameModePicker } from './GameModePicker';
+import { GameSettingsEditor } from './GameSettingsEditor';
 import { Banner, BigButton, Card, Eyebrow } from './ui';
 
 const CATEGORY_LABEL: Record<GameCategory, string> = { matchday: 'Matchday', general: 'General' };
@@ -39,19 +42,25 @@ export const GamePicker = ({
   startLabel,
   startDisabled = false,
   autoSelectModuleId = null,
+  autoSelectConfig = null,
+  fixtureStatus = null,
   setupScope = null,
   onAutoSelectSettled,
   collapsible = false,
 }: {
-  readonly room: ProjectedRoom;
+  readonly room: ClientRoom;
   readonly category: GameCategory | null;
   /** Sends `SELECT_GAME`. Returns `false` if it could not be sent (no seat / not connected). */
-  readonly onSelectGame: (moduleId: string) => boolean;
+  readonly onSelectGame: (moduleId: string, config: Record<string, unknown> | null) => boolean;
   readonly onStart: () => void;
   readonly startLabel: string;
   readonly startDisabled?: boolean;
   /** The host's choice from the /host screen, dispatched once when connected (lobby only). */
   readonly autoSelectModuleId?: string | null;
+  /** The host's custom settings from /host, sent with the auto-selected game. */
+  readonly autoSelectConfig?: Record<string, unknown> | null;
+  /** The matchday fixture's status, so finished matches hide the live-only games. */
+  readonly fixtureStatus?: string | null;
   /** Shown in the setup summary between the category and the round count. */
   readonly setupScope?: string | null;
   /** Called once the server confirmed or rejected the auto-selected game (clears the stored choice). */
@@ -68,6 +77,11 @@ export const GamePicker = ({
     choiceFromModuleId(room.selection?.moduleId ?? autoSelectModuleId),
   );
   const autoDispatched = useRef(false);
+  // Custom game settings for the game being picked. Default mode sends no config at all.
+  const [settings, setSettings] = useState<SettingsState>(() =>
+    autoSelectConfig === null ? DEFAULT_SETTINGS : { mode: 'custom', edits: autoSelectConfig },
+  );
+  const [appliedJson, setAppliedJson] = useState<string>(() => JSON.stringify(autoSelectConfig === null ? null : autoSelectConfig));
 
   const connected = status === 'connected';
   // The room's category, or what the chosen game implies while the room summary is still loading.
@@ -91,13 +105,14 @@ export const GamePicker = ({
     );
   }, [room.selection?.moduleId, room.version, connected, lastError]);
 
-  const send = (moduleId: string): boolean => {
+  const send = (moduleId: string, config: Record<string, unknown> | null = null): boolean => {
     if (!connected) return false;
     clearError();
     setEditing(false);
-    const sent = onSelectGame(moduleId);
+    const sent = onSelectGame(moduleId, config);
     setSendFailed(!sent);
     if (!sent) return false;
+    setAppliedJson(JSON.stringify(config));
     setPending(beginPending({ moduleId, now: Date.now(), roomVersion: room.version, errorToken: lastError }));
     return true;
   };
@@ -120,7 +135,7 @@ export const GamePicker = ({
       autoDispatched.current = true;
       setRejectedAutoSelect(null);
       setChoice(choiceFromModuleId(autoSelectModuleId));
-      if (!send(autoSelectModuleId)) autoDispatched.current = false;
+      if (!send(autoSelectModuleId, autoSelectConfig)) autoDispatched.current = false;
     } else if (action === 'clear') {
       autoDispatched.current = false;
       onAutoSelectSettled?.();
@@ -140,7 +155,7 @@ export const GamePicker = ({
 
   const retry = (): void => {
     if (pending === null) return;
-    const sent = onSelectGame(pending.moduleId);
+    const sent = onSelectGame(pending.moduleId, JSON.parse(appliedJson) as Record<string, unknown> | null);
     setSendFailed(!sent);
     if (sent) setPending(retryPending(pending, { now: Date.now(), roomVersion: room.version, errorToken: lastError }));
   };
@@ -150,7 +165,16 @@ export const GamePicker = ({
     setRejectedAutoSelect(null);
     if (effectiveCategory === null) return;
     const moduleId = resolveModuleId(effectiveCategory, next);
-    if (moduleId !== null) send(moduleId);
+    const previous = resolveModuleId(effectiveCategory, choice);
+    // Settings belong to one game: picking another starts it on Default rules.
+    if (moduleId !== previous) setSettings(DEFAULT_SETTINGS);
+    if (moduleId !== null) send(moduleId, moduleId === previous ? configFor(moduleId, settings) : null);
+  };
+
+  const onSettings = (next: SettingsState): void => {
+    setSettings(next);
+    // Back to Default rules applies at once; Custom waits for an explicit Apply.
+    if (next.mode === 'default' && settings.mode === 'custom' && choiceModuleId !== null) send(choiceModuleId, null);
   };
 
   const phase = pendingPhase(pending, now);
@@ -163,17 +187,36 @@ export const GamePicker = ({
   const inSync = selectedId !== null && choiceModuleId === selectedId;
   const showSummary = collapsible && selectedId !== null && pending === null && !editing;
 
+  const spec = choiceModuleId === null ? null : gameConfigSpecFor(choiceModuleId);
+  const currentConfig = choiceModuleId === null ? null : configFor(choiceModuleId, settings);
+  const dirty = spec !== null && settings.mode === 'custom' && JSON.stringify(currentConfig) !== appliedJson;
+
   const startButton = (
-    <BigButton disabled={pending !== null || !inSync || startDisabled} onClick={onStart}>
+    <BigButton disabled={pending !== null || !inSync || startDisabled || dirty} onClick={onStart}>
       {pending !== null
         ? PICKER_COPY.buttonPreparing
         : selectedId === null
           ? 'Choose a game to start'
           : !inSync
             ? 'Pick a mini game'
-            : startLabel}
+            : dirty
+              ? 'Apply your settings first'
+              : startLabel}
     </BigButton>
   );
+
+  const openEditor = (): void => {
+    if (selectedId === null) return;
+                setChoice(choiceFromModuleId(selectedId));
+                // Reopen on what the server holds: custom settings stay editable, default stays default.
+                const held: SettingsState =
+                  settingsSummary(selectedId, room.selection?.config) !== null
+                    ? { mode: 'custom', edits: (room.selection?.config ?? {}) as Record<string, unknown> }
+                    : DEFAULT_SETTINGS;
+                setSettings(held);
+                setAppliedJson(JSON.stringify(configFor(selectedId, held)));
+                setEditing(true);
+  };
 
   if (showSummary && selectedId !== null) {
     return (
@@ -193,17 +236,30 @@ export const GamePicker = ({
                       .join(' · ')}
               </Eyebrow>
               <p className="t-d1 mt-1">{choiceLabel(selectedId)}</p>
+              {settingsSummary(selectedId, room.selection?.config) !== null ? (
+                <p className="t-sm mt-1 max-w-full font-semibold text-accent">
+                  Custom: {settingsSummary(selectedId, room.selection?.config)}
+                </p>
+              ) : null}
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setChoice(choiceFromModuleId(selectedId));
-                setEditing(true);
-              }}
-              className="tap-target pressable shrink-0 rounded-md border-2 border-border-strong px-4 text-sm font-bold"
-            >
-              Change
-            </button>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={openEditor}
+                className="tap-target pressable rounded-md border-2 border-border-strong px-4 text-sm font-bold"
+              >
+                Change
+              </button>
+              {gameConfigSpecFor(selectedId) !== null ? (
+                <button
+                  type="button"
+                  onClick={openEditor}
+                  className="tap-target pressable rounded-md border-2 border-border-strong px-4 text-sm font-bold"
+                >
+                  Settings
+                </button>
+              ) : null}
+            </div>
           </div>
         </Card>
         {startButton}
@@ -238,8 +294,24 @@ export const GamePicker = ({
             onChange={onChoice}
             pendingModuleId={pending?.moduleId ?? null}
             disabled={!connected}
+            fixtureStatus={fixtureStatus}
           />
         )}
+        {spec !== null && choiceModuleId !== null && effectiveCategory !== null ? (
+          <div className="mt-4">
+            <GameSettingsEditor
+              moduleId={choiceModuleId}
+              state={settings}
+              onChange={onSettings}
+              teams={{ home: room.currentFixture?.homeTeam.name ?? 'Home', away: room.currentFixture?.awayTeam.name ?? 'Away' }}
+            />
+            {settings.mode === 'custom' ? (
+              <BigButton className="mt-3" variant={dirty ? 'primary' : 'secondary'} disabled={!dirty || !connected || pending !== null} onClick={() => send(choiceModuleId, currentConfig)}>
+                {dirty ? 'Apply settings' : 'Settings applied'}
+              </BigButton>
+            ) : null}
+          </div>
+        ) : null}
         {waitMessage !== null ? (
           <div className="mt-3" role="status" aria-live="polite">
             <Banner tone={phase === 'stalled' ? 'warn' : 'info'}>{waitMessage}</Banner>

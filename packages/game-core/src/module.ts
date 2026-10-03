@@ -326,6 +326,34 @@ export interface ObserveStatsContext<S extends ModuleShape> {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Host marks (things the feed cannot see)                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The host ticks something by hand (`HOST_MARK`): an M6 house cell ("the commentator says 'world
+ * class'"), or anything else a module defines that the live feed cannot observe. `key` is the
+ * module's own identifier for the thing being marked (M6: a house cell id from the public payload).
+ * Only reaches the module while its round is `open`.
+ */
+export interface HostMarkContext<S extends ModuleShape> {
+  readonly config: S['config'];
+  readonly round: RoundView<S>;
+  readonly key: string;
+  readonly submissions: readonly TypedSubmission<S>[];
+  readonly players: readonly RoundPlayerView[];
+  readonly now: number;
+}
+
+/**
+ * Accepted marks are applied exactly like a live observation (payloads, mid-round penalties, score
+ * deltas, `resolved` ends the round). A refused mark (unknown key, already marked) changes nothing;
+ * `detail` is machine-oriented, never user-facing copy.
+ */
+export type HostMarkResult<S extends ModuleShape> =
+  | { readonly ok: true; readonly observation: ObserveEventsResult<S> }
+  | { readonly ok: false; readonly detail: string };
+
+/* -------------------------------------------------------------------------- */
 /* The module itself                                                           */
 /* -------------------------------------------------------------------------- */
 
@@ -374,6 +402,8 @@ export interface GameModuleDefinition<S extends ModuleShape> {
    */
   readonly liveEventWindow?: LiveEventWindowMode;
   afterSubmission?: (ctx: AfterSubmissionContext<S>) => AfterSubmissionResult;
+  /** Host-driven ticks (see "Host marks"). Omit when the host has nothing to mark. */
+  hostMark?: (ctx: HostMarkContext<S>) => HostMarkResult<S>;
   /**
    * **Required if and only if `projectRound` reads `ctx.now`** for a pre-reveal round (time-unlocked
    * content such as G1's clues). Returns the earliest instant *strictly after* `ctx.now` at which the
@@ -420,6 +450,8 @@ export interface EngineGameModule {
   readonly liveEventWindow: LiveEventWindowMode;
   /** `true` when the module declares `nextContentChangeAt`, i.e. its projection changes with time. */
   readonly hasTimedContent: boolean;
+  /** `true` when the module declares `hostMark`: the host UI may send `HOST_MARK`. */
+  readonly supportsHostMark: boolean;
   parseConfig(input: unknown): ConfigParseResult;
   generateRound(ctx: RoundGenerationContext<ModuleShape>): GenerateRoundResult<ModuleShape>;
   validateSubmission(ctx: ValidateSubmissionContext<ModuleShape>): SubmissionValidation<ModuleShape>;
@@ -428,6 +460,8 @@ export interface EngineGameModule {
   observeEvents(ctx: ObserveEventsContext<ModuleShape>): ObserveEventsResult<ModuleShape> | null;
   observeStats(ctx: ObserveStatsContext<ModuleShape>): ObserveEventsResult<ModuleShape> | null;
   afterSubmission(ctx: AfterSubmissionContext<ModuleShape>): AfterSubmissionResult | null;
+  /** `null` for modules without `hostMark`. */
+  hostMark(ctx: HostMarkContext<ModuleShape>): HostMarkResult<ModuleShape> | null;
   /** `null` for modules without timed content. Validated: never `<= ctx.now`, always finite. */
   nextContentChangeAt(ctx: ContentScheduleContext<ModuleShape>): number | null;
 }
@@ -521,6 +555,7 @@ export const defineGameModule = <S extends ModuleShape>(
     supportsLiveStats: definition.observeStats !== undefined,
     liveEventWindow: definition.liveEventWindow ?? DEFAULT_LIVE_EVENT_WINDOW,
     hasTimedContent: definition.nextContentChangeAt !== undefined,
+    supportsHostMark: definition.hostMark !== undefined,
 
     parseConfig: (input: unknown): ConfigParseResult => {
       const result = definition.configSchema.safeParse(input);
@@ -613,6 +648,19 @@ export const defineGameModule = <S extends ModuleShape>(
         round: typedRound(ctx.round),
         playerId: ctx.playerId,
         payload: parseWith(definition.submissionSchema, ctx.payload, `${definition.id} submission`),
+        submissions: typedSubmissions(ctx.submissions),
+        players: ctx.players,
+        now: ctx.now,
+      });
+    },
+
+    hostMark: (ctx) => {
+      const mark = definition.hostMark;
+      if (mark === undefined) return null;
+      return mark({
+        config: typedConfig(ctx.config),
+        round: typedRound(ctx.round),
+        key: ctx.key,
         submissions: typedSubmissions(ctx.submissions),
         players: ctx.players,
         now: ctx.now,
