@@ -259,9 +259,10 @@ export const BingoEditor = ({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="sample-wrap flex flex-col gap-2">
         <p className="t-h3">Sample card</p>
-        <ol className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }} aria-label="Sample card">
+        <p className="sample-hint t-sm text-fg-muted">The sample card needs a wider screen to show properly.</p>
+        <ol className="sample-grid gap-1.5" style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }} aria-label="Sample card">
           {sample.map((cell, index) => (
             <li
               key={`${cell.text}-${index}`}
