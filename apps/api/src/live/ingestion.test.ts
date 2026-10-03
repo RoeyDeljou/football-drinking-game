@@ -723,4 +723,22 @@ describe('live ingestion scheduler', () => {
     expect(t.statsDelivered.filter((d) => d.goals === 5).length).toBe(3); // then no more
     await t.service.close();
   });
+
+  it('records the latest observed status (kept after the watcher goes) and re-broadcasts rooms on a status change', async () => {
+    const t = setup({}, { reap: true });
+    expect(t.service.latestStatus(asFixtureId('fx1'))).toBeNull();
+    t.sync('a', ['fx1']);
+    await t.clock.advance(0);
+    expect(t.service.latestStatus(asFixtureId('fx1'))?.status).toBe('LIVE');
+    const before = t.changed.length;
+    t.feed.status = 'FINISHED';
+    t.feed.events = [event('ft', 'FULL_TIME')];
+    await t.clock.advance(1000);
+    expect(t.service.latestStatus(asFixtureId('fx1'))?.status).toBe('FINISHED');
+    expect(t.changed.length - before).toBeGreaterThanOrEqual(2); // delivery + status broadcast
+    t.sync('a', []); // watcher gone, status retained
+    expect(t.service.watchedFixtureIds()).toHaveLength(0);
+    expect(t.service.latestStatus(asFixtureId('fx1'))?.status).toBe('FINISHED');
+    await t.service.close();
+  });
 });

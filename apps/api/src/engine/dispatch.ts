@@ -24,13 +24,14 @@ import type {
 } from '@fdg/game-core';
 import { activePlayers, projectFor, projectForHostScreen, reduceRoom } from '@fdg/game-core';
 import type { Reduction } from '@fdg/game-core';
-import type { FixtureId } from '@fdg/football-data';
+import type { FixtureId, FixtureStatus } from '@fdg/football-data';
 import type { AppContext } from '../context.js';
 import { persistEngineEvents } from '../persistence/results.js';
 import type { RoomMeta, RoomRecord } from '../rooms/store.js';
 import type { EngineDepsCandidate } from './deps.js';
 import { buildEngineDepsResolution, registry } from './deps.js';
 import type { CurrentFixtureSummary } from './fixture-annotation.js';
+import { syncFixtureStatus } from './fixture-status.js';
 import { resolveCurrentFixtureAnnotation } from './fixture-annotation.js';
 import { pinRoundFixture } from './gameday-cache.js';
 
@@ -48,6 +49,12 @@ export interface DispatchResult {
  */
 export interface RoomBroadcastPayload extends ProjectedRoom {
   readonly currentFixture: CurrentFixtureSummary | null;
+  /**
+   * Single-fixture matchday rooms: the fixture's status from the cache-only sources (ingestion's latest observation,
+   * else the prefetched bundle); `null` otherwise. Re-broadcast when the watched fixture's status changes. REST
+   * (`GET /rooms/:id`) is the authoritative, fresher source. See `fixture-status.ts`.
+   */
+  readonly fixtureStatus: FixtureStatus | null;
 }
 
 export interface DispatchOutcome extends DispatchResult {
@@ -76,15 +83,16 @@ const project = (
   state: RoomState,
   meta: RoomMeta,
   clock: { now(): number },
+  fixtureStatus: FixtureStatus | null,
 ): { projections: Map<PlayerId, RoomBroadcastPayload>; hostScreen: RoomBroadcastPayload } => {
   const currentFixture = resolveCurrentFixtureAnnotation(state.id, state, meta);
   const projections = new Map<PlayerId, RoomBroadcastPayload>();
   for (const player of activePlayers(state)) {
-    projections.set(player.id, { ...projectFor(state, player.id, { modules: registry, clock }), currentFixture });
+    projections.set(player.id, { ...projectFor(state, player.id, { modules: registry, clock }), currentFixture, fixtureStatus });
   }
   return {
     projections,
-    hostScreen: { ...projectForHostScreen(state, { modules: registry, clock }), currentFixture },
+    hostScreen: { ...projectForHostScreen(state, { modules: registry, clock }), currentFixture, fixtureStatus },
   };
 };
 
@@ -173,7 +181,12 @@ export const dispatchAction = async (
     // Keep the live-ingestion watch set in sync with the room (sync, never throws, never awaits a poll).
     ctx.liveIngestion?.roomChanged(record);
 
-    const { projections, hostScreen } = project(record.state, record.meta, { now: () => Date.now() });
+    const { projections, hostScreen } = project(
+      record.state,
+      record.meta,
+      { now: () => Date.now() },
+      syncFixtureStatus(ctx, record.state.id, record.meta),
+    );
     return {
       record,
       events: reduction.events,
@@ -187,7 +200,8 @@ export const dispatchAction = async (
 /** Convenience for a fresh `RoomState` that was never in the store (only used right at creation). */
 export const projectRoom = (
   record: RoomRecord,
+  fixtureStatus: FixtureStatus | null = null,
 ): { projections: ReadonlyMap<PlayerId, RoomBroadcastPayload>; hostScreen: RoomBroadcastPayload } =>
-  project(record.state, record.meta, { now: () => Date.now() });
+  project(record.state, record.meta, { now: () => Date.now() }, fixtureStatus);
 
 export type { RoomState };

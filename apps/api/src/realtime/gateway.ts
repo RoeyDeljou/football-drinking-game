@@ -11,6 +11,7 @@ import type { Server, Socket } from 'socket.io';
 import type { AppContext } from '../context.js';
 import type { DispatchOutcome } from '../engine/dispatch.js';
 import { dispatchAction, projectRoom } from '../engine/dispatch.js';
+import { syncFixtureStatus } from '../engine/fixture-status.js';
 import type { RoomRecord } from '../rooms/store.js';
 import { runLoadingPipeline } from './loading.js';
 import { signRoomToken, verifyRoomToken } from './room-token.js';
@@ -162,7 +163,7 @@ export const createRealtimeGateway = (io: Server, ctx: AppContext): RealtimeGate
   };
 
   const broadcastFromRecord = (record: RoomRecord): void => {
-    const { projections } = projectRoom(record);
+    const { projections } = projectRoom(record, syncFixtureStatus(ctx, record.state.id, record.meta));
     const byPlayer = presence.get(record.state.id);
     if (byPlayer === undefined) return;
     for (const [playerId, socketIds] of byPlayer.entries()) {

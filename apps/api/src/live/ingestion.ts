@@ -19,7 +19,7 @@
  * simply delivers the full event list; unchanged batches are no-ops (no save, no broadcast).
  */
 
-import type { FixtureId, FootballDataProvider, LiveMatchState, MatchEvent } from '@fdg/football-data';
+import type { FixtureId, FixtureStatus, FootballDataProvider, LiveMatchState, MatchEvent } from '@fdg/football-data';
 import type { MatchStatsAction, RoomId } from '@fdg/game-core';
 import { matchStatsActionSchema } from '@fdg/game-core';
 import type { DispatchOutcome } from '../engine/dispatch.js';
@@ -73,6 +73,8 @@ export interface LiveIngestion {
   watchedFixtureIds(): readonly FixtureId[];
   /** Fixture ids with an armed or in-flight poll (diagnostics/tests). */
   activePollCount(): number;
+  /** Latest fixture status any poll observed (kept ~10 min after the watcher goes), or null. */
+  latestStatus(fixtureId: FixtureId): { readonly status: FixtureStatus; readonly observedAt: number } | null;
   /** Resolves once no poll or delivery is in flight (tests/diagnostics). */
   idle(): Promise<void>;
   close(): Promise<void>;
@@ -119,6 +121,9 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
 
   const watchers = new Map<FixtureId, Watcher>();
   const roomFixtures = new Map<RoomId, Set<FixtureId>>();
+  const statusByFixture = new Map<FixtureId, { status: FixtureStatus; observedAt: number }>();
+  const STATUS_RETAIN_MS = 10 * 60 * 1000;
+  const STATUS_MAX_ENTRIES = 200;
   const pending = new Set<Promise<unknown>>();
   /** Tail of the poll chain per fixture. Survives watcher recreation so two polls of one fixture can never overlap. */
   const inFlightByFixture = new Map<FixtureId, Promise<void>>();
@@ -316,6 +321,21 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     return { action, key: `${whistle ? 'FT' : 'live'}|${JSON.stringify([state.playerStats, state.teamStats])}` };
   };
 
+  /** A fixture's status changed: re-broadcast every attached room so clients see `fixtureStatus` move. */
+  const notifyStatusChange = (watcher: Watcher): void => {
+    const loadRoom = deps.loadRoom;
+    if (loadRoom === undefined) return;
+    for (const roomId of [...watcher.rooms.keys()]) {
+      track(
+        loadRoom(roomId)
+          .then((record) => {
+            if (record !== null && !closed) deps.onRoomChanged(record);
+          })
+          .catch((error: unknown) => log.warn(`status broadcast failed for room ${roomId}`, error)),
+      );
+    }
+  };
+
   const runPoll = async (watcher: Watcher): Promise<void> => {
     let state;
     try {
@@ -341,6 +361,14 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     watcher.lastStats = buildStats(watcher, state, events);
     const status = fixtureStatusSchema.safeParse(state.fixture.status);
     const current = status.success ? status.data : 'LIVE';
+    const previousStatus = statusByFixture.get(watcher.fixtureId)?.status ?? null;
+    statusByFixture.delete(watcher.fixtureId);
+    statusByFixture.set(watcher.fixtureId, { status: current, observedAt: now() });
+    for (const [id, entry] of statusByFixture) {
+      if (statusByFixture.size <= STATUS_MAX_ENTRIES && now() - entry.observedAt < STATUS_RETAIN_MS) break;
+      statusByFixture.delete(id);
+    }
+    if (previousStatus !== null && previousStatus !== current) notifyStatusChange(watcher);
 
     for (const roomId of [...watcher.rooms.keys()]) {
       await deliver(watcher.fixtureId, roomId, events);
@@ -467,6 +495,10 @@ export const createLiveIngestion = (deps: LiveIngestionDeps): LiveIngestion => {
     },
     roomRemoved: (roomId) => {
       for (const fixtureId of [...(roomFixtures.get(roomId) ?? [])]) detach(roomId, fixtureId);
+    },
+    latestStatus: (fixtureId) => {
+      const entry = statusByFixture.get(fixtureId);
+      return entry === undefined || now() - entry.observedAt >= STATUS_RETAIN_MS ? null : entry;
     },
     watchedFixtureIds: () => [...watchers.keys()],
     activePollCount: () =>
