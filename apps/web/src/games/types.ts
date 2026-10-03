@@ -14,4 +14,6 @@ export interface GameScreenProps {
   readonly round: ProjectedRound;
   readonly now: number;
   readonly onSubmit: (payload: unknown) => void;
+  /** Host only: tick a house cell the live feed cannot see (`HOST_MARK`). */
+  readonly onHostMark?: (key: string) => void;
 }

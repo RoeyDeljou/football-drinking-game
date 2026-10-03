@@ -2,7 +2,7 @@
 
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useState } from 'react';
-import type { ProjectedRoom } from '@fdg/game-core';
+import type { ClientRoom } from '@/lib/currentFixture';
 import { choiceLabel } from '@/lib/gameMode';
 import { Banner, Card, Eyebrow, PinBadge } from './ui';
 import { GamePicker } from './GamePicker';
@@ -15,16 +15,21 @@ export const Lobby = ({
   onSelectGame,
   onStartLoading,
   autoSelectModuleId = null,
+  autoSelectConfig = null,
+  fixtureStatus = null,
   setupScope = null,
   onAutoSelectSettled,
 }: {
-  readonly room: ProjectedRoom;
+  readonly room: ClientRoom;
   readonly category: 'matchday' | 'general' | null;
   readonly isHost: boolean;
-  readonly onSelectGame: (moduleId: string) => boolean;
+  readonly onSelectGame: (moduleId: string, config: Record<string, unknown> | null) => boolean;
   readonly onStartLoading: () => void;
   /** The game the host chose on /host, dispatched once when connected (host only). */
   readonly autoSelectModuleId?: string | null;
+  readonly autoSelectConfig?: Record<string, unknown> | null;
+  /** REST fallback for the fixture status until the first room:state carries it. */
+  readonly fixtureStatus?: string | null;
   /** The host's chosen scope for the setup summary, e.g. 'Premier League' or 'Arsenal vs Chelsea'. */
   readonly setupScope?: string | null;
   readonly onAutoSelectSettled?: () => void;
@@ -90,6 +95,8 @@ export const Lobby = ({
             startLabel={room.selection === null ? 'Start' : `Start ${choiceLabel(room.selection.moduleId)}`}
             startDisabled={!canStart}
             autoSelectModuleId={autoSelectModuleId}
+            autoSelectConfig={autoSelectConfig}
+            fixtureStatus={room.fixtureStatus ?? fixtureStatus}
             setupScope={setupScope}
             onAutoSelectSettled={onAutoSelectSettled}
             collapsible

@@ -16,7 +16,7 @@ import { errorMessage } from '@/lib/errorCopy';
 import { shouldShowGamedayExhaustedBanner } from '@/lib/gamedayEnd';
 import { intermissionContinueAction } from '@/lib/intermissionActions';
 import { useRoom } from '@/lib/room-context';
-import { clearPendingSelection, loadPendingSelection, loadRoom, loadRoomSetup } from '@/lib/storage';
+import { clearPendingSelection, loadPendingConfig, loadPendingSelection, loadRoom, loadRoomSetup } from '@/lib/storage';
 
 const MATCHDAY_STEP_KEYS = ['fixture', 'lineups', 'squads', 'stats'];
 const GENERAL_STEP_KEYS = ['dataset'];
@@ -35,6 +35,9 @@ export default function RoomPage(): React.JSX.Element {
   const [deletingRoom, setDeletingRoom] = useState(false);
   // The game the host picked on /host, waiting to be dispatched as SELECT_GAME once connected.
   const [initialModuleId, setInitialModuleId] = useState<string | null>(null);
+  const [initialConfig, setInitialConfig] = useState<Record<string, unknown> | null>(null);
+  // The fixture's status from the REST summary, until room:state carries its own.
+  const [summaryFixtureStatus, setSummaryFixtureStatus] = useState<string | null>(null);
 
   // The host's own setup from /host: the category before the server round trip below confirms it
   // (so the lobby picker never flashes the wrong category's games), and the lobby summary's scope.
@@ -42,6 +45,7 @@ export default function RoomPage(): React.JSX.Element {
 
   useEffect(() => {
     setInitialModuleId(loadPendingSelection(roomId));
+    setInitialConfig(loadPendingConfig(roomId));
     const setup = loadRoomSetup(roomId);
     if (setup !== null) {
       setCategory((current) => current ?? setup.category);
@@ -52,6 +56,7 @@ export default function RoomPage(): React.JSX.Element {
   const settleInitialSelection = (): void => {
     clearPendingSelection();
     setInitialModuleId(null);
+    setInitialConfig(null);
   };
 
   useEffect(() => {
@@ -83,6 +88,7 @@ export default function RoomPage(): React.JSX.Element {
       if (summary.ok) {
         setCategory(summary.value.fixtureId !== null || summary.value.gamedayCompetitionId !== null ? 'matchday' : 'general');
         setIsGameday(summary.value.gamedayCompetitionId !== null);
+        setSummaryFixtureStatus(summary.value.fixtureStatus ?? null);
         return;
       }
       retryTimer = window.setTimeout(() => void load(), ROOM_SUMMARY_RETRY_MS);
@@ -102,10 +108,10 @@ export default function RoomPage(): React.JSX.Element {
   // must keep the ordinary generic error banner instead.
   const lastActionTypeRef = useRef<string | null>(null);
 
-  const selectGame = (moduleId: string): boolean => {
+  const selectGame = (moduleId: string, config: Record<string, unknown> | null = null): boolean => {
     if (actorId === undefined || status !== 'connected') return false;
     lastActionTypeRef.current = 'SELECT_GAME';
-    send({ type: 'SELECT_GAME', actorId, moduleId, config: null });
+    send({ type: 'SELECT_GAME', actorId, moduleId, config });
     return true;
   };
 
@@ -114,6 +120,22 @@ export default function RoomPage(): React.JSX.Element {
     const stepKeys = category === 'matchday' ? MATCHDAY_STEP_KEYS : GENERAL_STEP_KEYS;
     lastActionTypeRef.current = 'START_LOADING';
     send({ type: 'START_LOADING', actorId, stepKeys });
+  };
+
+  // The host leaves the loading screen (in progress, failed, or the game cannot be built) to pick again.
+  const cancelLoading = (): void => {
+    if (actorId === undefined) return;
+    lastActionTypeRef.current = 'CANCEL_LOADING';
+    clearError();
+    send({ type: 'CANCEL_LOADING', actorId });
+  };
+
+  // The host ticks a Match Bingo house cell the live feed cannot see.
+  const hostMark = (key: string): void => {
+    const currentRound = room?.round;
+    if (actorId === undefined || currentRound === null || currentRound === undefined) return;
+    lastActionTypeRef.current = 'HOST_MARK';
+    send({ type: 'HOST_MARK', actorId, roundId: currentRound.id, key });
   };
 
   const startSession = (): void => {
@@ -260,13 +282,15 @@ export default function RoomPage(): React.JSX.Element {
           onSelectGame={selectGame}
           onStartLoading={startLoading}
           autoSelectModuleId={isHost ? initialModuleId : null}
+          autoSelectConfig={isHost ? initialConfig : null}
+          fixtureStatus={summaryFixtureStatus}
           setupScope={isHost ? setupScope : null}
           onAutoSelectSettled={settleInitialSelection}
         />
       ) : null}
 
       {room.phase === 'loading' && room.loading !== null ? (
-        <LoadingScreen loading={room.loading} isHost={isHost} onRetry={startLoading} />
+        <LoadingScreen loading={room.loading} isHost={isHost} onRetry={startLoading} onCancel={cancelLoading} />
       ) : null}
 
       {/* The engine has no way back to the lobby from loading, so when the game cannot be built (the
@@ -282,13 +306,16 @@ export default function RoomPage(): React.JSX.Element {
               <BigButton variant="secondary" onClick={startSession}>
                 Try again
               </BigButton>
+              <BigButton variant="ghost" onClick={cancelLoading}>
+                Pick another game
+              </BigButton>
             </div>
           </Card>
         </div>
       ) : null}
 
       {(room.phase === 'playing' || room.phase === 'roundReveal') ? (
-        <GameHost room={room} isHost={isHost} onSubmit={submitAnswer} onAdvance={advance} onRevealNow={revealNow} />
+        <GameHost room={room} isHost={isHost} onSubmit={submitAnswer} onAdvance={advance} onRevealNow={revealNow} onHostMark={hostMark} />
       ) : null}
 
       {room.phase === 'intermission' ? (

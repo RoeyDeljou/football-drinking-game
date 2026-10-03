@@ -9,12 +9,14 @@ export const GameHost = ({
   onSubmit,
   onAdvance,
   onRevealNow,
+  onHostMark,
 }: {
   readonly room: ClientRoom;
   readonly isHost: boolean;
   readonly onSubmit: (payload: unknown) => void;
   readonly onAdvance: () => void;
   readonly onRevealNow: () => void;
+  readonly onHostMark?: (key: string) => void;
 }): React.JSX.Element => {
   const now = useNow();
   const round = room.round;
@@ -30,7 +32,7 @@ export const GameHost = ({
       {/* Keyed by round id: without this, a game screen's local state (M1's picks, M3's slider
           position, …) can survive React's reconciliation across rounds whenever consecutive rounds
           use the same module, silently leaking a stale pick/guess into the next round. */}
-      <Screen key={round.id} room={room} round={round} now={now} onSubmit={onSubmit} />
+      <Screen key={round.id} room={room} round={round} now={now} onSubmit={onSubmit} onHostMark={isHost ? onHostMark : undefined} />
       {/* Host / wait controls keep a thumb-sized measure however wide the game screen gets. */}
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 empty:hidden">
         {isHost && round.visibility === 'pre-reveal' ? (

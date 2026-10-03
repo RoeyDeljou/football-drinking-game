@@ -13,6 +13,7 @@
  */
 
 import { miniGamesFor, SELECT_LABEL, SHUFFLE_LABEL, shuffleModuleId, type GameCategory, type ModeChoice } from '@/lib/gameMode';
+import { liveGameAvailability, liveGamesNote, LIVE_ONLY_GAME_IDS } from '@/lib/liveGames';
 import { PICKER_COPY } from '@/lib/pickerCopy';
 import { GAME_CATALOG } from '@/games/catalog';
 import { OptionButton } from './ui';
@@ -43,6 +44,7 @@ export const GameModePicker = ({
   onChange,
   pendingModuleId = null,
   disabled = false,
+  fixtureStatus = null,
 }: {
   readonly category: GameCategory;
   readonly value: ModeChoice;
@@ -50,11 +52,15 @@ export const GameModePicker = ({
   /** A module id whose `SELECT_GAME` is awaiting the server (shows a spinner on that option). */
   readonly pendingModuleId?: string | null;
   readonly disabled?: boolean;
+  /** The matchday fixture's status: live-only games are hidden (finished/cancelled) or greyed (postponed). */
+  readonly fixtureStatus?: string | null;
 }): React.JSX.Element => {
   const shuffleSelected = value.mode === 'shuffle';
   const shuffleBlurb = GAME_CATALOG.find((game) => game.id === shuffleModuleId(category))?.blurb ?? '';
   const shufflePending = pendingModuleId === shuffleModuleId(category);
-  const games = miniGamesFor(category);
+  const availability = category === 'matchday' ? liveGameAvailability(fixtureStatus) : 'available';
+  const games = miniGamesFor(category).filter((game) => !(availability === 'hidden' && LIVE_ONLY_GAME_IDS.has(game.id)));
+  const note = category === 'matchday' ? liveGamesNote(fixtureStatus) : null;
 
   return (
     <div className="flex flex-col gap-3" role="radiogroup" aria-label="Game mode">
@@ -96,6 +102,12 @@ export const GameModePicker = ({
         </span>
       </button>
 
+      {!shuffleSelected && note !== null ? (
+        <p className="t-sm font-semibold text-warn" role="status">
+          {note}
+        </p>
+      ) : null}
+
       {!shuffleSelected ? (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-2" role="group" aria-label="Mini games">
           {games.map((game) => {
@@ -108,7 +120,7 @@ export const GameModePicker = ({
                 aria-checked={selected}
                 aria-busy={pending}
                 selected={selected}
-                disabled={disabled}
+                disabled={disabled || (availability === 'greyed' && LIVE_ONLY_GAME_IDS.has(game.id))}
                 onClick={() => onChange({ mode: 'select', miniGameId: game.id })}
                 className="flex flex-wrap items-center gap-x-3"
               >

@@ -64,10 +64,18 @@ export const saveAgeGateConfirmed = (): void => writeJson(AGE_GATE_KEY, true);
 export interface PendingInitialSelection {
   readonly roomId: string;
   readonly moduleId: string;
+  /** The host's custom game settings (`SELECT_GAME.config`); absent = the game's defaults. */
+  readonly config?: Record<string, unknown>;
 }
 
-export const savePendingSelection = (roomId: string, moduleId: string): void =>
-  writeJson(PENDING_SELECTION_KEY, { roomId, moduleId } satisfies PendingInitialSelection);
+export const savePendingSelection = (roomId: string, moduleId: string, config: Record<string, unknown> | null = null): void =>
+  writeJson(PENDING_SELECTION_KEY, { roomId, moduleId, ...(config === null ? {} : { config }) } satisfies PendingInitialSelection);
+
+export const loadPendingConfig = (roomId: string): Record<string, unknown> | null => {
+  const stored = readJson<Partial<PendingInitialSelection>>(PENDING_SELECTION_KEY);
+  if (stored === null || stored.roomId !== roomId || typeof stored.config !== 'object' || stored.config === null) return null;
+  return stored.config;
+};
 
 export const loadPendingSelection = (roomId: string): string | null => {
   const stored = readJson<Partial<PendingInitialSelection>>(PENDING_SELECTION_KEY);

@@ -35,10 +35,41 @@ const toLoadingStatus = (status: PrefetchStepStatus): LoadingStepStatus => {
   }
 };
 
+/**
+ * Per-room run token. Every `runLoadingPipeline` call takes a fresh token; `invalidateLoadingRun` (called when
+ * `CANCEL_LOADING` is accepted) drops it. A run whose token is no longer current applies nothing more: no progress,
+ * no failure. The engine already rejects progress for a room that is no longer `loading`, but a host can cancel and
+ * immediately start loading again (same step keys), and then a stale run's progress would be accepted into the NEW
+ * run's loading state. The token makes that impossible. In-flight provider calls cannot be aborted; their results
+ * are simply ignored.
+ */
+const loadingRuns = new Map<RoomId, number>();
+let nextRunToken = 1;
+
+export const invalidateLoadingRun = (roomId: RoomId): void => {
+  loadingRuns.delete(roomId);
+};
+
 export const runLoadingPipeline = async (
   ctx: AppContext,
   roomId: RoomId,
   onBroadcast: (record: RoomRecord) => void,
+): Promise<void> => {
+  const token = nextRunToken;
+  nextRunToken += 1;
+  loadingRuns.set(roomId, token);
+  try {
+    await runPipeline(ctx, roomId, onBroadcast, () => loadingRuns.get(roomId) === token);
+  } finally {
+    if (loadingRuns.get(roomId) === token) loadingRuns.delete(roomId);
+  }
+};
+
+const runPipeline = async (
+  ctx: AppContext,
+  roomId: RoomId,
+  onBroadcast: (record: RoomRecord) => void,
+  isCurrent: () => boolean,
 ): Promise<void> => {
   const record = await ctx.roomStore.load(roomId);
   if (record === null || record.state.phase !== 'loading' || record.state.loading === null) return;
@@ -60,7 +91,7 @@ export const runLoadingPipeline = async (
   // for one step must not abort the whole pipeline (the pipeline's real success/failure is decided
   // by the prefetch's own result, not by whether every progress tick was broadcast).
   const dispatchProgress = (stepKey: string, status: LoadingStepStatus, detail: string | null): Promise<void> => {
-    if (!requestedKeys.has(stepKey)) return Promise.resolve();
+    if (!requestedKeys.has(stepKey) || !isCurrent()) return Promise.resolve();
     const task = (async (): Promise<void> => {
       try {
         const outcome = await dispatchAction(ctx, roomId, { type: 'LOADING_PROGRESS', stepKey, status, detail });
@@ -88,13 +119,13 @@ export const runLoadingPipeline = async (
       });
       await lastDispatch;
       if (bundle === null || bundle.fixtures.length === 0) {
-        await dispatchFailure(ctx, roomId, 'Could not load any live fixture for this competition.', onBroadcast);
+        if (isCurrent()) await dispatchFailure(ctx, roomId, 'Could not load any live fixture for this competition.', onBroadcast);
       }
       return;
     }
 
     if (record.meta.fixtureId === null) {
-      await dispatchFailure(ctx, roomId, 'No fixture selected for this matchday room.', onBroadcast);
+      if (isCurrent()) await dispatchFailure(ctx, roomId, 'No fixture selected for this matchday room.', onBroadcast);
       return;
     }
     const bundle = await runMatchdayPrefetch(ctx, roomId, record.meta.fixtureId, (prefetcher) => {
@@ -105,7 +136,7 @@ export const runLoadingPipeline = async (
     });
     await lastDispatch;
     if (bundle === null) {
-      await dispatchFailure(ctx, roomId, 'Could not load the fixture for this room.', onBroadcast);
+      if (isCurrent()) await dispatchFailure(ctx, roomId, 'Could not load the fixture for this room.', onBroadcast);
     }
     return;
   }

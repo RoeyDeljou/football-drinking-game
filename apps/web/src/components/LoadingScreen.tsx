@@ -18,10 +18,13 @@ export const LoadingScreen = ({
   loading,
   isHost,
   onRetry,
+  onCancel,
 }: {
   readonly loading: LoadingState;
   readonly isHost: boolean;
   readonly onRetry: () => void;
+  /** Host only: leave loading and pick another game. */
+  readonly onCancel: () => void;
 }): React.JSX.Element => {
   const now = useNow(1000);
   const failed = loading.steps.some((step) => step.status === 'failed');
@@ -67,6 +70,11 @@ export const LoadingScreen = ({
       {failed && isHost ? (
         <BigButton variant="danger" onClick={onRetry}>
           Retry loading
+        </BigButton>
+      ) : null}
+      {isHost ? (
+        <BigButton variant="ghost" onClick={onCancel}>
+          Pick another game
         </BigButton>
       ) : null}
     </div>

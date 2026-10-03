@@ -8,7 +8,11 @@ import type { GameScreenProps } from './types';
 
 interface Cell {
   readonly id: string;
-  readonly event: LiveEventKind;
+  /** `null` for a house cell: only the host can tick it. */
+  readonly event: LiveEventKind | null;
+  /** Host text shown instead of the generated label (and the whole text of a house cell). */
+  readonly label?: string | null;
+  readonly house?: boolean;
   readonly side: 'home' | 'away' | null;
   readonly count: number;
   readonly progress: number;
@@ -75,7 +79,16 @@ const Legend = ({ teams }: { readonly teams: { home: string; away: string } }): 
   </p>
 );
 
-const BigCard = ({ card, size }: { readonly card: Card_; readonly size: number }): React.JSX.Element => {
+const BigCard = ({
+  card,
+  size,
+  onMark,
+}: {
+  readonly card: Card_;
+  readonly size: number;
+  /** Host only: tick a house cell. */
+  readonly onMark?: (cellId: string) => void;
+}): React.JSX.Element => {
   const lit = litCells(card, size);
   return (
     <ol
@@ -85,7 +98,9 @@ const BigCard = ({ card, size }: { readonly card: Card_; readonly size: number }
     >
       {card.cells.map((cell, index) => {
         // Cells say Home / Away (a club name would not fit a small square); the card's legend names them.
-        const label = bingoCellLabel(cell.event, cell.count, cell.side === null ? null : cell.side === 'home' ? 'Home' : 'Away');
+        const label =
+          cell.label ?? (cell.event === null ? 'House rule' : bingoCellLabel(cell.event, cell.count, cell.side === null ? null : cell.side === 'home' ? 'Home' : 'Away'));
+        const isHouse = cell.house === true;
         return (
           <li
             key={`${cell.id}-${index}`}
@@ -95,8 +110,9 @@ const BigCard = ({ card, size }: { readonly card: Card_; readonly size: number }
                   ? 'border-accent bg-accent text-accent-fg'
                   : 'border-up bg-up/20 text-fg'
                 : 'border-border bg-card text-fg'
-            }`}
+            } ${isHouse && !cell.ticked ? '!border-dashed !border-accent/70' : ''}`}
           >
+            {isHouse ? <span className="t-eyebrow">House rule</span> : null}
             <span className="text-[min(0.9rem,4.6vw)] font-bold leading-tight sm:text-base lg:text-lg">{label}</span>
             <span className="tnum text-sm font-black">
               {cell.ticked ? (
@@ -105,6 +121,18 @@ const BigCard = ({ card, size }: { readonly card: Card_; readonly size: number }
                   <span className="sr-only">Ticked </span>
                   {cell.tickedAt !== null ? minuteLabel(cell.tickedAt.minute, cell.tickedAt.extraMinute) : ''}
                 </>
+              ) : isHouse ? (
+                onMark !== undefined ? (
+                  <button
+                    type="button"
+                    onClick={() => onMark(cell.id)}
+                    className="pressable mt-1 min-h-11 w-full rounded-md border-2 border-accent px-2 text-sm font-black"
+                  >
+                    Mark
+                  </button>
+                ) : (
+                  <span className="font-normal opacity-70">host marks it</span>
+                )
               ) : (
                 `${cell.progress}/${cell.count}`
               )}
@@ -143,12 +171,20 @@ interface Call {
   readonly big: boolean;
 }
 
-export const M6MatchBingo = ({ room, round, now }: GameScreenProps): React.JSX.Element => {
+export const M6MatchBingo = ({ room, round, now, onHostMark }: GameScreenProps): React.JSX.Element => {
   const payload = round.publicPayload as PublicPayload;
   const teams = teamNamesOf(room);
   const size = payload.size;
   const mine = payload.cards.find((card) => card.playerId === room.viewerId) ?? null;
   const others = payload.cards.filter((card) => card.playerId !== room.viewerId);
+  // Every distinct house cell across the table, ticked if any card shows it ticked (a mark ticks them all).
+  const houseCells: { id: string; label: string; ticked: boolean }[] = [];
+  for (const card of payload.cards) {
+    for (const cell of card.cells) {
+      if (cell.house !== true || houseCells.some((entry) => entry.id === cell.id)) continue;
+      houseCells.push({ id: cell.id, label: cell.label ?? 'House rule', ticked: cell.ticked });
+    }
+  }
 
   // Line / full-house celebrations: fired when a card's counts go up between two payloads. The first
   // payload seen (join, reconnect, reload) only sets the baseline, so old lines are never replayed.
@@ -284,7 +320,7 @@ export const M6MatchBingo = ({ room, round, now }: GameScreenProps): React.JSX.E
           {mine !== null ? (
             <>
               <Legend teams={teams} />
-              <BigCard card={mine} size={size} />
+              <BigCard card={mine} size={size} onMark={onHostMark} />
               <p className="t-sm mt-3 text-center text-fg-muted">
                 {mine.cells.filter((cell) => cell.ticked).length}/{mine.cells.length} ticked ·{' '}
                 {mine.lines.length} {mine.lines.length === 1 ? 'line' : 'lines'}. A line makes everyone else drink.
@@ -315,6 +351,29 @@ export const M6MatchBingo = ({ room, round, now }: GameScreenProps): React.JSX.E
           </ul>
         </Card>
       </div>
+      {onHostMark !== undefined && houseCells.length > 0 ? (
+        <Card>
+          <Eyebrow className="mb-2">House rules (you tick these)</Eyebrow>
+          <ul className="split-cols gap-2 [--split-min:16rem]">
+            {houseCells.map((cell) => (
+              <li key={cell.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border-2 border-dashed border-accent/60 px-3 py-2">
+                <span className="max-w-full flex-1 basis-32 font-semibold">{cell.label}</span>
+                {cell.ticked ? (
+                  <span className="t-sm font-bold text-up">✓ marked</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onHostMark(cell.id)}
+                    className="pressable min-h-11 rounded-md bg-accent px-5 font-black text-accent-fg"
+                  >
+                    Mark
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
     </RoundShell>
   );
 };
