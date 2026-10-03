@@ -205,6 +205,19 @@ export const GamePicker = ({
     </BigButton>
   );
 
+  const openEditor = (): void => {
+    if (selectedId === null) return;
+                setChoice(choiceFromModuleId(selectedId));
+                // Reopen on what the server holds: custom settings stay editable, default stays default.
+                const held: SettingsState =
+                  settingsSummary(selectedId, room.selection?.config) !== null
+                    ? { mode: 'custom', edits: (room.selection?.config ?? {}) as Record<string, unknown> }
+                    : DEFAULT_SETTINGS;
+                setSettings(held);
+                setAppliedJson(JSON.stringify(configFor(selectedId, held)));
+                setEditing(true);
+  };
+
   if (showSummary && selectedId !== null) {
     return (
       <div className="flex flex-col gap-4">
@@ -229,23 +242,24 @@ export const GamePicker = ({
                 </p>
               ) : null}
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setChoice(choiceFromModuleId(selectedId));
-                // Reopen on what the server holds: custom settings stay editable, default stays default.
-                const held: SettingsState =
-                  settingsSummary(selectedId, room.selection?.config) !== null
-                    ? { mode: 'custom', edits: (room.selection?.config ?? {}) as Record<string, unknown> }
-                    : DEFAULT_SETTINGS;
-                setSettings(held);
-                setAppliedJson(JSON.stringify(configFor(selectedId, held)));
-                setEditing(true);
-              }}
-              className="tap-target pressable shrink-0 rounded-md border-2 border-border-strong px-4 text-sm font-bold"
-            >
-              Change
-            </button>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={openEditor}
+                className="tap-target pressable rounded-md border-2 border-border-strong px-4 text-sm font-bold"
+              >
+                Change
+              </button>
+              {gameConfigSpecFor(selectedId) !== null ? (
+                <button
+                  type="button"
+                  onClick={openEditor}
+                  className="tap-target pressable rounded-md border-2 border-border-strong px-4 text-sm font-bold"
+                >
+                  Settings
+                </button>
+              ) : null}
+            </div>
           </div>
         </Card>
         {startButton}

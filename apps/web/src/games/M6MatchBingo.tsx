@@ -92,7 +92,7 @@ const BigCard = ({
   const lit = litCells(card, size);
   return (
     <ol
-      className="grid gap-2 lg:gap-3"
+      className="grid gap-1.5 sm:gap-2 lg:gap-3"
       style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
       aria-label="Your bingo card"
     >
@@ -112,8 +112,12 @@ const BigCard = ({
                 : 'border-border bg-card text-fg'
             } ${isHouse && !cell.ticked ? '!border-dashed !border-accent/70' : ''}`}
           >
-            {isHouse ? <span className="t-eyebrow">House rule</span> : null}
-            <span className="text-[min(0.9rem,4.6vw)] font-bold leading-tight sm:text-base lg:text-lg">{label}</span>
+            {isHouse ? (
+              <span aria-label="House rule" role="img" className="text-sm leading-none text-accent">
+                ★
+              </span>
+            ) : null}
+            <span className="text-[min(0.9rem,4.6vw)] font-bold leading-tight">{label}</span>
             <span className="tnum text-sm font-black">
               {cell.ticked ? (
                 <>
@@ -126,12 +130,12 @@ const BigCard = ({
                   <button
                     type="button"
                     onClick={() => onMark(cell.id)}
-                    className="pressable mt-1 min-h-11 w-full rounded-md border-2 border-accent px-2 text-sm font-black"
+                    className="pressable mt-1 min-h-11 w-full rounded-md border-2 border-accent px-1 text-[min(0.875rem,4vw)] font-black"
                   >
                     Mark
                   </button>
                 ) : (
-                  <span className="font-normal opacity-70">host marks it</span>
+                  <span className="font-normal opacity-70">by host</span>
                 )
               ) : (
                 `${cell.progress}/${cell.count}`
@@ -321,6 +325,9 @@ export const M6MatchBingo = ({ room, round, now, onHostMark }: GameScreenProps):
             <>
               <Legend teams={teams} />
               <BigCard card={mine} size={size} onMark={onHostMark} />
+              {mine.cells.some((cell) => cell.house === true) ? (
+                <p className="t-sm mt-2 text-center text-accent">★ Dashed cells are house rules. The host ticks them.</p>
+              ) : null}
               <p className="t-sm mt-3 text-center text-fg-muted">
                 {mine.cells.filter((cell) => cell.ticked).length}/{mine.cells.length} ticked ·{' '}
                 {mine.lines.length} {mine.lines.length === 1 ? 'line' : 'lines'}. A line makes everyone else drink.

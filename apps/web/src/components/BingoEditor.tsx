@@ -251,16 +251,16 @@ export const BingoEditor = ({
           {sample.map((cell, index) => (
             <li
               key={`${cell.text}-${index}`}
-              className={`flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-md border-2 p-1.5 text-center text-xs font-bold leading-tight ${
+              className={`flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-md border-2 p-1 text-center text-[min(0.75rem,3.2vw)] font-bold leading-tight ${
                 cell.house ? 'border-dashed border-accent/70 bg-accent/10' : 'border-border bg-card'
               }`}
             >
-              {cell.house ? <span className="t-eyebrow text-accent">House</span> : null}
+              {cell.house ? <span aria-label="House rule" role="img" className="text-accent">★</span> : null}
               <span className="max-w-full">{cell.text}</span>
             </li>
           ))}
         </ol>
-        <p className="t-xs text-fg-subtle">Each player gets a different card dealt from the pool.</p>
+        <p className="t-xs text-fg-subtle">★ marks a house rule. Each player gets a different card dealt from the pool.</p>
       </div>
     </div>
   );

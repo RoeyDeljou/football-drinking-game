@@ -41,6 +41,8 @@ export const GameSettingsEditor = ({
   if (spec === null) return null;
 
   const renderField = (field: ConfigFieldSpec): React.JSX.Element | null => {
+    // Match Bingo's house-cells-per-card count sits with the house cells, in the Bingo editor.
+    if (field.key === 'housePerCard') return null;
     const value = valueOf(spec, state, field.key);
     switch (field.type) {
       case 'integer': {
