@@ -3,6 +3,7 @@ import { RoundShell } from '@/components/RoundShell';
 import { Card, Eyebrow } from '@/components/ui';
 import { bingoFullHouseCall, bingoLineCall, roundDrinkTotalLine } from '@/lib/drinkCopy';
 import { bingoCellLabel, minuteLabel, type LiveEventKind } from '@/lib/liveEventCopy';
+import { longestWord } from '@/lib/cellFit';
 import { nicknameOf } from '@/lib/roomHelpers';
 import type { GameScreenProps } from './types';
 
@@ -104,7 +105,7 @@ const BigCard = ({
         return (
           <li
             key={`${cell.id}-${index}`}
-            className={`flex min-h-24 flex-col justify-between gap-1 rounded-md border-2 p-1.5 text-center sm:p-3 lg:min-h-32 ${
+            className={`bingo-cell flex min-h-24 flex-col justify-between gap-1 rounded-md border-2 p-1.5 text-center sm:p-3 lg:min-h-32 ${
               cell.ticked
                 ? lit.has(index)
                   ? 'border-accent bg-accent text-accent-fg'
@@ -117,7 +118,9 @@ const BigCard = ({
                 ★
               </span>
             ) : null}
-            <span className="text-[min(0.9rem,4.6vw)] font-bold leading-tight">{label}</span>
+            <span className="bingo-label font-bold leading-tight" style={{ ['--w' as string]: Math.max(longestWord(label), 4) } as React.CSSProperties}>
+              {label}
+            </span>
             <span className="tnum text-sm font-black">
               {cell.ticked ? (
                 <>
