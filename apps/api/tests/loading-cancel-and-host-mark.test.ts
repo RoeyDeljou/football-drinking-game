@@ -115,7 +115,7 @@ describe('CANCEL_LOADING and HOST_MARK through the gateway', () => {
     host.socket.emit('room:action', { type: 'SELECT_GAME', actorId: hostId, moduleId: 'M3', config: null });
     await host.state.waitFor((s) => s.selection?.moduleId === 'M3', 15_000);
     host.socket.emit('room:action', { type: 'START_LOADING', actorId: hostId, stepKeys: STEPS });
-    const failed = await host.state.waitFor((s) => s.loading?.failedReason != null, 15_000);
+    const failed = await host.state.waitFor((s) => s.loading?.failedReason !== null && s.loading?.failedReason !== undefined, 15_000);
     expect(failed.phase).toBe('loading');
 
     host.socket.emit('room:action', { type: 'CANCEL_LOADING', actorId: hostId });
