@@ -28,6 +28,8 @@
  *   present); an owner who left no longer drinks (a `self` penalty has no recipient once gone).
  * - **Void**: the round opened after full time (its baseline contains `FULL_TIME`) — resolves at
  *   once, nothing charged.
+ * - **Labels.** Optional `labels` (per kind, trimmed 1..40 chars) are host text shown instead of the
+ *   client's default event name; copied into the public payload (`labels`, `{}` when none).
  * - **Result.** No points (pure chance must not move the quiz leaderboard). "Winners" for the reveal
  *   screen: in `owner` mode the players whose event fired least, in `others` mode the players whose
  *   event fired most (at least once).
@@ -58,6 +60,8 @@ export const M5_DEFAULT_EVENT_KINDS: readonly LiveEventKind[] = [
   'SHOT_OFF_TARGET',
 ];
 
+export const M5_LABEL_MAX_LENGTH = 40;
+
 const configSchema = z
   .object({
     /** Match minutes one spin lasts. */
@@ -70,8 +74,13 @@ const configSchema = z
       .array(liveEventKindSchema)
       .min(1)
       .refine((kinds) => new Set(kinds).size === kinds.length, 'event kinds must be distinct'),
+    /** Optional host text per kind, shown instead of the client's default name (trimmed, 1..40). */
+    labels: z.record(liveEventKindSchema, z.string().trim().min(1).max(M5_LABEL_MAX_LENGTH)).optional(),
   })
   .strict();
+
+/** The M5 config schema, for the host's editor and boundary checks. */
+export const M5_CONFIG_SCHEMA = configSchema;
 
 const playerIdSchema = z.string().min(1).transform((value) => value as PlayerId);
 
@@ -86,6 +95,8 @@ const publicPayloadSchema = z
     drinker: z.enum(['owner', 'others']),
     sipsPerFire: z.number().int().min(1),
     windowMinutes: z.number().int().min(1),
+    /** Host label overrides per kind (from config); a missing kind renders its default name. */
+    labels: z.record(liveEventKindSchema, z.string()).default({}),
     /** Scoreboard minute the spin started at; `null` until the round knows the match clock. */
     startMinute: z.number().int().min(0).nullable(),
     /** First minute that ends the spin (`startMinute + windowMinutes`); `null` with `startMinute`. */
@@ -204,6 +215,7 @@ export const m5EventRoulette = defineGameModule<M5Shape>({
           drinker: ctx.config.drinker,
           sipsPerFire: ctx.config.sipsPerFire,
           windowMinutes: ctx.config.windowMinutes,
+          labels: { ...ctx.config.labels },
           startMinute: null,
           endMinute: null,
           clockKnown: false,

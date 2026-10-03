@@ -197,6 +197,9 @@ export interface M1OptionSettlement {
   readonly outcome: M1OptionOutcome;
 }
 
+/** The M1 config schema, for the host's editor and boundary checks. */
+export const M1_CONFIG_SCHEMA = configSchema;
+
 export const M1_DEFAULT_CONFIG: M1Shape['config'] = {
   markets: [
     'MATCH_RESULT',

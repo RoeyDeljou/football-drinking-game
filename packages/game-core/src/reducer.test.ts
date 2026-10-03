@@ -274,6 +274,10 @@ describe('host-only authorization', () => {
         return { type: 'SELECT_GAME', actorId: P2, moduleId: TEST_ID, config: null };
       case 'START_LOADING':
         return { type: 'START_LOADING', actorId: P2, stepKeys: ['fixtures'] };
+      case 'CANCEL_LOADING':
+        return { type: 'CANCEL_LOADING', actorId: P2 };
+      case 'HOST_MARK':
+        return { type: 'HOST_MARK', actorId: P2, roundId: asRoundId('r'), key: 'house:0' };
       case 'START_SESSION':
         return { type: 'START_SESSION', actorId: P2 };
       case 'ADVANCE':
@@ -490,6 +494,102 @@ describe('setup', () => {
       'WRONG_PHASE',
     );
     expectRejected(reduceRoom(newRoom(), { type: 'LOADING_FAILED', reason: 'x' }, deps), 'WRONG_PHASE');
+  });
+});
+
+describe('cancel loading (back to game selection)', () => {
+  const loadingRoom = (deps: EngineDeps): RoomState => {
+    const result = reduceAll(
+      newRoom(),
+      [
+        join('p2', 'Bea'),
+        { type: 'SELECT_GAME', actorId: HOST, moduleId: TEST_ID, config: null },
+        { type: 'START_LOADING', actorId: HOST, stepKeys: ['fixtures', 'lineups'] },
+      ],
+      deps,
+    );
+    expect(result.rejection).toBeNull();
+    return result.state;
+  };
+
+  it('returns a loading room to the lobby, clearing selection and loading', () => {
+    const { deps } = harness();
+    const room = loadingRoom(deps);
+    const cancelled = reduceRoom(room, { type: 'CANCEL_LOADING', actorId: HOST }, deps);
+    expect(cancelled.rejection).toBeNull();
+    expect(cancelled.state.phase).toBe('lobby');
+    expect(cancelled.state.selection).toBeNull();
+    expect(cancelled.state.loading).toBeNull();
+    expect(cancelled.state.version).toBe(room.version + 1);
+    expect(cancelled.events).toEqual([
+      { type: 'LOADING_CANCELLED' },
+      { type: 'PHASE_CHANGED', from: 'loading', to: 'lobby' },
+    ]);
+    // The host can pick again, and the abandoned pipeline's progress is refused.
+    expectRejected(
+      reduceRoom(cancelled.state, { type: 'LOADING_PROGRESS', stepKey: 'fixtures', status: 'done', detail: null }, deps),
+      'WRONG_PHASE',
+    );
+    expectRejected(reduceRoom(cancelled.state, { type: 'LOADING_FAILED', reason: 'late' }, deps), 'WRONG_PHASE');
+    expectRejected(reduceRoom(cancelled.state, { type: 'START_SESSION', actorId: HOST }, deps), 'NO_GAME_SELECTED');
+    const again = reduceAll(
+      cancelled.state,
+      [
+        { type: 'SELECT_GAME', actorId: HOST, moduleId: TEST_ID, config: { fail: false, answerWindowMs: 5_000 } },
+        { type: 'START_LOADING', actorId: HOST, stepKeys: ['fixtures'] },
+      ],
+      deps,
+    );
+    expect(again.rejection).toBeNull();
+    expect(again.state.phase).toBe('loading');
+  });
+
+  it('also leaves a failed load', () => {
+    const { deps } = harness();
+    const failed = reduceRoom(loadingRoom(deps), { type: 'LOADING_FAILED', reason: 'provider 503' }, deps).state;
+    const cancelled = reduceRoom(failed, { type: 'CANCEL_LOADING', actorId: HOST }, deps);
+    expect(cancelled.rejection).toBeNull();
+    expect(cancelled.state.phase).toBe('lobby');
+    expect(cancelled.state.loading).toBeNull();
+  });
+
+  it('returns to intermission when the room already played a session', () => {
+    const { deps } = harness();
+    const ended = reduceRoom(playingRoom(deps), { type: 'END_SESSION', actorId: HOST }, deps).state;
+    expect(ended.phase).toBe('intermission');
+    // Loading is only entered from the lobby today; this guards a room that already has sessions.
+    const loading: RoomState = {
+      ...ended,
+      phase: 'loading',
+      loading: { steps: [{ key: 'fixtures', status: 'active', detail: null }], startedAt: T0, failedReason: null },
+    };
+    const cancelled = reduceRoom(loading, { type: 'CANCEL_LOADING', actorId: HOST }, deps);
+    expect(cancelled.rejection).toBeNull();
+    expect(cancelled.state.phase).toBe('intermission');
+    expect(cancelled.state.selection).toBeNull();
+    expect(cancelled.state.sessions).toBe(ended.sessions);
+  });
+
+  it('is host-only and only valid while loading', () => {
+    const { deps } = harness();
+    expectRejected(reduceRoom(loadingRoom(deps), { type: 'CANCEL_LOADING', actorId: P2 }, deps), 'NOT_HOST');
+    expectRejected(reduceRoom(newRoom(), { type: 'CANCEL_LOADING', actorId: HOST }, deps), 'WRONG_PHASE');
+    expectRejected(reduceRoom(playingRoom(deps), { type: 'CANCEL_LOADING', actorId: HOST }, deps), 'WRONG_PHASE');
+  });
+});
+
+describe('host marks (generic)', () => {
+  it('rejects HOST_MARK for a module without hostMark, a stale round, the wrong phase and a guest', () => {
+    const { deps } = harness();
+    const room = playingRoom(deps);
+    const roundId = currentRound(room)?.id ?? asRoundId('missing');
+    expectRejected(reduceRoom(room, { type: 'HOST_MARK', actorId: HOST, roundId, key: 'house:0' }, deps), 'HOST_MARK_UNSUPPORTED');
+    expectRejected(
+      reduceRoom(room, { type: 'HOST_MARK', actorId: HOST, roundId: asRoundId('stale'), key: 'house:0' }, deps),
+      'ROUND_NOT_FOUND',
+    );
+    expectRejected(reduceRoom(room, { type: 'HOST_MARK', actorId: P2, roundId, key: 'house:0' }, deps), 'NOT_HOST');
+    expectRejected(reduceRoom(newRoom(), { type: 'HOST_MARK', actorId: HOST, roundId, key: 'house:0' }, deps), 'WRONG_PHASE');
   });
 });
 

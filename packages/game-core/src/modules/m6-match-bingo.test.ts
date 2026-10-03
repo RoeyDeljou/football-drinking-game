@@ -32,11 +32,16 @@ import {
   bingoCellId,
   bingoLines,
   dealBingoCards,
+  dealOptionsOf,
+  houseCellId,
+  M6_BINGO_VOCABULARY,
   M6_CARD_MIX,
   M6_CELL_TIERS,
+  M6_CONFIG_SCHEMA,
   M6_DEFAULT_CONFIG,
   M6_ID,
   m6MatchBingo as module,
+  markHouseCell,
   tickBingoCards,
 } from './m6-match-bingo.js';
 
@@ -51,7 +56,7 @@ const HISTORY: readonly MatchEvent[] = [ev('ko', 'KICK_OFF', 0, null), ev('c10',
 /** A hand-built card: row-major cells, fresh. */
 const card = (playerId: PlayerId, cells: readonly BingoCellSpec[]): M6Card => ({
   playerId,
-  cells: cells.map((cell) => ({ id: bingoCellId(cell), ...cell, progress: 0, ticked: false, tickedAt: null })),
+  cells: cells.map((cell) => ({ id: bingoCellId(cell), ...cell, label: null, house: false, progress: 0, ticked: false, tickedAt: null })),
   lines: [],
   fullHouse: false,
 });
@@ -362,5 +367,213 @@ describe('M6 against the recorded PSG 6-1 Slovan Bratislava timeline (401915445)
       }
       if (solution.endedBy === 'FULL_HOUSE') expect(solution.fullHouseIds.length).toBeGreaterThan(0);
     }
+  });
+});
+
+/* ------------------------------- custom mode ------------------------------- */
+
+const issuesOf = (config: unknown): string => {
+  const parsed = module.parseConfig(config);
+  return parsed.ok ? '' : parsed.issues.join('; ');
+};
+
+const POOL = [
+  { event: 'CORNER', side: null, count: 1, label: '  Any corner  ' },
+  { event: 'CORNER', side: 'home', count: 2 },
+  { event: 'FOUL', side: null, count: 3, label: 'Three fouls' },
+  { event: 'CARD', side: 'away', count: 1 },
+  { event: 'GOAL', side: null, count: 1, label: 'GOOOAL' },
+  { event: 'OFFSIDE', side: null, count: 1 },
+  { event: 'SUBSTITUTION', side: 'home', count: 1 },
+  { event: 'SHOT_ON_TARGET', side: null, count: 2 },
+] as const;
+const HOUSE = ["Commentator says 'world class'", 'VAR check', 'Pundit mentions Messi'];
+const CUSTOM = { ...M6_DEFAULT_CONFIG, cellPool: POOL, houseCells: HOUSE, housePerCard: 2 };
+
+describe('M6 custom mode: config', () => {
+  it('leaves the default config untouched and accepts a valid custom config', () => {
+    const parsed = module.parseConfig(M6_DEFAULT_CONFIG);
+    expect(parsed).toEqual({ ok: true, config: M6_DEFAULT_CONFIG });
+    const custom = module.parseConfig(CUSTOM);
+    expect(custom.ok).toBe(true);
+    // Labels are trimmed.
+    if (custom.ok) expect(M6_CONFIG_SCHEMA.parse(custom.config).cellPool?.[0]?.label).toBe('Any corner');
+  });
+
+  it('rejects a pool too small for the card, counting house cells', () => {
+    expect(issuesOf({ ...M6_DEFAULT_CONFIG, cellPool: POOL })).toBe('cellPool: a 3x3 card with 0 house cell(s) needs at least 9 pool cells, got 8');
+    expect(issuesOf({ ...M6_DEFAULT_CONFIG, cellPool: POOL, houseCells: HOUSE, housePerCard: 1 })).toBe('');
+    expect(issuesOf({ ...M6_DEFAULT_CONFIG, size: 4, cellPool: POOL, houseCells: HOUSE })).toContain('needs at least 13 pool cells, got 8');
+  });
+
+  it('rejects bad cells, labels and house settings with a path', () => {
+    expect(issuesOf({ ...CUSTOM, cellPool: [...POOL, { event: 'CORNER', side: null, count: 1 }] })).toContain('cellPool.8: duplicate cell CORNER:any:1');
+    expect(issuesOf({ ...CUSTOM, cellPool: [{ event: 'THROW_IN', side: null, count: 1 }, ...POOL] })).toContain('cellPool.0.event');
+    expect(issuesOf({ ...CUSTOM, cellPool: [{ event: 'CORNER', side: null, count: 11 }, ...POOL.slice(1)] })).toContain('cellPool.0.count');
+    expect(issuesOf({ ...CUSTOM, cellPool: [{ ...POOL[0], label: 'x'.repeat(41) }, ...POOL.slice(1)] })).toContain('cellPool.0.label');
+    expect(issuesOf({ ...CUSTOM, cellPool: [{ ...POOL[0], label: '   ' }, ...POOL.slice(1)] })).toContain('cellPool.0.label');
+    expect(issuesOf({ ...CUSTOM, cellPool: [{ ...POOL[0], extra: 1 }, ...POOL.slice(1)] })).not.toBe('');
+    expect(issuesOf({ ...CUSTOM, houseCells: ['VAR check', 'var CHECK '] })).toContain('houseCells.1: duplicate house cell');
+    expect(issuesOf({ ...CUSTOM, houseCells: ['y'.repeat(41)] })).toContain('houseCells.0');
+    expect(issuesOf({ ...CUSTOM, houseCells: [] })).toContain('houseCells');
+    expect(issuesOf({ ...CUSTOM, housePerCard: 4 })).toBe('housePerCard: housePerCard 4 exceeds the 3 house cell(s) given');
+    expect(issuesOf({ ...M6_DEFAULT_CONFIG, housePerCard: 1 })).toContain('exceeds the 0 house cell(s)');
+    const many = Array.from({ length: 12 }, (_, index) => `h${index}`);
+    expect(issuesOf({ ...M6_DEFAULT_CONFIG, houseCells: many, housePerCard: 10 })).toContain('exceeds the 9 cells of a 3x3 card');
+  });
+
+  it('SELECT_GAME refuses an invalid custom config with a readable INVALID_CONFIG detail', () => {
+    const harness = makeHarness({ data: sampleData({ fixture: LIVE_FIXTURE }) });
+    const result = reduceRoom(newRoom(T0), { type: 'SELECT_GAME', actorId: HOST, moduleId: M6_ID, config: { ...M6_DEFAULT_CONFIG, cellPool: POOL } }, harness.deps);
+    expect(result.rejection).toEqual({
+      code: 'INVALID_CONFIG',
+      detail: 'cellPool: a 3x3 card with 0 house cell(s) needs at least 9 pool cells, got 8',
+      submissionCode: null,
+    });
+  });
+
+  it('exports a JSON-friendly vocabulary whose default cells are valid pool cells', () => {
+    expect(JSON.parse(JSON.stringify(M6_BINGO_VOCABULARY))).toEqual(M6_BINGO_VOCABULARY);
+    expect(M6_BINGO_VOCABULARY.kinds).toEqual([...LIVE_EVENT_KINDS]);
+    expect(M6_BINGO_VOCABULARY.countPresets.CORNER).toEqual([1, 3, 5]);
+    expect(M6_BINGO_VOCABULARY.defaultCells).toHaveLength(29);
+    const pool = M6_BINGO_VOCABULARY.defaultCells.map(({ event, side, count }) => ({ event, side, count }));
+    expect(issuesOf({ ...M6_DEFAULT_CONFIG, size: 4, cellPool: pool })).toBe('');
+    expect(new Set(M6_BINGO_VOCABULARY.defaultCells.map((cell) => cell.id)).size).toBe(29);
+  });
+});
+
+describe('M6 custom mode: the deal', () => {
+  const ids = Array.from({ length: 6 }, (_, index) => asPlayerId(`p${index}`));
+
+  it('default mode deals exactly as before (same draws, no labels, no house cells)', () => {
+    const options = dealOptionsOf(M6_DEFAULT_CONFIG);
+    expect(options).toEqual({ pool: null, houseCells: [], housePerCard: 0 });
+    const cards = dealBingoCards(ids, 3, createSeededRng(9), options);
+    expect(cards).toEqual(dealBingoCards(ids, 3, createSeededRng(9)));
+    expect(cards.flatMap((entry) => entry.cells).every((cell) => cell.label === null && !cell.house)).toBe(true);
+  });
+
+  it('deals auto cells from the pool only, with their labels, plus housePerCard house cells', () => {
+    const config = M6_CONFIG_SCHEMA.parse(CUSTOM);
+    const cards = dealBingoCards(ids, 3, createSeededRng(3), dealOptionsOf(config));
+    expect(dealBingoCards(ids, 3, createSeededRng(3), dealOptionsOf(config))).toEqual(cards);
+    const poolIds = POOL.map((cell) => bingoCellId(cell));
+    for (const entry of cards) {
+      expect(entry.cells).toHaveLength(9);
+      const house = entry.cells.filter((cell) => cell.house);
+      expect(house).toHaveLength(2);
+      for (const cell of house) {
+        expect(cell).toMatchObject({ event: null, side: null, count: 1 });
+        expect(cell.label).toBe(HOUSE[Number(cell.id.split(':')[1])]);
+      }
+      const auto = entry.cells.filter((cell) => !cell.house);
+      expect(auto).toHaveLength(7);
+      expect(auto.every((cell) => poolIds.includes(cell.id))).toBe(true);
+      expect(new Set(entry.cells.map((cell) => cell.id)).size).toBe(9);
+      const corner = auto.find((cell) => cell.id === 'CORNER:any:1');
+      if (corner !== undefined) expect(corner.label).toBe('Any corner');
+      const awayCard = auto.find((cell) => cell.id === 'CARD:away:1');
+      if (awayCard !== undefined) expect(awayCard.label).toBeNull();
+    }
+    expect(new Set(cards.map((entry) => entry.cells.map((cell) => cell.id).join('|'))).size).toBe(ids.length);
+  });
+
+  it('house cells without a pool fill from the default tiers; housePerCard defaults to size - 1', () => {
+    const config = M6_CONFIG_SCHEMA.parse({ ...M6_DEFAULT_CONFIG, houseCells: HOUSE });
+    expect(dealOptionsOf(config).housePerCard).toBe(2);
+    const cards = dealBingoCards(ids, 3, createSeededRng(5), dealOptionsOf(config));
+    for (const entry of cards) {
+      expect(entry.cells.filter((cell) => cell.house)).toHaveLength(2);
+      expect(entry.cells.filter((cell) => !cell.house).every((cell) => cell.event !== null && cell.label === null)).toBe(true);
+    }
+  });
+
+  it('live events never tick a house cell; markHouseCell ticks only that cell', () => {
+    const house = { id: houseCellId(0), event: null, side: null, count: 1, label: 'VAR check', house: true, progress: 0, ticked: false, tickedAt: null };
+    const base = card(HOST, Array.from({ length: 8 }, () => c('GOAL', 5)));
+    const cards: readonly M6Card[] = [{ ...base, cells: [house, ...base.cells] }];
+    for (const type of ['CORNER', 'FOUL', 'GOAL', 'YELLOW_CARD', 'VAR_CHECK'] as const) {
+      expect(tickBingoCards(cards, ev(type, type, 10), 3, HOME_TEAM_ID, AWAY_TEAM_ID).cards[0]?.cells[0]?.ticked).toBe(false);
+    }
+    const marked = markHouseCell(cards, houseCellId(0), 3, { minute: 12, extraMinute: null });
+    expect(marked.cards[0]?.cells[0]).toMatchObject({ ticked: true, progress: 1, tickedAt: { minute: 12, extraMinute: null } });
+    expect(marked.cards[0]?.cells.slice(1).every((cell) => !cell.ticked)).toBe(true);
+    expect(markHouseCell(cards, houseCellId(1), 3, null).cards).toEqual(cards);
+  });
+});
+
+describe('M6 custom mode: HOST_MARK through the reducer', () => {
+  /** Three players, every card made of the same 9 house cells (shuffled), baselined at 30'. */
+  const houseRoom = () => {
+    const harness = makeHarness({ data: sampleData({ fixture: LIVE_FIXTURE }) });
+    const houseCells = Array.from({ length: 9 }, (_, index) => `house text ${index}`);
+    let room = start(harness, { config: { ...M6_DEFAULT_CONFIG, houseCells, housePerCard: 9 } });
+    room = feed(room, harness.deps, HISTORY).state;
+    return { harness, room, roundId: currentRound(room)?.id ?? ('' as never) };
+  };
+  const mark = (room: RoomState, deps: EngineDeps, key: string, actorId: PlayerId = HOST) =>
+    reduceRoom(room, { type: 'HOST_MARK', actorId, roundId: currentRound(room)?.id ?? ('' as never), key }, deps);
+
+  it('ticks the house cell on every card holding it, with the match clock', () => {
+    const { harness, room } = houseRoom();
+    const marked = mark(room, harness.deps, 'house:4');
+    expect(marked.rejection).toBeNull();
+    expect(marked.events[0]).toEqual({ type: 'ROUND_UPDATED', roundId: currentRound(room)?.id });
+    for (const entry of payloadOf(marked.state).cards) {
+      const cell = entry.cells.find((candidate) => candidate.id === 'house:4');
+      expect(cell).toMatchObject({ ticked: true, house: true, label: 'house text 4', tickedAt: { minute: 30 } });
+      expect(entry.cells.filter((candidate) => candidate.ticked)).toHaveLength(1);
+    }
+  });
+
+  it('refuses an already-marked, unknown or non-house key, a guest, and a closed round', () => {
+    const { harness, room } = houseRoom();
+    const once = mark(room, harness.deps, 'house:0').state;
+    const again = mark(once, harness.deps, 'house:0');
+    expect(again.rejection).toMatchObject({ code: 'INVALID_HOST_MARK', detail: 'already marked: house:0' });
+    expect(again.state).toBe(once);
+    expect(mark(once, harness.deps, 'house:9').rejection).toMatchObject({ code: 'INVALID_HOST_MARK', detail: 'house cell not on any card: house:9' });
+    expect(mark(once, harness.deps, 'CORNER:any:1').rejection).toMatchObject({ code: 'INVALID_HOST_MARK', detail: 'not a house cell: CORNER:any:1' });
+    expect(mark(once, harness.deps, 'house:1', P2).rejection?.code).toBe('NOT_HOST');
+    const revealed = reduceRoom(once, { type: 'REVEAL_ROUND', actorId: HOST }, harness.deps).state;
+    expect(mark(revealed, harness.deps, 'house:1').rejection?.code).toBe('WRONG_PHASE');
+  });
+
+  it('house-cell lines and the full house charge exactly like auto cells, then end the round', () => {
+    const { harness, room } = houseRoom();
+    let state = room;
+    for (let index = 0; index < 8; index += 1) state = mark(state, harness.deps, houseCellId(index)).state;
+    expect(state.phase).toBe('playing');
+    const lines = roundPenalties(state).filter((entry) => entry.reason === 'BINGO_LINE');
+    // Every card has completed some lines by now; each charges the two other players once.
+    const lineCount = payloadOf(state).cards.reduce((sum, entry) => sum + entry.lines.length, 0);
+    expect(lineCount).toBeGreaterThan(0);
+    expect(lines).toHaveLength(lineCount * 2);
+    expect(lines.every((entry) => entry.recipientId !== entry.playerId && /^house:\d$/.test(String(entry.meta?.cellId)))).toBe(true);
+    expect(lines.every((entry) => entry.meta?.line !== undefined && entry.meta.eventId === undefined)).toBe(true);
+
+    const done = mark(state, harness.deps, houseCellId(8));
+    expect(done.state.phase).toBe('roundReveal');
+    expect(solutionOf(done.state)).toEqual({ status: 'ended', endedBy: 'FULL_HOUSE', fullHouseIds: [HOST, P2, P3] });
+    expect(done.events.map((event) => event.type)).toContain('ROUND_REVEALED');
+    const fullHouses = roundPenalties(done.state).filter((entry) => entry.reason === 'BINGO_FULL_HOUSE');
+    expect(fullHouses.map((entry) => entry.meta)).toEqual(Array.from({ length: 6 }, () => ({ cellId: 'house:8' })));
+    expect(payloadOf(done.state).cards.every((entry) => entry.fullHouse && entry.lines.length === 8)).toBe(true);
+    expect(currentRound(done.state)?.outcome?.winnerIds).toEqual([HOST, P2, P3]);
+  });
+
+  it('a custom room shows labels to every viewer and hides the solution until the reveal', () => {
+    const harness = makeHarness({ data: sampleData({ fixture: LIVE_FIXTURE }) });
+    const room = start(harness, { config: CUSTOM });
+    for (const viewer of [HOST, P2, null]) {
+      const view = projectFor(room, viewer, harness.deps).round;
+      expect(view?.solution ?? null).toBeNull();
+      const cells = (view?.publicPayload as M6PublicPayload).cards.flatMap((entry) => entry.cells);
+      expect(cells.filter((cell) => cell.house).every((cell) => cell.label !== null && HOUSE.includes(cell.label))).toBe(true);
+    }
+    // House cells survive live feeds untouched.
+    const fed = feed(room, harness.deps, [ev('ko', 'KICK_OFF', 0, null), ev('c1', 'CORNER', 1), ev('v', 'VAR_CHECK', 2)]).state;
+    expect(payloadOf(fed).cards.flatMap((entry) => entry.cells).filter((cell) => cell.house).every((cell) => !cell.ticked)).toBe(true);
   });
 });

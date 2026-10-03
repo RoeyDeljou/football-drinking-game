@@ -146,6 +146,9 @@ export type M7Solution = M7Shape['solution'];
 export type M7Submission = M7Shape['submission'];
 export type M7Outcome = M7Solution['outcome'];
 
+/** The M7 config schema, for the host's editor and boundary checks. */
+export const M7_CONFIG_SCHEMA = configSchema;
+
 export const M7_DEFAULT_CONFIG: M7Shape['config'] = {
   pickWindowMs: 60_000,
   toleranceMinutes: 15,
