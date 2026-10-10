@@ -335,13 +335,45 @@ describe('GET /competitions/:id/fixtures', () => {
   );
 
   it(
+    'window=open returns live + scheduled-within-30-min from the current scoreboard only (one call, no date window)',
+    async () => {
+      const now = Date.now();
+      provider = new StubProvider(
+        new Map([
+          [
+            'premier-league',
+            [
+              fixture('live-1', new Date(now - 600_000).toISOString(), 'LIVE'),
+              fixture('soon-20', new Date(now + 20 * 60_000).toISOString(), 'SCHEDULED'),
+              fixture('later-45', new Date(now + 45 * 60_000).toISOString(), 'SCHEDULED'),
+              fixture('done', new Date(now - 3 * 3_600_000).toISOString(), 'FINISHED'),
+            ],
+          ],
+        ]),
+      );
+      server = await startTestServer({ footballData: provider });
+      const response = await jsonFetch(`${server.baseUrl}/competitions/premier-league/fixtures?window=open`);
+      expect((response.body as { fixtures: { fixtureId: string }[] }).fixtures.map((f) => f.fixtureId)).toEqual(['live-1', 'soon-20']);
+      // Current scoreboard only (no from/to), at most one extra day-call near midnight ET, no listLiveFixtures.
+      expect(provider.liveCalls).toBe(0);
+      expect(provider.calls).toBeLessThanOrEqual(2);
+      expect(provider.receivedQueries[0]).toEqual({});
+      // Cached briefly: a second request does not call the provider again.
+      const callsBefore = provider.calls;
+      await jsonFetch(`${server.baseUrl}/competitions/premier-league/fixtures?window=open`);
+      expect(provider.calls).toBe(callsBefore);
+    },
+    SERVER_BOOT_TIMEOUT_MS,
+  );
+
+  it(
     'window=live reflects a status change after the live TTL (a finished match drops off)',
     async () => {
       const now = Date.now();
       provider = new StubProvider(new Map([['premier-league', [fixture('live-1', new Date(now - 600_000).toISOString(), 'LIVE')]]]));
       server = await startTestServer({ footballData: provider, fixtureListCacheTtlMs: 50 });
       const ids = async () =>
-        ((await jsonFetch(`${server.baseUrl}/competitions/premier-league/fixtures?window=live`)).body as { fixtures: { fixtureId: string }[] }).fixtures.map((f) => f.fixtureId);
+        ((await jsonFetch(`${server!.baseUrl}/competitions/premier-league/fixtures?window=live`)).body as { fixtures: { fixtureId: string }[] }).fixtures.map((f) => f.fixtureId);
       expect(await ids()).toEqual(['live-1']);
       provider.setFixtures('premier-league', [fixture('live-1', new Date(now - 600_000).toISOString(), 'FINISHED')]);
       expect(await ids()).toEqual(['live-1']); // still inside the 15s live window

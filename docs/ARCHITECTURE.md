@@ -131,3 +131,23 @@ observation, else one provider `getFixture` lookup with a 15s coalescing memo an
 per-recipient socket `room:state` payload (`fixtureStatus` next to `currentFixture`; cache-only: ingestion's latest
 observation, else the prefetched bundle's status; re-broadcast whenever a watched fixture's status changes). General and
 gameday rooms are always `null` (gameday has no single room status; see `currentFixture`). Code: `engine/fixture-status.ts`.
+
+**Fixture lists and open window.** `GET /competitions/:id/fixtures?window=` accepts `live` (provider `listLiveFixtures`: the
+CURRENT scoreboard, one call per slug, 15s cache), `open` (live fixtures plus SCHEDULED ones kicking off within
+`OPEN_BEFORE_KICKOFF_MS` = 30 min, `competitions/open-window.ts`; current scoreboard plus, only when the window crosses
+midnight ET, tomorrow's dated scoreboard) and `upcoming` (the 14-day walk, unchanged). `EspnProvider` caches the current
+and today's dated scoreboards with the live TTL (15s), other days with the 10-minute fixtures TTL. The first host after a
+cold start is served from a background warm-up (`warmLiveFixtureLists`, skipped under test).
+
+**Multi-fixture rooms.** `POST /rooms` (matchday) accepts `fixtureIds: string[]` (1..20, deduped, any competitions; each
+must exist and be live or SCHEDULED, else 400 `UNKNOWN_FIXTURE` / `FIXTURE_NOT_AVAILABLE` with `error.fixtureIds`). One id
+is an ordinary single-fixture room. 2+ is a rotation pool (`RoomMeta.fixtureIds`): the gameday rotation, per-round pinning
+and retry-on-unplayable machinery run over that explicit list (`runPoolPrefetch`, `GamedayCacheEntry.pool`; statuses are
+re-read every `gamedayLivePollMs` and a fixture whose status changed is re-prefetched). `fixtureId` (single) and
+`gameday`+`competitionId` request shapes keep working. Room summary and `room:state` carry `fixtureIds` (`[id]` for single,
+the list for a pool, `[]` for gameday/general; `fixtureId` is `null` for a pool) and `currentFixture` per round
+(`mode: 'gameday'` for any rotation). Pool `fixtureStatus`: `LIVE` if any fixture is live, `FINISHED` only if all are
+finished, else the earliest unfinished fixture's status (`null` if any is unknown and none live). Live ingestion watches
+only the round's pinned fixture. Rooms may be created up to 30 minutes before kickoff: while a fixture is SCHEDULED the
+live-feed data requirements (`hasLiveEvents`, `hasPlayerMatchStats`) are treated as available so M1/M4/M5/M6/M7/M9 can be
+selected and started; the engine's live window baselines such a round as empty and ingestion polls pre-kickoff.

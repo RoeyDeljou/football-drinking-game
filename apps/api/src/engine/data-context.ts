@@ -77,6 +77,23 @@ const singleCandidate = (context: RoundDataContext): RoundDataResolution => ({
   gamedayPinKey: null,
 });
 
+/**
+ * Pre-kickoff rooms (a fixture is selectable 30 minutes before it starts): a SCHEDULED fixture has no live feed yet, so
+ * the prefetch reports `hasLiveEvents`/`hasPlayerMatchStats` false and every live game would be greyed out until
+ * kickoff. The feeds are expected to appear, and the engine's live window treats a round built before kickoff as
+ * having an empty baseline, so those two flags are treated as available while the fixture is SCHEDULED. Once the match
+ * is live the real flags apply (and a fixture whose feed never comes still fails round generation cleanly).
+ */
+const qualityFor = (bundle: MatchdayBundle): MatchdayBundle['quality'] =>
+  bundle.fixture.status !== 'SCHEDULED' || (bundle.quality.hasLiveEvents && bundle.quality.hasPlayerMatchStats)
+    ? bundle.quality
+    : {
+        ...bundle.quality,
+        hasLiveEvents: true,
+        hasPlayerMatchStats: true,
+        notes: [...bundle.quality.notes, 'Match has not kicked off: live feeds are expected once it starts.'],
+      };
+
 const bundleToContext = (bundle: MatchdayBundle): RoundDataContext => ({
   fixture: bundle.fixture,
   lineups: bundle.lineups,
@@ -85,7 +102,7 @@ const bundleToContext = (bundle: MatchdayBundle): RoundDataContext => ({
   players: bundle.squads.flatMap((squad) => squad.players),
   profiles: bundle.profiles,
   seasonStats: bundle.seasonStats,
-  quality: bundle.quality,
+  quality: qualityFor(bundle),
 });
 
 /** Runs the four-step prefetch, caches the bundle, and (optionally) reports live progress. */
@@ -486,7 +503,7 @@ const pickCandidates = (
 ): readonly RoundDataCandidate[] => {
   const playableIds = entry.fixtureOrder.filter((fixtureId) => {
     const bundle = entry.bundle.fixtures.find((candidate) => candidate.fixture.id === fixtureId);
-    return bundle !== undefined && checkModulePlayable({ dataRequirements }, bundle.quality).playable;
+    return bundle !== undefined && checkModulePlayable({ dataRequirements }, qualityFor(bundle)).playable;
   });
   if (playableIds.length === 0) return [{ context: EMPTY_DATA_CONTEXT, fixtureId: null }];
 
@@ -519,7 +536,7 @@ const probePlayability = (
   for (const fixtureId of entry.fixtureOrder) {
     const bundle = entry.bundle.fixtures.find((candidate) => candidate.fixture.id === fixtureId);
     if (bundle === undefined) continue;
-    if (checkModulePlayable({ dataRequirements }, bundle.quality).playable) return bundleToContext(bundle);
+    if (checkModulePlayable({ dataRequirements }, qualityFor(bundle)).playable) return bundleToContext(bundle);
   }
   return EMPTY_DATA_CONTEXT;
 };
