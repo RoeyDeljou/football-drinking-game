@@ -63,7 +63,14 @@ class StubProvider implements FootballDataProvider {
     return ok([]);
   }
 
-  listLiveFixtures: FootballDataProvider['listLiveFixtures'] = () => Promise.resolve(ok([]));
+  /** Calls to `listLiveFixtures` (the only thing `window=live` may use), kept apart from `calls`. */
+  liveCalls = 0;
+  async listLiveFixtures(competitionId: CompetitionId): Promise<DataResult<readonly Fixture[]>> {
+    this.liveCalls += 1;
+    if (this.shouldFail === 'throw') throw new Error('upstream exploded');
+    if (this.shouldFail) return fail('UPSTREAM', 'upstream is down');
+    return ok((this.fixturesByCompetition.get(competitionId) ?? []).filter((f) => f.status === 'LIVE' || f.status === 'HALF_TIME'));
+  }
 
   private notImplemented(): never {
     throw new Error('not implemented in StubProvider');
@@ -302,6 +309,42 @@ describe('GET /competitions/:id/fixtures', () => {
       expect(
         (upcomingOnly.body as { fixtures: { fixtureId: string }[] }).fixtures.map((f) => f.fixtureId),
       ).toEqual(['soon']);
+    },
+    SERVER_BOOT_TIMEOUT_MS,
+  );
+
+  it(
+    'window=live uses the current scoreboard only (one listLiveFixtures call, no 14-day walk), is fast, and is cached briefly',
+    async () => {
+      const now = Date.now();
+      provider = new StubProvider(new Map([['premier-league', [fixture('live-1', new Date(now - 600_000).toISOString(), 'LIVE')]]]));
+      server = await startTestServer({ footballData: provider });
+
+      const started = Date.now();
+      const first = await jsonFetch(`${server.baseUrl}/competitions/premier-league/fixtures?window=live`);
+      expect(Date.now() - started).toBeLessThan(2_000);
+      expect((first.body as { fixtures: { fixtureId: string }[] }).fixtures.map((f) => f.fixtureId)).toEqual(['live-1']);
+      expect(provider.liveCalls).toBe(1);
+      expect(provider.calls).toBe(0); // never the dated getFixturesByCompetition walk
+      expect(provider.receivedQueries).toEqual([]);
+
+      await jsonFetch(`${server.baseUrl}/competitions/premier-league/fixtures?window=live`);
+      expect(provider.liveCalls).toBe(1); // inside the live TTL: served from the short cache
+    },
+    SERVER_BOOT_TIMEOUT_MS,
+  );
+
+  it(
+    'window=live reflects a status change after the live TTL (a finished match drops off)',
+    async () => {
+      const now = Date.now();
+      provider = new StubProvider(new Map([['premier-league', [fixture('live-1', new Date(now - 600_000).toISOString(), 'LIVE')]]]));
+      server = await startTestServer({ footballData: provider, fixtureListCacheTtlMs: 50 });
+      const ids = async () =>
+        ((await jsonFetch(`${server.baseUrl}/competitions/premier-league/fixtures?window=live`)).body as { fixtures: { fixtureId: string }[] }).fixtures.map((f) => f.fixtureId);
+      expect(await ids()).toEqual(['live-1']);
+      provider.setFixtures('premier-league', [fixture('live-1', new Date(now - 600_000).toISOString(), 'FINISHED')]);
+      expect(await ids()).toEqual(['live-1']); // still inside the 15s live window
     },
     SERVER_BOOT_TIMEOUT_MS,
   );

@@ -38,7 +38,7 @@ describe('isFreshLiveFixture', () => {
     expect(isFreshLiveFixture(fixture({ kickoff: new Date(NOW).toISOString() }), NOW)).toBe(true);
   });
 
-  it('excludes a live-status fixture that kicked off more than 2 hours ago (stuck provider status)', () => {
+  it('excludes a live-status fixture that kicked off more than the fresh window ago (stuck provider status)', () => {
     const staleKickoff = new Date(NOW - FRESH_LIVE_WINDOW_MS - 60_000).toISOString();
     expect(isFreshLiveFixture(fixture({ kickoff: staleKickoff, status: 'LIVE' }), NOW)).toBe(false);
   });
@@ -47,8 +47,15 @@ describe('isFreshLiveFixture', () => {
     expect(isFreshLiveFixture(fixture({ status: 'SCHEDULED', kickoff: new Date(NOW).toISOString() }), NOW)).toBe(false);
   });
 
-  it('excludes an unparsable kickoff', () => {
-    expect(isFreshLiveFixture(fixture({ kickoff: 'not-a-date' }), NOW)).toBe(false);
+  it('trusts a live status when the kickoff is unknown or unparsable', () => {
+    expect(isFreshLiveFixture(fixture({ kickoff: 'not-a-date' }), NOW)).toBe(true);
+    expect(isFreshLiveFixture(fixture({ kickoff: 'not-a-date', status: 'HALF_TIME' }), NOW)).toBe(true);
+    expect(isFreshLiveFixture(fixture({ kickoff: 'not-a-date', status: 'SCHEDULED' }), NOW)).toBe(false);
+  });
+
+  it('keeps a match fresh through half-time and stoppage (2h40m after kickoff)', () => {
+    const kickoff = new Date(NOW - (2 * 60 + 40) * 60_000).toISOString();
+    expect(isFreshLiveFixture(fixture({ kickoff, status: 'LIVE' }), NOW)).toBe(true);
   });
 });
 
@@ -67,7 +74,7 @@ describe('matchdayAvailability', () => {
     expect(matchdayAvailability(checks, NOW)).toBe('available');
   });
 
-  it('excludes a live-status fixture that kicked off more than 2 hours ago from counting as available', () => {
+  it('excludes a live-status fixture that kicked off more than the fresh window ago from counting as available', () => {
     const stale = fixture({ kickoff: new Date(NOW - FRESH_LIVE_WINDOW_MS - 60_000).toISOString() });
     const checks: CompetitionLiveCheck[] = [settledOk([stale])];
     expect(matchdayAvailability(checks, NOW)).toBe('unavailable');

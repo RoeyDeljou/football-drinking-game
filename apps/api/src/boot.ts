@@ -1,5 +1,6 @@
 import type { BuildAppOptions, BuiltApp } from './app.js';
 import { buildApp } from './app.js';
+import { warmLiveFixtureLists } from './competitions/routes.js';
 import type { WarmupHandle, WarmupOptions } from './engine/general-dataset-access.js';
 import { startGeneralDatasetWarmup } from './engine/general-dataset-access.js';
 import type { AppEnv } from './env.js';
@@ -23,6 +24,8 @@ export interface BootedApp extends BuiltApp {
 export const bootServer = async (env: AppEnv, options: BootOptions): Promise<BootedApp> => {
   const built = await buildApp({ ...options, env });
   await built.app.listen({ port: options.port, host: options.host });
+  // Non-blocking: fill the live-fixture lists the host page polls before the first host asks (skipped under test).
+  if (env.NODE_ENV !== 'test') void warmLiveFixtureLists(built.ctx);
   const warmup = startGeneralDatasetWarmup(built.generalDatasetAccess, options.warmup);
   return {
     ...built,

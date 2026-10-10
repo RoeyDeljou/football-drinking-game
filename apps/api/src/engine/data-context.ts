@@ -19,7 +19,7 @@
 
 import type { DataRequirementKey, GameCategory, RoomAction, RoomState, RoundDataContext } from '@fdg/game-core';
 import { checkModulePlayable, EMPTY_DATA_CONTEXT } from '@fdg/game-core';
-import type { CompetitionId, FixtureId, GamedayBundle, MatchdayBundle, PrefetchStepId, PrefetchStepStatus } from '@fdg/football-data';
+import type { CompetitionId, DataError, FixtureId, GamedayBundle, MatchdayBundle, PrefetchStepId, PrefetchStepStatus } from '@fdg/football-data';
 import { MatchdayPrefetcher, PREFETCH_STEP_ORDER } from '@fdg/football-data';
 import type { RoomId } from '@fdg/game-core';
 import type { AppContext } from '../context.js';
@@ -28,6 +28,7 @@ import type { GamedayCacheEntry, RoundKey } from './gameday-cache.js';
 import { getCachedGameday, getPinnedRoundFixture, setCachedGameday } from './gameday-cache.js';
 import { getScopedGeneralDataset } from './general-scope.js';
 import type { RoomMeta } from '../rooms/store.js';
+import { poolFixtureIds } from '../rooms/store.js';
 
 /**
  * One candidate `RoundDataContext` the dispatch layer may hand to `reduceRoom` while trying to
@@ -185,6 +186,112 @@ export const runGamedayPrefetch = async (
   return result.value;
 };
 
+const mapLimit = async <T, R>(items: readonly T[], limit: number, task: (item: T) => Promise<R>): Promise<R[]> => {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    for (;;) {
+      const index = next;
+      next += 1;
+      const item = items[index];
+      if (item === undefined) return;
+      results[index] = await task(item);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+};
+
+/** A fixture that can no longer host a new round: finished, cancelled or postponed. */
+const isRetiredStatus = (status: string): boolean => status === 'FINISHED' || status === 'CANCELLED' || status === 'POSTPONED';
+
+/**
+ * Prefetches an explicit multi-fixture pool (`RoomMeta.fixtureIds`): one `MatchdayBundle` per fixture, at most 3
+ * pipelines at once, reporting the same aggregated four-step progress gameday mode does. Caches the result in the
+ * same per-room `GamedayCacheEntry` the competition gameday flow uses (with `pool` set), so round rotation, pinning
+ * and annotation are shared code. A fixture whose prefetch fails outright is skipped; only if every one fails is
+ * the whole prefetch a failure.
+ */
+export const runPoolPrefetch = async (
+  ctx: AppContext,
+  roomId: RoomId,
+  fixtureIds: readonly FixtureId[],
+  onProgress?: (steps: readonly AggregatedPrefetchStep[]) => void,
+): Promise<GamedayBundle | null> => {
+  const progressByFixture = new Map<FixtureId, ReturnType<MatchdayPrefetcher['progress']>>();
+  const outcomes = await mapLimit(fixtureIds, 3, async (fixtureId) => {
+    const prefetcher = new MatchdayPrefetcher(ctx.footballData, {
+      onProgress: (progress) => {
+        progressByFixture.set(fixtureId, progress);
+        onProgress?.(aggregateGamedaySteps(progressByFixture, fixtureIds.length));
+      },
+    });
+    return { fixtureId, result: await prefetcher.run(fixtureId) };
+  });
+
+  const bundles: MatchdayBundle[] = [];
+  const skipped: { fixtureId: FixtureId; error: DataError }[] = [];
+  for (const { fixtureId, result } of outcomes) {
+    if (result.ok) bundles.push(result.value);
+    else skipped.push({ fixtureId, error: result.error });
+  }
+  const first = bundles[0];
+  if (first === undefined) return null;
+
+  const existing = getCachedGameday(roomId);
+  const freshIds = new Set(bundles.map((bundle) => bundle.fixture.id));
+  const carriedOver = (existing?.bundle.fixtures ?? []).filter((bundle) => !freshIds.has(bundle.fixture.id));
+  const competitionId = first.fixture.competitionId;
+  const bundle: GamedayBundle = { competitionId, fixtures: [...carriedOver, ...bundles], skipped };
+  setCachedGameday(roomId, {
+    competitionId,
+    bundle,
+    fixtureOrder: fixtureIds.filter((id) => bundles.some((b) => b.fixture.id === id && !isRetiredStatus(b.fixture.status))),
+    lastPolledAt: Date.now(),
+    pool: fixtureIds,
+  });
+  return bundle;
+};
+
+/**
+ * Pool counterpart of the competition live-set refresh: re-reads each pool fixture's status (one `getFixture` each,
+ * behind the provider's own cache), re-prefetches a bundle whose status changed (a SCHEDULED fixture that kicked off
+ * needs live data before live-only games can use it), and rebuilds `fixtureOrder` as the pool minus retired
+ * fixtures. A failed lookup keeps the previous knowledge; `bundle.fixtures` stays grow-only (replace in place).
+ */
+const refreshPool = async (ctx: AppContext, roomId: RoomId, entry: GamedayCacheEntry, pool: readonly FixtureId[]): Promise<GamedayCacheEntry> => {
+  const statuses = new Map<FixtureId, string>();
+  await mapLimit(pool, 3, async (fixtureId) => {
+    try {
+      const result = await ctx.footballData.getFixture(fixtureId);
+      if (result.ok && result.value !== null) statuses.set(fixtureId, result.value.status);
+    } catch {
+      // keep what we knew
+    }
+  });
+  let fixtures = [...entry.bundle.fixtures];
+  for (const fixtureId of pool) {
+    const status = statuses.get(fixtureId);
+    if (status === undefined) continue;
+    const known = fixtures.find((bundle) => bundle.fixture.id === fixtureId);
+    if (known !== undefined && known.fixture.status === status) continue;
+    const fresh = await new MatchdayPrefetcher(ctx.footballData).run(fixtureId);
+    if (!fresh.ok) continue;
+    fixtures = known === undefined ? [...fixtures, fresh.value] : fixtures.map((bundle) => (bundle.fixture.id === fixtureId ? fresh.value : bundle));
+  }
+  const refreshed: GamedayCacheEntry = {
+    ...entry,
+    bundle: { ...entry.bundle, fixtures },
+    fixtureOrder: pool.filter((id) => fixtures.some((bundle) => bundle.fixture.id === id && !isRetiredStatus(statuses.get(id) ?? statusOfBundle(fixtures, id)))),
+    lastPolledAt: Date.now(),
+  };
+  setCachedGameday(roomId, refreshed);
+  return refreshed;
+};
+
+const statusOfBundle = (fixtures: readonly MatchdayBundle[], id: FixtureId): string =>
+  fixtures.find((bundle) => bundle.fixture.id === id)?.fixture.status ?? 'SCHEDULED';
+
 /** How often the live-fixture pool for a gameday room is re-polled — same order of magnitude as
  * `DEFAULT_FIXTURE_LIST_TTL_MS` in `competitions/fixture-list-cache.ts`, which this mirrors: fixture
  * lists change slowly outside kickoff/final-whistle moments, so polling much faster than this just
@@ -213,6 +320,7 @@ export const refreshGamedayLiveSet = async (ctx: AppContext, roomId: RoomId): Pr
   const entry = getCachedGameday(roomId);
   if (entry === null) return null;
   if (Date.now() - entry.lastPolledAt < ctx.gamedayLivePollMs) return entry;
+  if (entry.pool !== undefined) return refreshPool(ctx, roomId, entry, entry.pool);
 
   const liveResult = await ctx.footballData.listLiveFixtures(entry.competitionId);
   if (!liveResult.ok) {
@@ -416,16 +524,24 @@ const probePlayability = (
   return EMPTY_DATA_CONTEXT;
 };
 
+/** What a rotation room rotates over: a competition's live fixtures (gameday) or an explicit fixture list (pool). */
+type RotationSource =
+  | { readonly kind: 'competition'; readonly competitionId: CompetitionId }
+  | { readonly kind: 'pool'; readonly fixtureIds: readonly FixtureId[] };
+
 const buildGamedayRoundContext = async (
   ctx: AppContext,
   room: RoomState,
   action: RoomAction,
-  competitionId: CompetitionId,
+  source: RotationSource,
   dataRequirements: readonly DataRequirementKey[],
 ): Promise<RoundDataResolution> => {
   let entry = getCachedGameday(room.id);
   if (entry === null) {
-    const bundle = await runGamedayPrefetch(ctx, room.id, competitionId);
+    const bundle =
+      source.kind === 'pool'
+        ? await runPoolPrefetch(ctx, room.id, source.fixtureIds)
+        : await runGamedayPrefetch(ctx, room.id, source.competitionId);
     entry = bundle === null ? null : getCachedGameday(room.id);
   } else {
     entry = (await refreshGamedayLiveSet(ctx, room.id)) ?? entry;
@@ -468,9 +584,13 @@ export const buildRoundDataContext = async (
   if (category === null) return singleCandidate(EMPTY_DATA_CONTEXT);
 
   if (category === 'matchday') {
+    const pool = poolFixtureIds(meta);
+    if (pool !== null) {
+      return buildGamedayRoundContext(ctx, room, action, { kind: 'pool', fixtureIds: pool }, dataRequirements);
+    }
     const gamedayCompetitionId = meta.gamedayCompetitionId ?? null;
     if (gamedayCompetitionId !== null) {
-      return buildGamedayRoundContext(ctx, room, action, gamedayCompetitionId, dataRequirements);
+      return buildGamedayRoundContext(ctx, room, action, { kind: 'competition', competitionId: gamedayCompetitionId }, dataRequirements);
     }
 
     if (meta.fixtureId === null) return singleCandidate(EMPTY_DATA_CONTEXT);

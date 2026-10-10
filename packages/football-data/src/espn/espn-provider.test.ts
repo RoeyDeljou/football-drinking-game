@@ -102,11 +102,41 @@ describe('EspnProvider — caching and coalescing (through the shared upstream p
   it('re-fetches once the TTL has expired', async () => {
     const clock = createManualClock();
     const { http, requests } = scriptedHttp([okResponse(scoreboardBody('1')), okResponse(scoreboardBody('1'))]);
-    const provider = new EspnProvider({ http, clock, cacheTtl: { fixtures: 1_000 } });
+    const provider = new EspnProvider({ http, clock, cacheTtl: { liveMatch: 1_000 } });
     await provider.getFixturesByCompetition(LA_LIGA.id);
     await clock.advance(1_001);
     await provider.getFixturesByCompetition(LA_LIGA.id);
     expect(requests).toHaveLength(2);
+  });
+
+  it('caches the CURRENT scoreboard with the short live TTL, not the 10-minute fixtures TTL (statuses stay fresh)', async () => {
+    const clock = createManualClock();
+    const { http, requests } = scriptedHttp([okResponse(scoreboardBody('1')), okResponse(scoreboardBody('1'))]);
+    const provider = new EspnProvider({ http, clock });
+    await provider.listLiveFixtures(LA_LIGA.id);
+    await clock.advance(10_000);
+    await provider.listLiveFixtures(LA_LIGA.id);
+    expect(requests).toHaveLength(1); // inside the 15s live TTL
+    await clock.advance(6_000);
+    await provider.listLiveFixtures(LA_LIGA.id);
+    expect(requests).toHaveLength(2); // past 15s: refreshed (the old 10-minute TTL would have kept it)
+  });
+
+  it("today's dated scoreboard is short-lived too, while other days keep the long fixtures TTL", async () => {
+    const clock = createManualClock();
+    const today = new Date(clock.now()).toISOString().slice(0, 10);
+    const { http, requests } = scriptedHttp([
+      okResponse(scoreboardBody('1')),
+      okResponse(scoreboardBody('1')),
+      okResponse(scoreboardBody('1')),
+    ]);
+    const provider = new EspnProvider({ http, clock });
+    await provider.getFixturesByCompetition(LA_LIGA.id, { from: today, to: today });
+    await provider.getFixturesByCompetition(LA_LIGA.id, { from: '2099-01-01', to: '2099-01-01' });
+    await clock.advance(60_000);
+    await provider.getFixturesByCompetition(LA_LIGA.id, { from: today, to: today });
+    await provider.getFixturesByCompetition(LA_LIGA.id, { from: '2099-01-01', to: '2099-01-01' });
+    expect(requests).toHaveLength(3); // today re-fetched, the far day served from cache
   });
 });
 

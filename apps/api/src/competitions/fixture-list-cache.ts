@@ -14,8 +14,10 @@ import type { DataResult } from '@fdg/football-data';
 export interface FixtureListCache {
   /** Returns the cached result if still fresh, otherwise calls `load` and caches a success. */
   get(
-    competitionId: CompetitionId,
+    key: CompetitionId | string,
     load: () => Promise<DataResult<readonly Fixture[]>>,
+    /** Per-call TTL override (the live list uses a much shorter one than the 14-day list). */
+    ttlMs?: number,
   ): Promise<DataResult<readonly Fixture[]>>;
 }
 
@@ -30,14 +32,14 @@ export const DEFAULT_FIXTURE_LIST_TTL_MS = 90_000;
 export const createFixtureListCache = (options: FixtureListCacheOptions = {}): FixtureListCache => {
   const ttlMs = options.ttlMs ?? DEFAULT_FIXTURE_LIST_TTL_MS;
   const now = options.now ?? Date.now;
-  const entries = new Map<CompetitionId, { readonly expiresAt: number; readonly result: DataResult<readonly Fixture[]> }>();
+  const entries = new Map<string, { readonly expiresAt: number; readonly result: DataResult<readonly Fixture[]> }>();
 
   return {
-    get: async (competitionId, load) => {
-      const cached = entries.get(competitionId);
+    get: async (key, load, ttlOverrideMs) => {
+      const cached = entries.get(key);
       if (cached !== undefined && cached.expiresAt > now()) return cached.result;
       const result = await load();
-      if (result.ok) entries.set(competitionId, { expiresAt: now() + ttlMs, result });
+      if (result.ok) entries.set(key, { expiresAt: now() + (ttlOverrideMs ?? ttlMs), result });
       return result;
     },
   };

@@ -15,6 +15,9 @@ const LIVE_STATUSES: readonly FixtureStatus[] = ['LIVE', 'HALF_TIME', 'EXTRA_TIM
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const UPCOMING_WINDOW_MS = 14 * ONE_DAY_MS;
 
+/** How long a `window=live` answer is reused. */
+const LIVE_LIST_TTL_MS = 15_000;
+
 /** Cap on the returned list, applied after filtering and sorting. */
 const MAX_FIXTURES = 20;
 
@@ -68,6 +71,26 @@ export function selectRelevantFixtures(
   return combined.slice(0, MAX_FIXTURES);
 }
 
+/**
+ * Warms the live-fixture lists (the exact cache entries `window=live` reads) once, in the background, one competition at
+ * a time, so the first host after a cold start gets a fast answer instead of paying for the provider's cold scoreboard
+ * fetches. Never throws, never blocks boot; failures are simply not cached.
+ */
+export const warmLiveFixtureLists = async (ctx: AppContext): Promise<void> => {
+  for (const config of allCompetitions()) {
+    const competitionId = asCompetitionId(config.id);
+    try {
+      await ctx.fixtureListCache.get(
+        `${competitionId}:live`,
+        () => ctx.footballData.listLiveFixtures(competitionId),
+        LIVE_LIST_TTL_MS,
+      );
+    } catch (error) {
+      console.warn(`[competitions] live fixture warm-up failed for ${competitionId}:`, error);
+    }
+  }
+};
+
 export const registerCompetitionRoutes = (app: FastifyInstance, ctx: AppContext): void => {
   // Static config, straight from COMPETITION_CONFIGS — no provider call, so this is instant.
   app.get('/competitions', async (_request, reply) => reply.send({ competitions: allCompetitions() }));
@@ -91,9 +114,20 @@ export const registerCompetitionRoutes = (app: FastifyInstance, ctx: AppContext)
     const competitionId = asCompetitionId(config.id);
     const nowMs = Date.now();
 
+    // `window=live` only needs what is in play right now: the provider's current scoreboard (one call per slug),
+    // NOT the 14-day walk — against ESPN that walk costs one request per day per slug (national teams has ~12
+    // slugs), which took 40s+ on a cold start and kept the host page from ever showing Matchday. Cached briefly
+    // (live statuses go stale quickly); the upcoming/combined paths below are unchanged.
+    const liveOnly = parsedQuery.data.window === 'live';
     let result: Awaited<ReturnType<typeof ctx.footballData.getFixturesByCompetition>>;
     try {
-      result = await ctx.fixtureListCache.get(competitionId, () =>
+      result = liveOnly
+        ? await ctx.fixtureListCache.get(
+            `${competitionId}:live`,
+            () => ctx.footballData.listLiveFixtures(competitionId),
+            LIVE_LIST_TTL_MS,
+          )
+        : await ctx.fixtureListCache.get(competitionId, () =>
         ctx.footballData.getFixturesByCompetition(competitionId, {
           season: config.currentSeason,
           // The provider contract only guarantees "the six supported competitions' fixtures",

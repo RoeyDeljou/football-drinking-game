@@ -28,6 +28,7 @@ import type { FixtureId, FixtureStatus } from '@fdg/football-data';
 import type { AppContext } from '../context.js';
 import { persistEngineEvents } from '../persistence/results.js';
 import type { RoomMeta, RoomRecord } from '../rooms/store.js';
+import { roomFixtureIds } from '../rooms/store.js';
 import type { EngineDepsCandidate } from './deps.js';
 import { buildEngineDepsResolution, registry } from './deps.js';
 import type { CurrentFixtureSummary } from './fixture-annotation.js';
@@ -55,6 +56,11 @@ export interface RoomBroadcastPayload extends ProjectedRoom {
    * (`GET /rooms/:id`) is the authoritative, fresher source. See `fixture-status.ts`.
    */
   readonly fixtureStatus: FixtureStatus | null;
+  /**
+   * Every fixture the room is tied to (`[]` for general/gameday rooms): the single fixture, or the pool's list in the
+   * host's order. Per-round fixture is `currentFixture`. See `rooms/routes.ts`.
+   */
+  readonly fixtureIds: readonly string[];
 }
 
 export interface DispatchOutcome extends DispatchResult {
@@ -86,13 +92,14 @@ const project = (
   fixtureStatus: FixtureStatus | null,
 ): { projections: Map<PlayerId, RoomBroadcastPayload>; hostScreen: RoomBroadcastPayload } => {
   const currentFixture = resolveCurrentFixtureAnnotation(state.id, state, meta);
+  const fixtureIds = roomFixtureIds(meta);
   const projections = new Map<PlayerId, RoomBroadcastPayload>();
   for (const player of activePlayers(state)) {
-    projections.set(player.id, { ...projectFor(state, player.id, { modules: registry, clock }), currentFixture, fixtureStatus });
+    projections.set(player.id, { ...projectFor(state, player.id, { modules: registry, clock }), currentFixture, fixtureStatus, fixtureIds });
   }
   return {
     projections,
-    hostScreen: { ...projectForHostScreen(state, { modules: registry, clock }), currentFixture, fixtureStatus },
+    hostScreen: { ...projectForHostScreen(state, { modules: registry, clock }), currentFixture, fixtureStatus, fixtureIds },
   };
 };
 

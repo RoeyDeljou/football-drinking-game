@@ -61,6 +61,8 @@ export interface RoomSummary {
   readonly hostNickname: string | null;
   readonly category: string | null;
   readonly fixtureId: string | null;
+  /** Every fixture of a matchday room (one for a single match); absent on older servers. */
+  readonly fixtureIds?: readonly string[] | null;
   /** Set only for a gameday room (rounds rotating across a competition's live fixtures); `null`
    * otherwise, including for single-fixture matchday rooms. */
   readonly gamedayCompetitionId: string | null;
@@ -70,16 +72,15 @@ export interface RoomSummary {
 
 export const createRoom = (input: {
   readonly category: 'matchday' | 'general';
-  readonly fixtureId?: string;
-  /** Mutually exclusive with `fixtureId` — see `apps/api/src/rooms/schemas.ts`. */
-  readonly gameday?: boolean;
+  /** Matchday: every ticked match (1..20): one is a single-match room, several a rotation room. */
+  readonly fixtureIds?: readonly string[];
+  /** General: scope the season data to one competition. */
   readonly competitionId?: string;
   readonly hostNickname?: string;
   readonly settings?: Record<string, unknown>;
 }): Promise<ApiResult<CreateRoomResponse>> => {
   const body: Record<string, unknown> = { category: input.category };
-  if (input.fixtureId !== undefined) body.fixtureId = input.fixtureId;
-  if (input.gameday === true) body.gameday = true;
+  if (input.fixtureIds !== undefined) body.fixtureIds = [...input.fixtureIds];
   if (input.competitionId !== undefined) body.competitionId = input.competitionId;
   if (input.hostNickname !== undefined) body.hostNickname = input.hostNickname;
   if (input.settings !== undefined) body.settings = input.settings;

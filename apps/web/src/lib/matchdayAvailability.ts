@@ -14,13 +14,14 @@
 import type { ApiResult, FixtureSummary } from './api';
 import { isFixtureLive } from './matchdayPicker';
 
-/** Only count a live fixture if it kicked off less than 2 hours ago. */
-export const FRESH_LIVE_WINDOW_MS = 2 * 60 * 60 * 1000;
+/** Only count a live fixture if it kicked off less than 3 hours ago (90 min + half-time + stoppage + delays). */
+export const FRESH_LIVE_WINDOW_MS = 3 * 60 * 60 * 1000;
 
 export const isFreshLiveFixture = (fixture: Pick<FixtureSummary, 'status' | 'kickoff'>, nowMs: number): boolean => {
   if (!isFixtureLive(fixture)) return false;
   const kickoffMs = Date.parse(fixture.kickoff);
-  if (Number.isNaN(kickoffMs)) return false;
+  // The provider says it is live and gave no usable kickoff time: trust the status.
+  if (Number.isNaN(kickoffMs)) return true;
   return nowMs - kickoffMs < FRESH_LIVE_WINDOW_MS;
 };
 
