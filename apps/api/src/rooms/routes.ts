@@ -126,7 +126,10 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
       for (const id of unique) {
         try {
           const result = await ctx.footballData.getFixture(asFixtureId(id));
-          if (!result.ok) looked.push({ id, status: null, failed: true });
+          if (!result.ok) {
+            console.error(`[rooms] could not look up fixture ${id}:`, result.error);
+            looked.push({ id, status: null, failed: true });
+          }
           else looked.push({ id, status: result.value === null ? null : result.value.status, failed: false });
         } catch (error) {
           console.error(`[rooms] provider threw looking up fixture ${id}:`, error);
