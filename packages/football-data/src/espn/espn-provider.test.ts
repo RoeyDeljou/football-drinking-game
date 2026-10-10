@@ -425,3 +425,34 @@ describe('live cache TTL follows the live poll interval', () => {
     expect(requests).toHaveLength(2);
   });
 });
+
+describe('EspnProvider — reads a fixture summary from the league it was listed under', () => {
+  const summaryBody = (eventId: string) => {
+    const event = scoreboardBody(eventId).events[0]!;
+    return { header: { id: eventId, league: { slug: 'esp.1' }, competitions: event.competitions } };
+  };
+
+  it('uses the league summary route once a scoreboard has listed the fixture', async () => {
+    const clock = createManualClock();
+    const { http, requests } = scriptedHttp([okResponse(scoreboardBody('77')), okResponse(summaryBody('77'))]);
+    const provider = new EspnProvider({ userAgent: 'TestAgent/1.0 (+https://example.test)', http, clock });
+    await provider.getFixturesByCompetition(LA_LIGA.id);
+    const fixture = await provider.getFixture(asFixtureId('77'));
+    expect(fixture.ok && fixture.value?.id).toBe('77');
+    expect(requests[1]?.url).toContain('/esp.1/summary?event=77');
+  });
+
+  it('falls back to the cross-league route when the league route fails', async () => {
+    const clock = createManualClock();
+    const { http, requests } = scriptedHttp([
+      okResponse(scoreboardBody('78')),
+      { status: 404, body: {}, headers: {} },
+      okResponse(summaryBody('78')),
+    ]);
+    const provider = new EspnProvider({ userAgent: 'TestAgent/1.0 (+https://example.test)', http, clock });
+    await provider.getFixturesByCompetition(LA_LIGA.id);
+    const fixture = await provider.getFixture(asFixtureId('78'));
+    expect(fixture.ok && fixture.value?.id).toBe('78');
+    expect(requests.at(-1)?.url).toContain('/all/summary?event=78');
+  });
+});

@@ -141,6 +141,8 @@ export class EspnProvider implements FootballDataProvider {
 
   /** Learned id → competition routes, so an id-only call knows which league endpoint to use. */
   private readonly teamSlugs = new Map<string, string>();
+  /** Fixture id → the ESPN league slug whose scoreboard listed it, so its summary can be read from that league. */
+  private readonly fixtureSlugs = new Map<string, string>();
   private readonly playerIndex = new Map<string, Player>();
 
   constructor(config: EspnProviderConfig = {}) {
@@ -442,6 +444,7 @@ export class EspnProvider implements FootballDataProvider {
     for (const fixture of normalized.value) {
       this.teamSlugs.set(fixture.homeTeam.id, slug);
       this.teamSlugs.set(fixture.awayTeam.id, slug);
+      this.fixtureSlugs.set(fixture.id, slug);
     }
     return ok(normalized.value, [...result.notes, ...normalized.notes], result.fromCache);
   }
@@ -449,10 +452,26 @@ export class EspnProvider implements FootballDataProvider {
   private async summary(
     fixtureId: FixtureId,
   ): Promise<DataResult<{ payload: EspnSummary; config: CompetitionConfig } | null>> {
-    const url = `${this.baseUrl}/all/summary?event=${encodeURIComponent(fixtureId)}`;
-    const result = await this.client.getJson(`summary:${fixtureId}`, url, summaryTtl(this.ttl, () => this.clock.now()), espnSummarySchema);
-    if (!result.ok) return result;
-    const slug = result.value.header.league?.slug ?? null;
+    // Prefer the league the fixture was listed under (a league summary is the documented ESPN route); fall back to
+    // the cross-league `all` route when the fixture was never seen on a scoreboard, or when the league route fails.
+    const event = encodeURIComponent(fixtureId);
+    const ttl = summaryTtl(this.ttl, () => this.clock.now());
+    const knownSlug = this.fixtureSlugs.get(fixtureId) ?? null;
+    let result =
+      knownSlug === null
+        ? null
+        : await this.client.getJson(`summary:${fixtureId}`, `${this.baseUrl}/${knownSlug}/summary?event=${event}`, ttl, espnSummarySchema);
+    if (result === null || !result.ok) {
+      const fallback = await this.client.getJson(
+        `summary:all:${fixtureId}`,
+        `${this.baseUrl}/all/summary?event=${event}`,
+        ttl,
+        espnSummarySchema,
+      );
+      if (!fallback.ok) return result ?? fallback;
+      result = fallback;
+    }
+    const slug = result.value.header.league?.slug ?? knownSlug;
     if (slug === null) {
       return ok(null, [`Fixture ${fixtureId} belongs to an unsupported competition (unknown).`]);
     }
