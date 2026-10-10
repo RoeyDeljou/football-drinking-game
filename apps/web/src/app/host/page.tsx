@@ -18,7 +18,7 @@ import {
   resolveModuleId,
   type ModeChoice,
 } from '@/lib/gameMode';
-import { isFreshLiveFixture, isMatchdayVisible, matchdayAvailability, type CompetitionLiveCheck } from '@/lib/matchdayAvailability';
+import { isMatchdayVisible, isOpenFixture, matchdayAvailability, type CompetitionLiveCheck } from '@/lib/matchdayAvailability';
 import { type FixtureSelection } from '@/lib/fixtureSelection';
 import { savePendingSelection, saveRoomSetup } from '@/lib/storage';
 import { setupScopeLabel } from '@/lib/setupScopeLabel';
@@ -130,7 +130,7 @@ function HostPageContent(): React.JSX.Element {
 
   // Every live fixture the sweep has found so far, from any competition (answers arrive independently).
   const liveFixtures = matchdayChecks.flatMap((check) =>
-    check.status === 'settled' && check.result.ok ? check.result.value.fixtures.filter((fixture) => isFreshLiveFixture(fixture, now)) : [],
+    check.status === 'settled' && check.result.ok ? check.result.value.fixtures.filter((fixture) => isOpenFixture(fixture, now)) : [],
   );
   const sweepStartedAt = useRef(Date.now());
   const matchdayState = matchdayAvailability(matchdayChecks, now);

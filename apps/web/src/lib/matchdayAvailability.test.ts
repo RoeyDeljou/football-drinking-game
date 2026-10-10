@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { FixtureSummary } from './api';
 import {
   FRESH_LIVE_WINDOW_MS,
+  isImminentFixture,
+  isOpenFixture,
+  PRE_KICKOFF_SELECTABLE_MS,
+  startsInLabel,
   isFreshLiveFixture,
   isMatchdayVisible,
   matchdayAvailability,
@@ -106,5 +110,35 @@ describe('isMatchdayVisible', () => {
   it('never hides Matchday from a host already on it', () => {
     expect(isMatchdayVisible('unavailable', 'matchday')).toBe(true);
     expect(isMatchdayVisible('searching', 'matchday')).toBe(true);
+  });
+});
+
+describe('pre-kickoff selection (30 minutes before kick-off)', () => {
+  const at = (minutes: number): string => new Date(NOW + minutes * 60_000).toISOString();
+
+  it('is 30 minutes', () => {
+    expect(PRE_KICKOFF_SELECTABLE_MS).toBe(30 * 60_000);
+  });
+
+  it('opens a scheduled match from 30 minutes before kick-off, not earlier', () => {
+    expect(isImminentFixture(fixture({ status: 'SCHEDULED', kickoff: at(30) }), NOW)).toBe(true);
+    expect(isImminentFixture(fixture({ status: 'SCHEDULED', kickoff: at(12) }), NOW)).toBe(true);
+    expect(isImminentFixture(fixture({ status: 'SCHEDULED', kickoff: at(31) }), NOW)).toBe(false);
+    expect(isImminentFixture(fixture({ status: 'SCHEDULED', kickoff: at(180) }), NOW)).toBe(false);
+  });
+
+  it('does not open postponed or finished matches', () => {
+    expect(isImminentFixture(fixture({ status: 'POSTPONED', kickoff: at(5) }), NOW)).toBe(false);
+    expect(isOpenFixture(fixture({ status: 'FINISHED', kickoff: at(-120) }), NOW)).toBe(false);
+  });
+
+  it('makes Matchday available for an imminent match even with nothing live', () => {
+    expect(matchdayAvailability([settledOk([fixture({ status: 'SCHEDULED', kickoff: at(20) })])], NOW)).toBe('available');
+    expect(matchdayAvailability([settledOk([fixture({ status: 'SCHEDULED', kickoff: at(90) })])], NOW)).toBe('unavailable');
+  });
+
+  it('words the badge', () => {
+    expect(startsInLabel(at(12), NOW)).toBe('Starts in 12 min');
+    expect(startsInLabel(at(-1), NOW)).toBe('Kicking off');
   });
 });

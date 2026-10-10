@@ -69,18 +69,18 @@ export const scopeLabelForFixtures = (
 
 export interface CompetitionGroup {
   readonly competition: Pick<Competition, 'id' | 'name'>;
+  /** Matches selectable right now (live or starting within 30 minutes). */
   readonly liveCount: number;
 }
 
 /** Competitions with live matches first (most live first), the rest in their given order. */
 export const orderCompetitions = (
   competitions: readonly Pick<Competition, 'id' | 'name'>[],
-  liveFixtures: readonly Pick<FixtureSummary, 'competitionId' | 'status'>[],
+  openFixtures: readonly Pick<FixtureSummary, 'competitionId'>[],
 ): readonly CompetitionGroup[] => {
+  // `openFixtures` are the ones the sweep found selectable now (live or about to kick off).
   const live = new Map<string, number>();
-  for (const fixture of liveFixtures) {
-    if (isFixtureLive(fixture)) live.set(fixture.competitionId, (live.get(fixture.competitionId) ?? 0) + 1);
-  }
+  for (const fixture of openFixtures) live.set(fixture.competitionId, (live.get(fixture.competitionId) ?? 0) + 1);
   return competitions
     .map((competition, index) => ({ competition, liveCount: live.get(competition.id) ?? 0, index }))
     .sort((a, b) => (b.liveCount > 0 ? 1 : 0) - (a.liveCount > 0 ? 1 : 0) || b.liveCount - a.liveCount || a.index - b.index)

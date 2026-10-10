@@ -25,6 +25,30 @@ export const isFreshLiveFixture = (fixture: Pick<FixtureSummary, 'status' | 'kic
   return nowMs - kickoffMs < FRESH_LIVE_WINDOW_MS;
 };
 
+/**
+ * A match can be picked from this long before kick-off, so players can join and the host can set up
+ * game cards (a custom Bingo, say) before the whistle.
+ */
+export const PRE_KICKOFF_SELECTABLE_MS = 30 * 60_000;
+
+/** Scheduled, with kick-off no more than `PRE_KICKOFF_SELECTABLE_MS` away (a kick-off already past still counts). */
+export const isImminentFixture = (fixture: Pick<FixtureSummary, 'status' | 'kickoff'>, nowMs: number): boolean => {
+  if (fixture.status !== 'SCHEDULED') return false;
+  const kickoffMs = Date.parse(fixture.kickoff);
+  if (Number.isNaN(kickoffMs)) return false;
+  return kickoffMs - nowMs <= PRE_KICKOFF_SELECTABLE_MS;
+};
+
+/** Selectable right now: live, or about to kick off. */
+export const isOpenFixture = (fixture: Pick<FixtureSummary, 'status' | 'kickoff'>, nowMs: number): boolean =>
+  isFreshLiveFixture(fixture, nowMs) || isImminentFixture(fixture, nowMs);
+
+/** "Starts in 12 min" (or "Kicking off"), for an imminent fixture. */
+export const startsInLabel = (kickoffIso: string, nowMs: number): string => {
+  const minutes = Math.ceil((Date.parse(kickoffIso) - nowMs) / 60_000);
+  return minutes <= 0 ? 'Kicking off' : `Starts in ${minutes} min`;
+};
+
 /** One competition's live-fixture check, as fanned out in parallel over every competition. */
 export type CompetitionLiveCheck =
   | { readonly status: 'pending' }
@@ -48,7 +72,7 @@ export const matchdayAvailability = (checks: readonly CompetitionLiveCheck[], no
     (check) =>
       check.status === 'settled' &&
       check.result.ok &&
-      check.result.value.fixtures.some((fixture) => isFreshLiveFixture(fixture, nowMs)),
+      check.result.value.fixtures.some((fixture) => isOpenFixture(fixture, nowMs)),
   );
   if (hasFreshLiveFixture) return 'available';
 

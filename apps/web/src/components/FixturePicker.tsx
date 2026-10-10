@@ -24,6 +24,7 @@ import {
   type FixtureSelection,
   type PickedFixture,
 } from '@/lib/fixtureSelection';
+import { isImminentFixture, isOpenFixture, startsInLabel } from '@/lib/matchdayAvailability';
 import { formatKickoffLocal, isFixtureLive, kickoffCountdown, liveBadgeLabel } from '@/lib/matchdayPicker';
 import { Banner, BigButton, Eyebrow } from './ui';
 
@@ -37,7 +38,7 @@ export const FixturePicker = ({
   now,
 }: {
   readonly competitions: readonly Competition[];
-  /** Live fixtures the background sweep already found, from every competition. */
+  /** Fixtures the background sweep found selectable (live, or starting within 30 minutes), from every competition. */
   readonly liveFixtures: readonly FixtureSummary[];
   readonly selection: FixtureSelection;
   readonly onChange: (selection: FixtureSelection) => void;
@@ -81,11 +82,9 @@ export const FixturePicker = ({
       return next;
     });
 
-  const anyUpcoming = (fixtures: readonly FixtureSummary[]): boolean => fixtures.some((fixture) => !isFixtureLive(fixture));
-
   return (
     <div className="flex flex-col gap-3">
-      <div className="sticky top-[max(0.5rem,env(safe-area-inset-top))] z-20 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-md border-2 border-border-strong bg-bg-raised px-3 py-2 shadow-sheet">
+      <div className="flex [@media(min-height:640px)]:sticky [@media(min-height:640px)]:top-[max(0.5rem,env(safe-area-inset-top))] [@media(min-height:640px)]:z-20 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-md border-2 border-border-strong bg-bg-raised px-3 py-2 shadow-sheet">
         <p role="status" aria-live="polite" className="t-body max-w-full flex-1 basis-48 font-semibold">
           {selectionSummary(selection)}
         </p>
@@ -100,15 +99,20 @@ export const FixturePicker = ({
         ) : null}
       </div>
       <p className="t-xs text-fg-subtle">
-        Tick one match for a single-match room, or several (even across leagues) and the rounds rotate between them. Up to {MAX_FIXTURES}.
+        Tick one match for a single-match room, or several (even across leagues) and the rounds rotate between them. Up to {MAX_FIXTURES}. A match opens 30 minutes before kick-off. Lineups usually appear about an hour before, so lineup games may not be available yet; live-event games wait for the whistle.
       </p>
 
-      {groups.map(({ competition, liveCount }) => {
+      {groups.map(({ competition }) => {
         const open = expanded.has(competition.id);
         const loaded = lists[competition.id];
         const sweepFixtures = liveFixtures.filter((fixture) => fixture.competitionId === competition.id);
         const fixtures = listableFixtures(mergeFixtures(sweepFixtures, loaded?.status === 'ready' ? loaded.fixtures : []));
-        const picks: PickedFixture[] = fixtures.map((fixture) => ({ fixture, competitionName: competition.name }));
+        // Only live matches and ones starting within 30 minutes can be ticked; later ones stay visible but disabled.
+        const picks: PickedFixture[] = fixtures
+          .filter((fixture) => isOpenFixture(fixture, now))
+          .map((fixture) => ({ fixture, competitionName: competition.name }));
+        const soonCount = sweepFixtures.filter((fixture) => isImminentFixture(fixture, now)).length;
+        const liveHere = sweepFixtures.filter((fixture) => isFixtureLive(fixture)).length;
         const pickedHere = selection.filter((entry) => entry.fixture.competitionId === competition.id).length;
         const panelId = `fixtures-${competition.id}`;
         return (
@@ -128,8 +132,11 @@ export const FixturePicker = ({
               </span>
               <span className="max-w-full flex-1 basis-32 font-bold">{competition.name}</span>
               <span className="flex flex-wrap items-center gap-2">
-                {liveCount > 0 ? (
-                  <span className="whitespace-nowrap rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">{liveCount} live</span>
+                {liveHere > 0 ? (
+                  <span className="whitespace-nowrap rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">{liveHere} live</span>
+                ) : null}
+                {soonCount > 0 ? (
+                  <span className="whitespace-nowrap rounded-full bg-accent/20 px-2 py-0.5 text-xs font-bold text-accent">{soonCount} starting soon</span>
                 ) : null}
                 {pickedHere > 0 ? (
                   <span className="whitespace-nowrap rounded-full bg-accent/20 px-2 py-0.5 text-xs font-bold text-accent">{pickedHere} ticked</span>
@@ -186,6 +193,8 @@ export const FixturePicker = ({
                         const live = isFixtureLive(fixture);
                         const badge = liveBadgeLabel(fixture);
                         const checked = isPicked(selection, fixture.fixtureId);
+                        const open = isOpenFixture(fixture, now);
+                        const imminent = isImminentFixture(fixture, now);
                         const full = !checked && selection.length >= MAX_FIXTURES;
                         return (
                           <li key={fixture.fixtureId}>
@@ -193,9 +202,9 @@ export const FixturePicker = ({
                               type="button"
                               role="checkbox"
                               aria-checked={checked}
-                              disabled={full}
+                              disabled={full || !open}
                               onClick={() => onChange(toggleFixture(selection, { fixture, competitionName: competition.name }))}
-                              className={`tap-target pressable flex w-full items-center gap-3 rounded-md border-2 px-3 py-2 text-left disabled:opacity-50 ${
+                              className={`tap-target pressable flex w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-md border-2 px-3 py-2 text-left disabled:opacity-50 ${
                                 checked ? 'border-accent bg-selected' : 'border-border bg-card'
                               }`}
                             >
@@ -207,16 +216,22 @@ export const FixturePicker = ({
                               >
                                 {checked ? '✓' : ''}
                               </span>
-                              <span className="flex max-w-full flex-1 flex-col gap-0.5">
+                              <span className="flex max-w-full flex-1 basis-40 flex-col gap-0.5">
                                 <span className="max-w-full font-bold text-[min(1rem,5vw)] sm:text-base">
                                   {fixture.homeTeam.name} vs {fixture.awayTeam.name}
                                 </span>
                                 {!live ? (
                                   <span className="t-xs text-fg-muted">
                                     {formatKickoffLocal(fixture.kickoff)} · {kickoffCountdown(fixture.kickoff, now)}
+                                    {open ? '' : ' · Opens 30 min before kick-off'}
                                   </span>
                                 ) : null}
                               </span>
+                              {imminent ? (
+                                <span className="shrink-0 whitespace-nowrap rounded-full bg-accent/20 px-2 py-0.5 text-xs font-bold text-accent">
+                                  {startsInLabel(fixture.kickoff, now)}
+                                </span>
+                              ) : null}
                               {live && badge !== null ? (
                                 <span className="shrink-0 whitespace-nowrap rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">{badge}</span>
                               ) : null}
@@ -225,12 +240,7 @@ export const FixturePicker = ({
                         );
                       })}
                     </ul>
-                    {anyUpcoming(fixtures) ? (
-                      <p className="t-xs text-fg-subtle">
-                        Lineups are published about an hour before kickoff, so games for an upcoming match won&apos;t be selectable until then.
-                        Tick a live match for a game you can start now.
-                      </p>
-                    ) : null}
+
                   </>
                 ) : null}
               </div>
