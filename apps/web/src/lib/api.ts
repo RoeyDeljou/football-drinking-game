@@ -19,6 +19,8 @@ export type ApiResult<T> =
       readonly code?: string;
       /** The HTTP status, when a response was actually received (absent on a network failure). */
       readonly status?: number;
+      /** Offending fixture ids, when the server names them (UNKNOWN_FIXTURE, FIXTURE_NOT_AVAILABLE). */
+      readonly fixtureIds?: readonly string[];
     };
 
 const request = async <T>(path: string, init: RequestInit = {}): Promise<ApiResult<T>> => {
@@ -32,10 +34,12 @@ const request = async <T>(path: string, init: RequestInit = {}): Promise<ApiResu
     if (!response.ok) {
       const errorBody =
         body !== null && typeof body === 'object' && 'error' in body
-          ? (body as { error: { message?: string; code?: string } }).error
+          ? (body as { error: { message?: string; code?: string; fixtureIds?: unknown } }).error
           : undefined;
       const message = errorBody !== undefined ? String(errorBody.message ?? errorBody.code ?? 'Request failed') : `Request failed (${response.status})`;
-      return { ok: false, message, code: errorBody?.code, status: response.status };
+      const fixtureIds =
+        Array.isArray(errorBody?.fixtureIds) ? errorBody.fixtureIds.filter((id): id is string => typeof id === 'string') : undefined;
+      return { ok: false, message, code: errorBody?.code, status: response.status, ...(fixtureIds !== undefined ? { fixtureIds } : {}) };
     }
     return { ok: true, value: body as T };
   } catch {
@@ -61,6 +65,8 @@ export interface RoomSummary {
   readonly hostNickname: string | null;
   readonly category: string | null;
   readonly fixtureId: string | null;
+  /** Every fixture of a matchday room (one for a single match); absent on older servers. */
+  readonly fixtureIds?: readonly string[] | null;
   /** Set only for a gameday room (rounds rotating across a competition's live fixtures); `null`
    * otherwise, including for single-fixture matchday rooms. */
   readonly gamedayCompetitionId: string | null;
@@ -70,16 +76,15 @@ export interface RoomSummary {
 
 export const createRoom = (input: {
   readonly category: 'matchday' | 'general';
-  readonly fixtureId?: string;
-  /** Mutually exclusive with `fixtureId` — see `apps/api/src/rooms/schemas.ts`. */
-  readonly gameday?: boolean;
+  /** Matchday: every ticked match (1..20): one is a single-match room, several a rotation room. */
+  readonly fixtureIds?: readonly string[];
+  /** General: scope the season data to one competition. */
   readonly competitionId?: string;
   readonly hostNickname?: string;
   readonly settings?: Record<string, unknown>;
 }): Promise<ApiResult<CreateRoomResponse>> => {
   const body: Record<string, unknown> = { category: input.category };
-  if (input.fixtureId !== undefined) body.fixtureId = input.fixtureId;
-  if (input.gameday === true) body.gameday = true;
+  if (input.fixtureIds !== undefined) body.fixtureIds = [...input.fixtureIds];
   if (input.competitionId !== undefined) body.competitionId = input.competitionId;
   if (input.hostNickname !== undefined) body.hostNickname = input.hostNickname;
   if (input.settings !== undefined) body.settings = input.settings;
@@ -133,7 +138,8 @@ export const listCompetitions = (): Promise<ApiResult<{ competitions: readonly C
 
 export const listCompetitionFixtures = (
   competitionId: string,
-  window?: 'live' | 'upcoming',
+  /** `open`: live matches first, then ones kicking off within 30 minutes (the host picker's sweep). */
+  window?: 'live' | 'upcoming' | 'open',
 ): Promise<ApiResult<{ fixtures: readonly FixtureSummary[] }>> =>
   request(
     `/competitions/${encodeURIComponent(competitionId)}/fixtures${window !== undefined ? `?window=${window}` : ''}`,

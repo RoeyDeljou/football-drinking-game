@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { roomSettingsPatchSchema } from '@fdg/game-core';
 
 /**
- * A matchday room is either tied to one specific fixture (`fixtureId`, unchanged) or, for "gameday
+ * A matchday room is tied to one fixture (`fixtureId`), to an explicit list of 1..20 fixtures (`fixtureIds`; one id =
+ * single-fixture room, more = a rotation pool across them, any competitions) or, for "gameday
  * mode", to a whole competition whose currently-live fixtures rotate round to round
  * (`gameday: true` + `competitionId`) — never both. A `general` room uses neither of those, but may
  * itself optionally carry `competitionId` to scope every general game in the room to that one
@@ -14,6 +15,8 @@ export const createRoomBodySchema = z
   .object({
     category: z.enum(['matchday', 'general']),
     fixtureId: z.string().min(1).max(64).optional(),
+    /** 1..20 fixtures (any competitions). One id = a single-fixture room; more = a rotation pool. */
+    fixtureIds: z.array(z.string().min(1).max(64)).min(1).max(20).optional(),
     gameday: z.literal(true).optional(),
     competitionId: z.string().min(1).max(64).optional(),
     /** Required when the caller has no bearer token; ignored (server uses the account name) otherwise. */
@@ -22,10 +25,14 @@ export const createRoomBodySchema = z
   })
   .strict()
   .refine(
-    (value) => value.category !== 'matchday' || value.gameday === true || value.fixtureId !== undefined,
+    (value) =>
+      value.category !== 'matchday' ||
+      value.gameday === true ||
+      value.fixtureId !== undefined ||
+      value.fixtureIds !== undefined,
     {
-      message: 'fixtureId is required for a single-fixture matchday room',
-      path: ['fixtureId'],
+      message: 'fixtureId or fixtureIds is required for a matchday room',
+      path: ['fixtureIds'],
     },
   )
   .refine((value) => value.gameday !== true || value.competitionId !== undefined, {
@@ -39,6 +46,14 @@ export const createRoomBodySchema = z
   .refine((value) => value.category === 'general' || value.gameday === true || value.competitionId === undefined, {
     message: 'competitionId is only accepted for a general room or a gameday matchday room',
     path: ['competitionId'],
+  })
+  .refine((value) => value.fixtureIds === undefined || (value.fixtureId === undefined && value.gameday === undefined), {
+    message: 'fixtureIds cannot be combined with fixtureId or gameday',
+    path: ['fixtureIds'],
+  })
+  .refine((value) => value.category !== 'general' || value.fixtureIds === undefined, {
+    message: 'fixtureIds does not apply to a general room',
+    path: ['fixtureIds'],
   })
   .refine((value) => value.category !== 'general' || value.fixtureId === undefined, {
     message: 'fixtureId does not apply to a general room',

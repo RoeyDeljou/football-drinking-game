@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { FixtureSummary } from './api';
 import {
   FRESH_LIVE_WINDOW_MS,
+  isImminentFixture,
+  isOpenFixture,
+  PRE_KICKOFF_SELECTABLE_MS,
+  startsInLabel,
   isFreshLiveFixture,
   isMatchdayVisible,
   matchdayAvailability,
@@ -38,7 +42,7 @@ describe('isFreshLiveFixture', () => {
     expect(isFreshLiveFixture(fixture({ kickoff: new Date(NOW).toISOString() }), NOW)).toBe(true);
   });
 
-  it('excludes a live-status fixture that kicked off more than 2 hours ago (stuck provider status)', () => {
+  it('excludes a live-status fixture that kicked off more than the fresh window ago (stuck provider status)', () => {
     const staleKickoff = new Date(NOW - FRESH_LIVE_WINDOW_MS - 60_000).toISOString();
     expect(isFreshLiveFixture(fixture({ kickoff: staleKickoff, status: 'LIVE' }), NOW)).toBe(false);
   });
@@ -47,8 +51,15 @@ describe('isFreshLiveFixture', () => {
     expect(isFreshLiveFixture(fixture({ status: 'SCHEDULED', kickoff: new Date(NOW).toISOString() }), NOW)).toBe(false);
   });
 
-  it('excludes an unparsable kickoff', () => {
-    expect(isFreshLiveFixture(fixture({ kickoff: 'not-a-date' }), NOW)).toBe(false);
+  it('trusts a live status when the kickoff is unknown or unparsable', () => {
+    expect(isFreshLiveFixture(fixture({ kickoff: 'not-a-date' }), NOW)).toBe(true);
+    expect(isFreshLiveFixture(fixture({ kickoff: 'not-a-date', status: 'HALF_TIME' }), NOW)).toBe(true);
+    expect(isFreshLiveFixture(fixture({ kickoff: 'not-a-date', status: 'SCHEDULED' }), NOW)).toBe(false);
+  });
+
+  it('keeps a match fresh through half-time and stoppage (2h40m after kickoff)', () => {
+    const kickoff = new Date(NOW - (2 * 60 + 40) * 60_000).toISOString();
+    expect(isFreshLiveFixture(fixture({ kickoff, status: 'LIVE' }), NOW)).toBe(true);
   });
 });
 
@@ -67,7 +78,7 @@ describe('matchdayAvailability', () => {
     expect(matchdayAvailability(checks, NOW)).toBe('available');
   });
 
-  it('excludes a live-status fixture that kicked off more than 2 hours ago from counting as available', () => {
+  it('excludes a live-status fixture that kicked off more than the fresh window ago from counting as available', () => {
     const stale = fixture({ kickoff: new Date(NOW - FRESH_LIVE_WINDOW_MS - 60_000).toISOString() });
     const checks: CompetitionLiveCheck[] = [settledOk([stale])];
     expect(matchdayAvailability(checks, NOW)).toBe('unavailable');
@@ -99,5 +110,35 @@ describe('isMatchdayVisible', () => {
   it('never hides Matchday from a host already on it', () => {
     expect(isMatchdayVisible('unavailable', 'matchday')).toBe(true);
     expect(isMatchdayVisible('searching', 'matchday')).toBe(true);
+  });
+});
+
+describe('pre-kickoff selection (30 minutes before kick-off)', () => {
+  const at = (minutes: number): string => new Date(NOW + minutes * 60_000).toISOString();
+
+  it('is 30 minutes', () => {
+    expect(PRE_KICKOFF_SELECTABLE_MS).toBe(30 * 60_000);
+  });
+
+  it('opens a scheduled match from 30 minutes before kick-off, not earlier', () => {
+    expect(isImminentFixture(fixture({ status: 'SCHEDULED', kickoff: at(30) }), NOW)).toBe(true);
+    expect(isImminentFixture(fixture({ status: 'SCHEDULED', kickoff: at(12) }), NOW)).toBe(true);
+    expect(isImminentFixture(fixture({ status: 'SCHEDULED', kickoff: at(31) }), NOW)).toBe(false);
+    expect(isImminentFixture(fixture({ status: 'SCHEDULED', kickoff: at(180) }), NOW)).toBe(false);
+  });
+
+  it('does not open postponed or finished matches', () => {
+    expect(isImminentFixture(fixture({ status: 'POSTPONED', kickoff: at(5) }), NOW)).toBe(false);
+    expect(isOpenFixture(fixture({ status: 'FINISHED', kickoff: at(-120) }), NOW)).toBe(false);
+  });
+
+  it('makes Matchday available for an imminent match even with nothing live', () => {
+    expect(matchdayAvailability([settledOk([fixture({ status: 'SCHEDULED', kickoff: at(20) })])], NOW)).toBe('available');
+    expect(matchdayAvailability([settledOk([fixture({ status: 'SCHEDULED', kickoff: at(90) })])], NOW)).toBe('unavailable');
+  });
+
+  it('words the badge', () => {
+    expect(startsInLabel(at(12), NOW)).toBe('Starts in 12 min');
+    expect(startsInLabel(at(-1), NOW)).toBe('Kicking off');
   });
 });

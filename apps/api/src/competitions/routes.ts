@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Fixture, FixtureStatus } from '@fdg/football-data';
 import { allCompetitions, asCompetitionId, competitionConfigById } from '@fdg/football-data';
 import type { AppContext } from '../context.js';
+import { isOpenForPlay, nextDayToCheck } from './open-window.js';
 import { competitionIdParamsSchema, fixturesQuerySchema } from './schemas.js';
 
 /** Fixtures in one of these statuses are happening right now. */
@@ -14,6 +15,9 @@ const LIVE_STATUSES: readonly FixtureStatus[] = ['LIVE', 'HALF_TIME', 'EXTRA_TIM
  */
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const UPCOMING_WINDOW_MS = 14 * ONE_DAY_MS;
+
+/** How long a `window=live` answer is reused. */
+const LIVE_LIST_TTL_MS = 15_000;
 
 /** Cap on the returned list, applied after filtering and sorting. */
 const MAX_FIXTURES = 20;
@@ -49,7 +53,7 @@ const summarizeFixture = (fixture: Fixture): FixtureSummary => ({
  */
 export function selectRelevantFixtures(
   fixtures: readonly Fixture[],
-  window: 'live' | 'upcoming' | undefined,
+  window: 'live' | 'upcoming' | 'open' | undefined,
   nowMs: number,
 ): readonly Fixture[] {
   const live = fixtures.filter((fixture) => LIVE_STATUSES.includes(fixture.status));
@@ -60,13 +64,66 @@ export function selectRelevantFixtures(
     return kickoffMs >= nowMs && kickoffMs <= nowMs + UPCOMING_WINDOW_MS;
   });
 
+  const open = fixtures.filter((fixture) => isOpenForPlay(fixture, nowMs));
+
   const byKickoffAsc = (a: Fixture, b: Fixture): number => Date.parse(a.kickoff) - Date.parse(b.kickoff);
   live.sort(byKickoffAsc);
   upcoming.sort(byKickoffAsc);
+  // `open`: live first (soonest-kicked-off first), then scheduled ones inside the pre-kickoff window, soonest first.
+  const openLive = open.filter((fixture) => LIVE_STATUSES.includes(fixture.status)).sort(byKickoffAsc);
+  const openSoon = open.filter((fixture) => fixture.status === 'SCHEDULED').sort(byKickoffAsc);
 
-  const combined = window === 'live' ? live : window === 'upcoming' ? upcoming : [...live, ...upcoming];
+  const combined =
+    window === 'live'
+      ? live
+      : window === 'open'
+        ? [...openLive, ...openSoon]
+        : window === 'upcoming'
+          ? upcoming
+          : [...live, ...upcoming];
   return combined.slice(0, MAX_FIXTURES);
 }
+
+/**
+ * Warms the live-fixture lists (the exact cache entries `window=live` reads) once, in the background, one competition at
+ * a time, so the first host after a cold start gets a fast answer instead of paying for the provider's cold scoreboard
+ * fetches. Never throws, never blocks boot; failures are simply not cached.
+ */
+export const warmLiveFixtureLists = async (ctx: AppContext): Promise<void> => {
+  for (const config of allCompetitions()) {
+    const competitionId = asCompetitionId(config.id);
+    try {
+      await ctx.fixtureListCache.get(
+        `${competitionId}:live`,
+        () => ctx.footballData.listLiveFixtures(competitionId),
+        LIVE_LIST_TTL_MS,
+      );
+      await ctx.fixtureListCache.get(`${competitionId}:open`, () => loadOpenFixtures(ctx, competitionId, Date.now()), LIVE_LIST_TTL_MS);
+    } catch (error) {
+      console.warn(`[competitions] live fixture warm-up failed for ${competitionId}:`, error);
+    }
+  }
+};
+
+/**
+ * Fixtures that may be open for play: the provider's CURRENT scoreboard (live and today's not-yet-started matches; one
+ * call per slug) plus, only when the 30-minute window crosses midnight ET, tomorrow's dated scoreboard (at most one
+ * more call per slug). A failure of the extra day is tolerated; a failure of the current scoreboard is the failure.
+ */
+const loadOpenFixtures = async (
+  ctx: AppContext,
+  competitionId: ReturnType<typeof asCompetitionId>,
+  nowMs: number,
+): Promise<Awaited<ReturnType<typeof ctx.footballData.getFixturesByCompetition>>> => {
+  const current = await ctx.footballData.getFixturesByCompetition(competitionId);
+  if (!current.ok) return current;
+  const day = nextDayToCheck(nowMs);
+  if (day === null) return current;
+  const next = await ctx.footballData.getFixturesByCompetition(competitionId, { from: day, to: day });
+  if (!next.ok) return current;
+  const seen = new Set(current.value.map((fixture) => fixture.id));
+  return { ...current, value: [...current.value, ...next.value.filter((fixture) => !seen.has(fixture.id))] };
+};
 
 export const registerCompetitionRoutes = (app: FastifyInstance, ctx: AppContext): void => {
   // Static config, straight from COMPETITION_CONFIGS — no provider call, so this is instant.
@@ -91,9 +148,23 @@ export const registerCompetitionRoutes = (app: FastifyInstance, ctx: AppContext)
     const competitionId = asCompetitionId(config.id);
     const nowMs = Date.now();
 
+    // `window=live` only needs what is in play right now: the provider's current scoreboard (one call per slug),
+    // NOT the 14-day walk — against ESPN that walk costs one request per day per slug (national teams has ~12
+    // slugs), which took 40s+ on a cold start and kept the host page from ever showing Matchday. Cached briefly
+    // (live statuses go stale quickly); the upcoming/combined paths below are unchanged.
+    const liveOnly = parsedQuery.data.window === 'live';
+    const openWindow = parsedQuery.data.window === 'open';
     let result: Awaited<ReturnType<typeof ctx.footballData.getFixturesByCompetition>>;
     try {
-      result = await ctx.fixtureListCache.get(competitionId, () =>
+      result = openWindow
+        ? await ctx.fixtureListCache.get(`${competitionId}:open`, () => loadOpenFixtures(ctx, competitionId, nowMs), LIVE_LIST_TTL_MS)
+        : liveOnly
+        ? await ctx.fixtureListCache.get(
+            `${competitionId}:live`,
+            () => ctx.footballData.listLiveFixtures(competitionId),
+            LIVE_LIST_TTL_MS,
+          )
+        : await ctx.fixtureListCache.get(competitionId, () =>
         ctx.footballData.getFixturesByCompetition(competitionId, {
           season: config.currentSeason,
           // The provider contract only guarantees "the six supported competitions' fixtures",

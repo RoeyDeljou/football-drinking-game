@@ -31,6 +31,12 @@ export interface GamedayCacheEntry {
    * `refreshGamedayLiveSet`'s periodic poll — never recomputed from inside round generation. */
   readonly fixtureOrder: readonly FixtureId[];
   readonly lastPolledAt: number;
+  /**
+   * Set only for an explicit multi-fixture pool (`RoomMeta.fixtureIds`): the full list the host picked, in order.
+   * Absent for competition gameday rooms. `fixtureOrder` is then the still-eligible subset (not finished /
+   * cancelled / postponed) and `competitionId` is just the first fixture's competition.
+   */
+  readonly pool?: readonly FixtureId[];
 }
 
 /** A round's identity for pinning purposes — the same `(sessionIndex, roundIndex)` pair

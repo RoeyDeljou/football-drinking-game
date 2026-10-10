@@ -11,12 +11,13 @@
  * the broadcast payload, alongside the engine's own projection.
  */
 
-import type { CompetitionId, Fixture } from '@fdg/football-data';
+import type { Fixture } from '@fdg/football-data';
 import type { RoomId, RoomState } from '@fdg/game-core';
 import { activeSession } from '@fdg/game-core';
 import { getCachedGameday, getPinnedRoundFixture } from './gameday-cache.js';
 import { getCachedBundle } from './matchday-cache.js';
 import type { RoomMeta } from '../rooms/store.js';
+import { isRotationRoom } from '../rooms/store.js';
 
 export interface CurrentFixtureSummary {
   readonly fixtureId: string;
@@ -43,9 +44,8 @@ export const resolveCurrentFixtureAnnotation = (
   room: RoomState,
   meta: RoomMeta,
 ): CurrentFixtureSummary | null => {
-  const gamedayCompetitionId: CompetitionId | null = meta.gamedayCompetitionId ?? null;
-
-  if (gamedayCompetitionId !== null) {
+  // Gameday rooms and explicit multi-fixture pools share the rotation/pinning machinery.
+  if (isRotationRoom(meta)) {
     const entry = getCachedGameday(roomId);
     if (entry === null) return null;
 

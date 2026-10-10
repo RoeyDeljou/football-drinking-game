@@ -5,13 +5,14 @@ import type { CreateRoomInput, RoomState } from '@fdg/game-core';
 import { optionalAuth } from '../auth/plugin.js';
 import type { AppContext } from '../context.js';
 import type { CompetitionId, FixtureStatus } from '@fdg/football-data';
-import { asCompetitionId, asFixtureId, competitionConfigById } from '@fdg/football-data';
+import { asCompetitionId, asFixtureId, competitionConfigById, isLiveFixtureStatus } from '@fdg/football-data';
 import { resolveFixtureStatus } from '../engine/fixture-status.js';
-import { runGamedayPrefetch, runMatchdayPrefetch } from '../engine/data-context.js';
+import { runGamedayPrefetch, runMatchdayPrefetch, runPoolPrefetch } from '../engine/data-context.js';
 import { signRoomToken } from '../realtime/room-token.js';
 import { generatePin } from './pin.js';
 import { createRoomBodySchema, pinParamsSchema, roomIdParamsSchema } from './schemas.js';
 import type { RoomMeta, RoomRecord, RoomStore } from './store.js';
+import { poolFixtureIds, roomFixtureIds } from './store.js';
 
 /**
  * Public room summary — deliberately excludes `hostPlayerId`. A `PlayerId` is a bare credential in
@@ -29,11 +30,18 @@ const summarize = (state: RoomState, meta: RoomMeta, fixtureStatus: FixtureStatu
   playerCount: state.players.filter((player) => player.leftAt === null).length,
   hostNickname: state.players.find((player) => player.id === state.hostPlayerId)?.nickname ?? null,
   category: state.selection === null ? null : state.selection.moduleId,
+  /** The single fixture of a one-fixture matchday room; `null` for a multi-fixture pool, gameday and general rooms. */
   fixtureId: meta.fixtureId,
   /**
+   * Every fixture the room is tied to: `[fixtureId]` for a single-fixture room, the host's list (2..20, order kept)
+   * for a pool, `[]` for gameday (its fixtures are whatever is live, see `currentFixture`) and general rooms.
+   */
+  fixtureIds: roomFixtureIds(meta),
+  /**
    * The room's fixture status (`SCHEDULED`/`LIVE`/`HALF_TIME`/`EXTRA_TIME`/`PENALTIES`/`FINISHED`/`POSTPONED`/
-   * `CANCELLED`) for a single-fixture matchday room; `null` for general and gameday rooms, and whenever it could not be
-   * determined within ~1.5s. See `engine/fixture-status.ts`.
+   * `CANCELLED`) for a single-fixture matchday room; for a pool: `LIVE` if any fixture is live, `FINISHED` only when all
+   * are finished, else the earliest unfinished fixture's status. `null` for general and gameday rooms, and whenever it
+   * could not be determined within ~1.5s. See `engine/fixture-status.ts`.
    */
   fixtureStatus,
   /** Set only for a gameday room (see `RoomMeta`); `null` otherwise. */
@@ -109,6 +117,48 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
       gamedayCompetitionId = competitionId;
     }
 
+    // An explicit fixture list (`fixtureIds`): deduped (order kept), every id must exist and still be live or
+    // upcoming. Validated before allocating a PIN or writing any row. One id behaves exactly like `fixtureId`.
+    let selectedFixtureIds: readonly string[] | null = null;
+    if (parsed.data.category === 'matchday' && parsed.data.fixtureIds !== undefined) {
+      const unique = [...new Set(parsed.data.fixtureIds)];
+      const looked: Array<{ id: string; status: FixtureStatus | null; failed: boolean }> = [];
+      for (const id of unique) {
+        try {
+          const result = await ctx.footballData.getFixture(asFixtureId(id));
+          if (!result.ok) looked.push({ id, status: null, failed: true });
+          else looked.push({ id, status: result.value === null ? null : result.value.status, failed: false });
+        } catch (error) {
+          console.error(`[rooms] provider threw looking up fixture ${id}:`, error);
+          looked.push({ id, status: null, failed: true });
+        }
+      }
+      if (looked.some((entry) => entry.failed)) {
+        return reply.code(503).send({
+          error: { code: 'DATA_UNAVAILABLE', message: 'Could not check the selected fixtures right now.' },
+        });
+      }
+      const unknown = looked.filter((entry) => entry.status === null).map((entry) => entry.id);
+      if (unknown.length > 0) {
+        return reply.code(400).send({
+          error: { code: 'UNKNOWN_FIXTURE', message: `Unknown fixture(s): ${unknown.join(', ')}.`, fixtureIds: unknown },
+        });
+      }
+      const unavailable = looked
+        .filter((entry) => entry.status !== 'SCHEDULED' && !isLiveFixtureStatus(entry.status as FixtureStatus))
+        .map((entry) => entry.id);
+      if (unavailable.length > 0) {
+        return reply.code(400).send({
+          error: {
+            code: 'FIXTURE_NOT_AVAILABLE',
+            message: `Fixture(s) already finished, postponed or cancelled: ${unavailable.join(', ')}.`,
+            fixtureIds: unavailable,
+          },
+        });
+      }
+      selectedFixtureIds = unique;
+    }
+
     // A general room may optionally scope itself to one competition — validated up front, before
     // allocating a PIN or writing any row, same as the gameday check above.
     let generalCompetitionId: CompetitionId | null = null;
@@ -139,10 +189,15 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
     };
     const state = createRoom(createInput);
 
+    // One id (from either request shape) is a plain single-fixture room; 2+ ids from `fixtureIds` are a pool.
+    const pool = selectedFixtureIds !== null && selectedFixtureIds.length > 1 ? selectedFixtureIds.map(asFixtureId) : null;
     const fixtureId =
-      parsed.data.category === 'matchday' && gamedayCompetitionId === null ? (parsed.data.fixtureId ?? null) : null;
+      parsed.data.category !== 'matchday' || gamedayCompetitionId !== null || pool !== null
+        ? null
+        : (selectedFixtureIds?.[0] ?? parsed.data.fixtureId ?? null);
     const meta: RoomMeta = {
       fixtureId: fixtureId === null ? null : asFixtureId(fixtureId),
+      fixtureIds: pool,
       gamedayCompetitionId,
       generalCompetitionId,
     };
@@ -170,7 +225,10 @@ export const registerRoomRoutes = (app: FastifyInstance, ctx: AppContext): void 
     // Best-effort warm the matchday/gameday bundle so the game picker can grey out unplayable games
     // immediately; failure here is not fatal — SELECT_GAME will simply see no quality yet, and the
     // loading screen re-runs the prefetch (with progress) before the session starts regardless.
-    if (record.meta.gamedayCompetitionId !== null && record.meta.gamedayCompetitionId !== undefined) {
+    const warmPool = poolFixtureIds(record.meta);
+    if (warmPool !== null) {
+      await runPoolPrefetch(ctx, roomId, warmPool).catch(() => null);
+    } else if (record.meta.gamedayCompetitionId !== null && record.meta.gamedayCompetitionId !== undefined) {
       await runGamedayPrefetch(ctx, roomId, record.meta.gamedayCompetitionId).catch(() => null);
     } else if (record.meta.fixtureId !== null) {
       await runMatchdayPrefetch(ctx, roomId, record.meta.fixtureId).catch(() => null);

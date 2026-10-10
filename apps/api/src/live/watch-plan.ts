@@ -13,10 +13,11 @@
  * - general rooms: none.
  */
 
-import type { CompetitionId, FixtureId } from '@fdg/football-data';
+import type { FixtureId } from '@fdg/football-data';
 import type { EngineGameModule, RoomId, RoomState } from '@fdg/game-core';
 import { activeSession } from '@fdg/game-core';
 import type { RoomMeta } from '../rooms/store.js';
+import { isRotationRoom } from '../rooms/store.js';
 
 export interface WatchNeed {
   readonly fixtureId: FixtureId;
@@ -48,8 +49,7 @@ export const planWatch = (
   const feed = { events: module.supportsLiveEvents, stats: module.supportsLiveStats };
 
   const roundKey = `${session.id}:${round.id}`;
-  const gamedayCompetition: CompetitionId | null = meta.gamedayCompetitionId ?? null;
-  if (gamedayCompetition !== null) {
+  if (isRotationRoom(meta)) {
     const sessionIndex = state.activeSessionIndex;
     const pinned =
       sessionIndex === null

@@ -86,8 +86,12 @@ export default function RoomPage(): React.JSX.Element {
       const summary = await fetchRoomById(roomId);
       if (cancelled) return;
       if (summary.ok) {
-        setCategory(summary.value.fixtureId !== null || summary.value.gamedayCompetitionId !== null ? 'matchday' : 'general');
-        setIsGameday(summary.value.gamedayCompetitionId !== null);
+        const fixtureCount = summary.value.fixtureIds?.length ?? 0;
+        setCategory(
+          summary.value.fixtureId !== null || summary.value.gamedayCompetitionId !== null || fixtureCount > 0 ? 'matchday' : 'general',
+        );
+        // A rotation room (several matches, or a whole gameday) can run out of live matches to rotate through.
+        setIsGameday(summary.value.gamedayCompetitionId !== null || fixtureCount > 1);
         setSummaryFixtureStatus(summary.value.fixtureStatus ?? null);
         return;
       }

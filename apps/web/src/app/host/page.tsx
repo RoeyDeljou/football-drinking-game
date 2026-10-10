@@ -4,13 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { AgeGateGuard } from '@/components/AgeGateGuard';
 import { BackButton } from '@/components/BackButton';
+import { FixturePicker } from '@/components/FixturePicker';
 import { GameModePicker } from '@/components/GameModePicker';
 import { GameSettingsEditor } from '@/components/GameSettingsEditor';
 import { configFor, DEFAULT_SETTINGS, type SettingsState } from '@/lib/gameSettings';
 import { Banner, BigButton, Card, Eyebrow, Field, OptionButton } from '@/components/ui';
-import type { ApiResult, Competition, FixtureSummary } from '@/lib/api';
+import type { ApiResult, Competition } from '@/lib/api';
 import { createRoom, listCompetitionFixtures, listCompetitions } from '@/lib/api';
-import { fixtureLoadElapsedPhase } from '@/lib/fixtureLoadElapsed';
 import {
   choiceAfterCategoryChange,
   DEFAULT_CHOICE,
@@ -18,20 +18,11 @@ import {
   resolveModuleId,
   type ModeChoice,
 } from '@/lib/gameMode';
-import { isMatchdayVisible, matchdayAvailability, type CompetitionLiveCheck } from '@/lib/matchdayAvailability';
+import { isMatchdayVisible, isOpenFixture, matchdayAvailability, type CompetitionLiveCheck } from '@/lib/matchdayAvailability';
+import { type FixtureSelection } from '@/lib/fixtureSelection';
 import { savePendingSelection, saveRoomSetup } from '@/lib/storage';
 import { setupScopeLabel } from '@/lib/setupScopeLabel';
-import {
-  competitionsView,
-  fixturesView,
-  formatKickoffLocal,
-  gamedayOptionLabel,
-  isFixtureLive,
-  kickoffCountdown,
-  liveBadgeLabel,
-  liveFixtureCount,
-  shouldOfferGameday,
-} from '@/lib/matchdayPicker';
+import { competitionsView } from '@/lib/matchdayPicker';
 import { competitionMonogram } from '@/lib/competitionMonogram';
 import { useNow } from '@/lib/useNow';
 import { useRoom } from '@/lib/room-context';
@@ -59,11 +50,8 @@ function HostPageContent(): React.JSX.Element {
   const [competitionsResult, setCompetitionsResult] = useState<ApiResult<{ competitions: readonly Competition[] }> | null>(
     null,
   );
-  const [selectedCompetitionId, setSelectedCompetitionId] = useState<string | null>(null);
-  const [fixturesResult, setFixturesResult] = useState<ApiResult<{ fixtures: readonly FixtureSummary[] }> | null>(null);
-  const [fixturesLoadStartedAt, setFixturesLoadStartedAt] = useState<number | null>(null);
-  const [selectedFixture, setSelectedFixture] = useState<FixtureSummary | null>(null);
-  const [gamedaySelected, setGamedaySelected] = useState(false);
+  /** The ticked matches (one = single-match room, several = rotation). */
+  const [fixtureSelection, setFixtureSelection] = useState<FixtureSelection>([]);
   /** General-room competition scope. `null` = "all competitions combined" (today's default, unchanged
    * request shape). Separate from `selectedCompetitionId`, which drives the Matchday league→fixture
    * flow and must never be disturbed by picking a General scope. */
@@ -111,16 +99,23 @@ function HostPageContent(): React.JSX.Element {
       // screen until the new ones land, so a known live game doesn't vanish (and shift the whole
       // page) for however long the 90s re-check takes.
       setMatchdayChecks((previous) =>
-        previous.length === 0 ? competitions.map(() => ({ status: 'pending' as const })) : previous,
+        previous.length === competitions.length ? previous : competitions.map(() => ({ status: 'pending' as const })),
       );
-      // Fan out in parallel, one live-fixture request per competition. listCompetitionFixtures
-      // never rejects (network failures are caught and returned as an ApiResult), so Promise.all is
-      // safe here: a single competition's failure can't derail the others.
-      const results = await Promise.all(
-        competitions.map((competition) => listCompetitionFixtures(competition.id, 'live')),
+      // Fan out in parallel, one live-fixture request per competition, and apply each answer the moment
+      // it lands: a competition with a live match makes Matchday available without waiting for the slowest
+      // one. listCompetitionFixtures never rejects (failures come back as an ApiResult), so a single
+      // competition failing can't derail the others.
+      await Promise.all(
+        competitions.map((competition, index) =>
+          listCompetitionFixtures(competition.id, 'open').then((result) => {
+            if (sweepId !== matchdaySweepId.current) return;
+            setMatchdayChecks((previous) =>
+              previous.map((check, position) => (position === index ? { status: 'settled' as const, result } : check)),
+            );
+          }),
+        ),
       );
       if (sweepId !== matchdaySweepId.current) return;
-      setMatchdayChecks(results.map((result) => ({ status: 'settled', result })));
       matchdaySweepInFlight.current = false;
     });
   };
@@ -133,14 +128,24 @@ function HostPageContent(): React.JSX.Element {
     // be re-created on every render.
   }, []);
 
+  // Every live fixture the sweep has found so far, from any competition (answers arrive independently).
+  const liveFixtures = matchdayChecks.flatMap((check) =>
+    check.status === 'settled' && check.result.ok ? check.result.value.fixtures.filter((fixture) => isOpenFixture(fixture, now)) : [],
+  );
+  const sweepStartedAt = useRef(Date.now());
   const matchdayState = matchdayAvailability(matchdayChecks, now);
   // Matchday is not rendered at all unless the sweep found a live game (no greyed-out button, no
   // flicker while searching). A host already on Matchday is never yanked out by a re-check.
   const matchdayVisible = isMatchdayVisible(matchdayState, category);
+  // The first sweep is slow on a cold server: after ~3s keep the slot reserved with a "Checking live
+  // games…" Matchday option, so it appears (or quietly goes) without the page jumping around.
+  const checkingLive = !matchdayVisible && matchdayState === 'searching' && fastNow - sweepStartedAt.current > 3_000;
+  const showCategoryCard = matchdayVisible || checkingLive;
 
   const switchCategory = (next: Category): void => {
     if (next === category) return;
     setCategory(next);
+    setFixtureSelection([]);
     setSettings(DEFAULT_SETTINGS);
     setError(null);
     setModeChoice(choiceAfterCategoryChange());
@@ -150,7 +155,6 @@ function HostPageContent(): React.JSX.Element {
   // switched category/league again before it resolved) must never overwrite state for whatever is
   // now selected. Each guard is bumped before firing a new request and checked before applying it.
   const competitionsRequestId = useRef(0);
-  const fixturesRequestId = useRef(0);
 
   const loadCompetitions = (): void => {
     setCompetitionsResult(null);
@@ -169,67 +173,15 @@ function HostPageContent(): React.JSX.Element {
     // re-fire when the category toggle changes, not on every re-render once results arrive.
   }, [category]);
 
-  const fetchFixturesFor = (competitionId: string): void => {
-    setFixturesResult(null);
-    setFixturesLoadStartedAt(Date.now());
-    const requestId = ++fixturesRequestId.current;
-    void listCompetitionFixtures(competitionId).then((result) => {
-      if (requestId !== fixturesRequestId.current) return;
-      setFixturesResult(result);
-    });
-  };
-
-  const chooseCompetition = (competitionId: string): void => {
-    setSelectedCompetitionId(competitionId);
-    setSelectedFixture(null);
-    setGamedaySelected(false);
-    fetchFixturesFor(competitionId);
-  };
-
-  const retryFixtures = (): void => {
-    if (selectedCompetitionId === null) return;
-    fetchFixturesFor(selectedCompetitionId);
-  };
-
-  const backToLeagues = (): void => {
-    // Invalidate any fixtures request still in flight for the league we're leaving, so its response
-    // can't land after we've already cleared the selection.
-    fixturesRequestId.current += 1;
-    setSelectedCompetitionId(null);
-    setFixturesResult(null);
-    setSelectedFixture(null);
-    setGamedaySelected(false);
-  };
-
-  const chooseFixture = (fixture: FixtureSummary): void => {
-    setGamedaySelected(false);
-    setSelectedFixture(fixture);
-  };
-
-  const chooseGameday = (): void => {
-    setSelectedFixture(null);
-    setGamedaySelected(true);
-  };
-
   const compView = competitionsView(competitionsResult);
-  const fixView = fixturesView(fixturesResult);
-  const selectedCompetitionName =
-    compView.status === 'ready'
-      ? (compView.competitions.find((competition) => competition.id === selectedCompetitionId)?.name ?? null)
-      : null;
-
   const onCreate = async (): Promise<void> => {
     setError(null);
     if (hostNickname.trim().length === 0) {
       setError('Enter a nickname.');
       return;
     }
-    if (category === 'matchday' && !gamedaySelected && selectedFixture === null) {
-      setError('Pick a fixture, or play the whole live gameday.');
-      return;
-    }
-    if (category === 'matchday' && gamedaySelected && selectedCompetitionId === null) {
-      setError('Pick a league first.');
+    if (category === 'matchday' && fixtureSelection.length === 0) {
+      setError('Tick at least one match.');
       return;
     }
     const moduleId = resolveModuleId(category, modeChoice);
@@ -238,14 +190,11 @@ function HostPageContent(): React.JSX.Element {
       setError('Pick a mini game above first.');
       return;
     }
-    const fixtureId = category === 'matchday' && !gamedaySelected ? selectedFixture?.fixtureId : undefined;
     setBusy(true);
     const result = await createRoom({
       category,
-      ...(fixtureId !== undefined ? { fixtureId } : {}),
-      ...(category === 'matchday' && gamedaySelected && selectedCompetitionId !== null
-        ? { gameday: true, competitionId: selectedCompetitionId }
-        : {}),
+      // One ticked match = a single-match room, several = a rotation room; the server tells them apart.
+      ...(category === 'matchday' ? { fixtureIds: fixtureSelection.map((entry) => entry.fixture.fixtureId) } : {}),
       // Omitted entirely (not sent as null/'') when unset, so "all competitions" stays byte-identical
       // to today's default request shape.
       ...(category === 'general' && generalCompetitionId !== null ? { competitionId: generalCompetitionId } : {}),
@@ -254,15 +203,20 @@ function HostPageContent(): React.JSX.Element {
     });
     setBusy(false);
     if (!result.ok) {
-      // A race between the gameday option being offered (>= 2 live fixtures at picker-render time)
-      // and every one of them finishing right before the room was created — treat it exactly like
-      // the ordinary "no live games" empty state, not a raw error: drop back to individual fixtures
-      // and refresh the list so the host immediately sees what's actually still playable.
-      if (result.code === 'NO_LIVE_FIXTURES') {
-        setGamedaySelected(false);
-        retryFixtures();
+      if (result.code === 'UNKNOWN_FIXTURE' || result.code === 'FIXTURE_NOT_AVAILABLE') {
+        // Untick the matches the server refused so the host can just tap Create again.
+        const refused = new Set(result.fixtureIds ?? []);
+        setFixtureSelection((current) => current.filter((entry) => !refused.has(entry.fixture.fixtureId)));
+        setError(
+          result.code === 'FIXTURE_NOT_AVAILABLE'
+            ? 'A ticked match isn’t open yet or has finished, so it was unticked. Matches open 30 minutes before kick-off.'
+            : 'A ticked match is no longer available, so it was unticked. Check your picks and try again.',
+        );
+      } else if (result.code === 'DATA_UNAVAILABLE') {
+        setError('Match data isn’t ready for that pick yet. Try again in a moment, or pick a General game.');
+      } else {
+        setError(result.message);
       }
-      setError(result.message);
       return;
     }
     // Carry the chosen game to the room: its page dispatches SELECT_GAME once connected.
@@ -276,9 +230,7 @@ function HostPageContent(): React.JSX.Element {
           compView.status === 'ready' && generalCompetitionId !== null
             ? (compView.competitions.find((competition) => competition.id === generalCompetitionId)?.name ?? null)
             : null,
-        matchdayCompetitionName: selectedCompetitionName,
-        gameday: gamedaySelected,
-        fixture: gamedaySelected ? null : selectedFixture,
+        fixtures: fixtureSelection.map((entry) => entry.fixture),
       }),
     });
     adopt({
@@ -311,7 +263,7 @@ function HostPageContent(): React.JSX.Element {
     <main className="page page-wide gap-5">
       <BackButton fallbackHref="/" />
       <div>
-        <Eyebrow>{matchdayVisible ? 'Set up your room' : 'General · season trivia'}</Eyebrow>
+        <Eyebrow>{showCategoryCard ? 'Set up your room' : 'General · season trivia'}</Eyebrow>
         <h1 className="t-d1 mt-1">Host a room</h1>
       </div>
 
@@ -319,7 +271,7 @@ function HostPageContent(): React.JSX.Element {
           rounds, nickname, Create) on the right, with the right column pinned so Create stays in reach. */}
       <div className="split-cols gap-5 [--split-min:20rem] lg:items-start lg:gap-8 land:items-start land:gap-4">
       <div className="flex min-w-0 flex-col gap-5">
-      {matchdayVisible ? (
+      {showCategoryCard ? (
         <Card>
           <Eyebrow className="mb-3">Category</Eyebrow>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))] gap-3" role="radiogroup" aria-label="Category">
@@ -327,15 +279,21 @@ function HostPageContent(): React.JSX.Element {
               role="radio"
               aria-checked={category === 'matchday'}
               selected={category === 'matchday'}
+              disabled={checkingLive}
+              aria-busy={checkingLive}
               onClick={() => switchCategory('matchday')}
             >
               <span className="flex flex-wrap items-center gap-x-2">
                 Matchday
-                <span className="whitespace-nowrap rounded-full bg-live/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-live">
-                  Live
-                </span>
+                {checkingLive ? null : (
+                  <span className="whitespace-nowrap rounded-full bg-live/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-live">
+                    Live
+                  </span>
+                )}
               </span>
-              <span className="t-xs block font-normal text-fg-muted">Tied to a real fixture</span>
+              <span role={checkingLive ? 'status' : undefined} className="t-xs block font-normal text-fg-muted">
+                {checkingLive ? 'Checking live games…' : 'Tied to real matches'}
+              </span>
             </OptionButton>
             <OptionButton
               role="radio"
@@ -352,128 +310,25 @@ function HostPageContent(): React.JSX.Element {
 
       {category === 'matchday' ? (
         <Card>
-          {selectedCompetitionId === null ? (
-            <>
-              <Eyebrow className="mb-3">Pick a league</Eyebrow>
-              {compView.status === 'loading' ? loadingRow('Loading competitions…') : null}
-              {compView.status === 'error' ? (
-                <div className="flex flex-col gap-3">
-                  <Banner tone="error">{compView.message}</Banner>
-                  <BigButton variant="secondary" onClick={loadCompetitions}>
-                    Try again
-                  </BigButton>
-                </div>
-              ) : null}
-              {compView.status === 'ready' ? (
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,8.5rem),1fr))] gap-3" role="listbox" aria-label="Leagues">
-                  {compView.competitions.map((competition) => (
-                    <OptionButton
-                      key={competition.id}
-                      role="option"
-                      aria-selected={false}
-                      aria-label={competition.name}
-                      onClick={() => chooseCompetition(competition.id)}
-                      className="flex flex-col items-center gap-2 text-center"
-                    >
-                      {crest(competition)}
-                      <span className="text-sm leading-tight">{competition.name}</span>
-                    </OptionButton>
-                  ))}
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <div className="mb-1 flex flex-wrap items-center justify-between gap-x-2">
-                <BackButton onBack={backToLeagues} label="Change league" className="px-0 text-accent" />
-                <Eyebrow>Pick a fixture</Eyebrow>
-              </div>
-              {selectedCompetitionName !== null ? (
-                <p className="t-body mb-3 text-fg-muted">
-                  League: <span className="font-semibold text-fg">{selectedCompetitionName}</span>
-                </p>
-              ) : null}
-
-              {fixView.status === 'loading' ? (
-                <div role="status" aria-live="polite" className="t-body flex flex-col items-center gap-1 py-4 text-center text-fg-muted">
-                  <span>Loading fixtures…</span>
-                  {fixtureLoadElapsedPhase({ loading: true, startedAt: fixturesLoadStartedAt ?? fastNow, now: fastNow }) ===
-                  'slow' ? (
-                    <span className="t-xs text-fg-subtle">
-                      A league&apos;s first check can take a few extra seconds — still working…
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-              {fixView.status === 'error' ? (
-                <div className="flex flex-col gap-3">
-                  <Banner tone="error">{fixView.message}</Banner>
-                  <BigButton variant="secondary" onClick={retryFixtures}>
-                    Try again
-                  </BigButton>
-                </div>
-              ) : null}
-              {fixView.status === 'empty' ? <Banner>No fixtures found for this competition right now.</Banner> : null}
-              {fixView.status === 'ready' ? (
-                <div className="flex flex-col gap-3">
-                  {liveFixtureCount(fixView.fixtures) === 0 ? (
-                    <p className="t-xs text-fg-subtle">
-                      Lineups are published about an hour before kickoff, so games for an upcoming fixture won&apos;t
-                      be selectable until then. Pick a live match for a game you can start now.
-                    </p>
-                  ) : null}
-                  {shouldOfferGameday(liveFixtureCount(fixView.fixtures)) ? (
-                    <OptionButton
-                      role="option"
-                      aria-selected={gamedaySelected}
-                      selected={gamedaySelected}
-                      onClick={chooseGameday}
-                      className="flex flex-col gap-1"
-                    >
-                      <span className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                        <span className="max-w-full">Play the whole live gameday</span>
-                        <span className="shrink-0 whitespace-nowrap rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">LIVE</span>
-                      </span>
-                      <span className="t-xs font-normal text-fg-muted">
-                        {gamedayOptionLabel(liveFixtureCount(fixView.fixtures))} — rounds rotate across every one
-                      </span>
-                    </OptionButton>
-                  ) : null}
-                  <div className="flex max-h-[min(20rem,60dvh)] flex-col gap-3 overflow-y-auto pr-1 lg:max-h-[min(32rem,60dvh)]" role="listbox" aria-label="Fixtures">
-                    {fixView.fixtures.map((fixture) => {
-                      const live = isFixtureLive(fixture);
-                      const badge = liveBadgeLabel(fixture);
-                      const selected = !gamedaySelected && selectedFixture?.fixtureId === fixture.fixtureId;
-                      return (
-                        <OptionButton
-                          key={fixture.fixtureId}
-                          role="option"
-                          aria-selected={selected}
-                          selected={selected}
-                          onClick={() => chooseFixture(fixture)}
-                          className="flex shrink-0 flex-col gap-1"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                            <span className="max-w-full text-[min(1rem,5.5vw)] sm:text-base">
-                              {fixture.homeTeam.name} vs {fixture.awayTeam.name}
-                            </span>
-                            {live ? (
-                              <span className="shrink-0 whitespace-nowrap rounded-full bg-live/20 px-2 py-0.5 text-xs font-bold text-live">{badge}</span>
-                            ) : null}
-                          </div>
-                          {!live ? (
-                            <span className="t-xs font-normal text-fg-muted">
-                              {formatKickoffLocal(fixture.kickoff)} · {kickoffCountdown(fixture.kickoff, now)}
-                            </span>
-                          ) : null}
-                        </OptionButton>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-            </>
-          )}
+          <Eyebrow className="mb-3">Pick your matches</Eyebrow>
+          {compView.status === 'loading' ? loadingRow('Loading competitions…') : null}
+          {compView.status === 'error' ? (
+            <div className="flex flex-col gap-3">
+              <Banner tone="error">{compView.message}</Banner>
+              <BigButton variant="secondary" onClick={loadCompetitions}>
+                Try again
+              </BigButton>
+            </div>
+          ) : null}
+          {compView.status === 'ready' ? (
+            <FixturePicker
+              competitions={compView.competitions}
+              liveFixtures={liveFixtures}
+              selection={fixtureSelection}
+              onChange={setFixtureSelection}
+              now={now}
+            />
+          ) : null}
         </Card>
       ) : null}
 
@@ -541,7 +396,7 @@ function HostPageContent(): React.JSX.Element {
               moduleId={resolveModuleId(category, modeChoice) ?? ''}
               state={settings}
               onChange={setSettings}
-              teams={{ home: selectedFixture?.homeTeam.name ?? 'Home', away: selectedFixture?.awayTeam.name ?? 'Away' }}
+              teams={{ home: fixtureSelection[0]?.fixture.homeTeam.name ?? 'Home', away: fixtureSelection[0]?.fixture.awayTeam.name ?? 'Away' }}
             />
           </div>
         ) : null}

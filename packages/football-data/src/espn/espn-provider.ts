@@ -432,7 +432,9 @@ export class EspnProvider implements FootballDataProvider {
     const result = await this.client.getJson(
       `scoreboard:${slug}:${day ?? 'current'}`,
       url,
-      this.ttl.fixtures,
+      // The current (undated) scoreboard and today's dated one carry live statuses/minutes/scores, so they get the
+      // short live TTL; other days (past results, future schedules) keep the long fixtures TTL.
+      day === null || day === compactUtcDate(this.clock.now()) ? this.ttl.liveMatch : this.ttl.fixtures,
       espnScoreboardSchema,
     );
     if (!result.ok) return result;
@@ -605,6 +607,11 @@ export function scheduledSummaryTtl(ttl: CacheTtlConfig, kickoff: string | null 
   const untilWindow = kickoffMs - PRE_KICKOFF_LIVE_WINDOW_MS - nowMs;
   if (untilWindow <= 0) return ttl.liveMatch;
   return Math.max(ttl.liveMatch, Math.min(SCHEDULED_SUMMARY_TTL_MS, untilWindow));
+}
+
+/** Epoch ms -> `YYYYMMDD` (UTC), the form ESPN's `dates=` parameter uses. */
+function compactUtcDate(ms: number): string {
+  return new Date(ms).toISOString().slice(0, 10).replace(/-/g, '');
 }
 
 /** `2026-09-16` → `20260916`; null for anything else. */
