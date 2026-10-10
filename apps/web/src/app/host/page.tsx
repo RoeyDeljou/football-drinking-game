@@ -107,7 +107,7 @@ function HostPageContent(): React.JSX.Element {
       // competition failing can't derail the others.
       await Promise.all(
         competitions.map((competition, index) =>
-          listCompetitionFixtures(competition.id, 'live').then((result) => {
+          listCompetitionFixtures(competition.id, 'open').then((result) => {
             if (sweepId !== matchdaySweepId.current) return;
             setMatchdayChecks((previous) =>
               previous.map((check, position) => (position === index ? { status: 'settled' as const, result } : check)),
@@ -203,7 +203,20 @@ function HostPageContent(): React.JSX.Element {
     });
     setBusy(false);
     if (!result.ok) {
-      setError(result.message);
+      if (result.code === 'UNKNOWN_FIXTURE' || result.code === 'FIXTURE_NOT_AVAILABLE') {
+        // Untick the matches the server refused so the host can just tap Create again.
+        const refused = new Set(result.fixtureIds ?? []);
+        setFixtureSelection((current) => current.filter((entry) => !refused.has(entry.fixture.fixtureId)));
+        setError(
+          result.code === 'FIXTURE_NOT_AVAILABLE'
+            ? 'A ticked match isn’t open yet or has finished, so it was unticked. Matches open 30 minutes before kick-off.'
+            : 'A ticked match is no longer available, so it was unticked. Check your picks and try again.',
+        );
+      } else if (result.code === 'DATA_UNAVAILABLE') {
+        setError('Match data isn’t ready for that pick yet. Try again in a moment, or pick a General game.');
+      } else {
+        setError(result.message);
+      }
       return;
     }
     // Carry the chosen game to the room: its page dispatches SELECT_GAME once connected.

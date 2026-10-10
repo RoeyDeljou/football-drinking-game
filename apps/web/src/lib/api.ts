@@ -19,6 +19,8 @@ export type ApiResult<T> =
       readonly code?: string;
       /** The HTTP status, when a response was actually received (absent on a network failure). */
       readonly status?: number;
+      /** Offending fixture ids, when the server names them (UNKNOWN_FIXTURE, FIXTURE_NOT_AVAILABLE). */
+      readonly fixtureIds?: readonly string[];
     };
 
 const request = async <T>(path: string, init: RequestInit = {}): Promise<ApiResult<T>> => {
@@ -32,10 +34,12 @@ const request = async <T>(path: string, init: RequestInit = {}): Promise<ApiResu
     if (!response.ok) {
       const errorBody =
         body !== null && typeof body === 'object' && 'error' in body
-          ? (body as { error: { message?: string; code?: string } }).error
+          ? (body as { error: { message?: string; code?: string; fixtureIds?: unknown } }).error
           : undefined;
       const message = errorBody !== undefined ? String(errorBody.message ?? errorBody.code ?? 'Request failed') : `Request failed (${response.status})`;
-      return { ok: false, message, code: errorBody?.code, status: response.status };
+      const fixtureIds =
+        Array.isArray(errorBody?.fixtureIds) ? errorBody.fixtureIds.filter((id): id is string => typeof id === 'string') : undefined;
+      return { ok: false, message, code: errorBody?.code, status: response.status, ...(fixtureIds !== undefined ? { fixtureIds } : {}) };
     }
     return { ok: true, value: body as T };
   } catch {
@@ -134,7 +138,8 @@ export const listCompetitions = (): Promise<ApiResult<{ competitions: readonly C
 
 export const listCompetitionFixtures = (
   competitionId: string,
-  window?: 'live' | 'upcoming',
+  /** `open`: live matches first, then ones kicking off within 30 minutes (the host picker's sweep). */
+  window?: 'live' | 'upcoming' | 'open',
 ): Promise<ApiResult<{ fixtures: readonly FixtureSummary[] }>> =>
   request(
     `/competitions/${encodeURIComponent(competitionId)}/fixtures${window !== undefined ? `?window=${window}` : ''}`,
