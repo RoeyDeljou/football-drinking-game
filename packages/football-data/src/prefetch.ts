@@ -255,7 +255,10 @@ export class MatchdayPrefetcher {
     }
 
     const profiles = await this.loadProfiles(lineups, statsNotes);
-    this.mark('stats', seasonStats.length === 0 && live === null ? 'failed' : 'done', statsNotes);
+    // Step 4 is non-fatal. Before kickoff there is no live state by design, so missing season stats alone must not
+    // fail it (a failed step blocks the host from starting); games that need stats are gated by data quality instead.
+    const notKickedOff = fixture.status === 'SCHEDULED';
+    this.mark('stats', seasonStats.length === 0 && live === null && !notKickedOff ? 'failed' : 'done', statsNotes);
 
     // ---- Assemble -------------------------------------------------------
     const quality = assessFixtureDataQuality({
